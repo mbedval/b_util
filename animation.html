@@ -1,0 +1,621 @@
+sho<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animation Collage</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #3a3a3a 0%, #2a2a2a 50%, #1a1a1a 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .collage-container {
+            position: relative;
+            width: 90vw;
+            max-width: 1400px;
+            height: 85vh;
+            max-height: 900px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+
+        .collage-container::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            background: linear-gradient(90deg, #5a5a5a, #4a4a4a, #3a3a3a, #2a2a2a, #1a1a1a, #2a2a2a, #5a5a5a);
+            background-size: 400% 400%;
+            border-radius: 22px;
+            z-index: -1;
+            animation: borderProgress 8s linear infinite;
+        }
+
+        @keyframes borderProgress {
+            0% {
+                background-position: 0% 50%;
+            }
+            100% {
+                background-position: 400% 50%;
+            }
+        }
+
+        .collage-item {
+            position: absolute;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            transition: transform 0.4s ease, box-shadow 0.4s ease, opacity 0.4s ease, border-radius 0.4s ease, top 0.6s ease, left 0.6s ease, right 0.6s ease, bottom 0.6s ease;
+            cursor: pointer;
+            overflow: hidden;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .collage-item.shuffling {
+            opacity: 0;
+            transform: scale(0.8) rotate(0deg) !important;
+        }
+
+        .collage-item.dimmed {
+            opacity: 0.15;
+            filter: blur(2px);
+        }
+
+        .collage-item.focused {
+            z-index: 1000;
+            transform: rotate(0deg) !important;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8);
+            border-color: rgba(255, 255, 255, 0.6);
+            border-radius: 12px !important;
+            position: fixed;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            transform: none !important;
+            margin: 0;
+            padding: 0;
+        }
+
+        .collage-item.focused img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .close-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 1001;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .close-button.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .close-button:hover {
+            background: rgba(255, 107, 107, 0.8);
+            border-color: rgba(255, 107, 107, 1);
+        }
+
+        .collage-item:hover:not(.focused) {
+            transform: scale(1.08) !important;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            z-index: 50;
+        }
+
+        .collage-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Item 1 - Large square, top left */
+        .item-1 {
+            width: 35%;
+            height: 35%;
+            top: 5%;
+            left: 5%;
+            border-radius: 15px;
+            transform: rotate(-4deg);
+        }
+
+        /* Item 2 - Circle, top right */
+        .item-2 {
+            width: 28%;
+            height: 28%;
+            top: 3%;
+            right: 8%;
+            border-radius: 50%;
+            transform: rotate(3deg);
+        }
+
+        /* Item 3 - Tall rectangle, middle left */
+        .item-3 {
+            width: 20%;
+            height: 45%;
+            top: 30%;
+            left: 3%;
+            border-radius: 10px;
+            transform: rotate(2deg);
+        }
+
+        /* Item 4 - Wide rectangle, center */
+        .item-4 {
+            width: 40%;
+            height: 25%;
+            top: 40%;
+            left: 30%;
+            border-radius: 12px;
+            transform: rotate(-3deg);
+        }
+
+        /* Item 5 - Small square, center right */
+        .item-5 {
+            width: 22%;
+            height: 22%;
+            top: 35%;
+            right: 5%;
+            border-radius: 8px;
+            transform: rotate(5deg);
+        }
+
+        /* Item 6 - Circle, bottom left */
+        .item-6 {
+            width: 25%;
+            height: 25%;
+            bottom: 8%;
+            left: 8%;
+            border-radius: 50%;
+            transform: rotate(-2deg);
+        }
+
+        /* Item 7 - Medium rectangle, bottom center */
+        .item-7 {
+            width: 30%;
+            height: 20%;
+            bottom: 5%;
+            left: 35%;
+            border-radius: 10px;
+            transform: rotate(4deg);
+        }
+
+        /* Item 8 - Small circle, bottom right */
+        .item-8 {
+            width: 18%;
+            height: 18%;
+            bottom: 10%;
+            right: 10%;
+            border-radius: 50%;
+            transform: rotate(-5deg);
+        }
+
+        .no-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 1.5rem;
+            text-align: center;
+            z-index: 10;
+        }
+
+        @media (max-width: 768px) {
+            .collage-container {
+                width: 95vw;
+                height: 90vh;
+            }
+
+            .collage-item {
+                transform: none !important;
+            }
+
+            .item-1 {
+                width: 45%;
+                height: 30%;
+                top: 5%;
+                left: 3%;
+                border-radius: 50%;
+            }
+            .item-2 {
+                width: 45%;
+                height: 30%;
+                top: 5%;
+                right: 3%;
+                border-radius: 50%;
+            }
+            .item-3 {
+                width: 45%;
+                height: 25%;
+                top: 38%;
+                left: 3%;
+                border-radius: 10px;
+            }
+            .item-4 {
+                width: 45%;
+                height: 25%;
+                top: 38%;
+                right: 3%;
+                border-radius: 12px;
+            }
+            .item-5 {
+                width: 45%;
+                height: 25%;
+                top: 66%;
+                left: 3%;
+                border-radius: 8px;
+            }
+            .item-6 {
+                width: 45%;
+                height: 25%;
+                top: 66%;
+                right: 3%;
+                border-radius: 50%;
+            }
+            .item-7 { display: none; }
+            .item-8 { display: none; }
+
+        }
+    </style>
+</head>
+<body>
+    <button class="close-button" id="closeButton">×</button>
+    <div class="collage-container">
+        <div class="collage-item item-1">
+            <img src="animation/1754038126809.gif" alt="Animation 1">
+        </div>
+        
+        <div class="collage-item item-2">
+            <img src="animation/1754303696108.gif" alt="Animation 2">
+        </div>
+        
+        <div class="collage-item item-3">
+            <img src="animation/youtube_Architecture.gif" alt="Animation 3">
+        </div>
+        
+        <div class="collage-item item-4">
+            <img src="animation/1754038126809.gif" alt="Animation 4">
+        </div>
+        
+        <div class="collage-item item-5">
+            <img src="animation/1754303696108.gif" alt="Animation 5">
+        </div>
+        
+        <div class="collage-item item-6">
+            <img src="animation/youtube_Architecture.gif" alt="Animation 6">
+        </div>
+        
+        <div class="collage-item item-7">
+            <img src="animation/1754038126809.gif" alt="Animation 7">
+        </div>
+        
+        <div class="collage-item item-8">
+            <img src="animation/1754303696108.gif" alt="Animation 8">
+        </div>
+    </div>
+
+    <script>
+        // Initial image files
+        const initialImages = [
+            'animation/1754038126809.gif',
+            'animation/1754303696108.gif',
+            'animation/youtube_Architecture.gif'
+        ];
+
+        // Pool of all available images (will be expanded if more files are detected)
+        let imagePool = [...initialImages];
+        let currentImages = [...initialImages];
+        let isShuffling = false;
+        let scrollTimeout = null;
+        let focusedItem = null;
+        let originalPositions = new Map();
+
+        // Supported image formats
+        const imageExtensions = ['.gif', '.webp', '.jpg', '.jpeg', '.png', '.bmp', '.svg'];
+
+        // Try to detect additional animation files
+        async function detectAdditionalFiles() {
+            try {
+                // Try to fetch directory listing (this may not work on all servers)
+                const response = await fetch('animation/');
+                if (response.ok) {
+                    const text = await response.text();
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(text, 'text/html');
+                    const links = doc.querySelectorAll('a');
+                    const newFiles = [];
+                    
+                    links.forEach(link => {
+                        const href = link.getAttribute('href');
+                        if (href) {
+                            const ext = href.substring(href.lastIndexOf('.')).toLowerCase();
+                            if (imageExtensions.includes(ext) && !imagePool.includes('animation/' + href)) {
+                                newFiles.push('animation/' + href);
+                            }
+                        }
+                    });
+                    
+                    if (newFiles.length > 0) {
+                        imagePool = [...imagePool, ...newFiles];
+                        console.log(`Detected ${newFiles.length} additional files`);
+                    }
+                }
+            } catch (e) {
+                // Directory listing not available, that's okay
+                console.log('Could not detect additional files (server may not allow directory listing)');
+            }
+        }
+
+        // Shuffle array using Fisher-Yates algorithm
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        // Get new set of images for the collage
+        function getNewImageSet() {
+            if (imagePool.length === 0) {
+                return [];
+            }
+            if (imagePool.length >= 8) {
+                // If we have enough files, pick 8 random ones
+                const shuffled = shuffleArray(imagePool);
+                return shuffled.slice(0, 8);
+            } else {
+                // If limited files, return only available images
+                return shuffleArray(imagePool);
+            }
+        }
+
+        // Update visible frames based on available content
+        function updateVisibleFrames() {
+            const items = document.querySelectorAll('.collage-item');
+            const availableCount = imagePool.length;
+            
+            if (availableCount === 0) {
+                // Show "add content" message
+                items.forEach(item => {
+                    item.style.display = 'none';
+                });
+                const container = document.querySelector('.collage-container');
+                let noContent = document.querySelector('.no-content');
+                if (!noContent) {
+                    noContent = document.createElement('div');
+                    noContent.className = 'no-content';
+                    noContent.textContent = 'Add content to animation folder';
+                    container.appendChild(noContent);
+                }
+                noContent.style.display = 'block';
+                return;
+            }
+            
+            // Hide "add content" message if it exists
+            const noContent = document.querySelector('.no-content');
+            if (noContent) {
+                noContent.style.display = 'none';
+            }
+            
+            // Show only as many frames as there are images
+            items.forEach((item, index) => {
+                if (index < availableCount) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        // Update images with animation
+        function shuffleImages() {
+            if (isShuffling) return;
+            isShuffling = true;
+
+            const items = document.querySelectorAll('.collage-item');
+            const newImages = getNewImageSet();
+            
+            // Only update visible items
+            const visibleItems = Array.from(items).filter(item => item.style.display !== 'none');
+
+            // Fade out all visible items
+            visibleItems.forEach(item => {
+                item.classList.add('shuffling');
+            });
+
+            // After fade out, update images and fade in
+            setTimeout(() => {
+                visibleItems.forEach((item, index) => {
+                    const img = item.querySelector('img');
+                    if (img && newImages[index]) {
+                        img.src = newImages[index];
+                    }
+                });
+
+                // Fade in with staggered delay
+                visibleItems.forEach((item, index) => {
+                    setTimeout(() => {
+                        item.classList.remove('shuffling');
+                    }, index * 50);
+                });
+
+                currentImages = newImages;
+                isShuffling = false;
+            }, 400);
+        }
+
+        // Handle mouse wheel scroll
+        let scrollDelta = 0;
+        const scrollThreshold = 100;
+
+        document.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            scrollDelta += Math.abs(e.deltaY);
+
+            if (scrollDelta >= scrollThreshold && !isShuffling) {
+                shuffleImages();
+                scrollDelta = 0;
+            }
+        }, { passive: false });
+
+        // Initialize
+        detectAdditionalFiles();
+        updateVisibleFrames();
+
+        // Store original positions
+        document.querySelectorAll('.collage-item').forEach(item => {
+            const computedStyle = window.getComputedStyle(item);
+            originalPositions.set(item, {
+                top: item.style.top || computedStyle.top,
+                left: item.style.left || computedStyle.left,
+                right: item.style.right || computedStyle.right,
+                bottom: item.style.bottom || computedStyle.bottom
+            });
+        });
+
+        // Click handler for focusing images
+        document.querySelectorAll('.collage-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                
+                if (focusedItem === item) {
+                    // Clicking the focused item returns to normal state
+                    resetFocus();
+                } else {
+                    // Focus the clicked item
+                    focusItem(item);
+                }
+            });
+        });
+
+        // Click on container to reset focus
+        document.querySelector('.collage-container').addEventListener('click', () => {
+            resetFocus();
+        });
+
+        // Close button click handler
+        document.getElementById('closeButton').addEventListener('click', (e) => {
+            e.stopPropagation();
+            resetFocus();
+        });
+
+        function focusItem(item) {
+            // Reset previous focus if any
+            if (focusedItem) {
+                focusedItem.classList.remove('focused');
+            }
+            
+            // Dim all items and apply magnetic repulsion
+            document.querySelectorAll('.collage-item').forEach(i => {
+                if (i !== item) {
+                    i.classList.add('dimmed');
+                    applyMagneticRepulsion(i);
+                }
+            });
+            
+            // Focus the clicked item
+            item.classList.remove('dimmed');
+            item.classList.add('focused');
+            focusedItem = item;
+            
+            // Show close button
+            document.getElementById('closeButton').classList.add('visible');
+        }
+
+        function resetFocus() {
+            document.querySelectorAll('.collage-item').forEach(i => {
+                i.classList.remove('dimmed');
+                i.classList.remove('focused');
+                restoreOriginalPosition(i);
+            });
+            focusedItem = null;
+            
+            // Hide close button
+            document.getElementById('closeButton').classList.remove('visible');
+        }
+
+        function applyMagneticRepulsion(item) {
+            const container = document.querySelector('.collage-container');
+            const containerRect = container.getBoundingClientRect();
+            const itemRect = item.getBoundingClientRect();
+            
+            const centerX = containerRect.width / 2;
+            const centerY = containerRect.height / 2;
+            
+            const itemCenterX = itemRect.left - containerRect.left + itemRect.width / 2;
+            const itemCenterY = itemRect.top - containerRect.top + itemRect.height / 2;
+            
+            const deltaX = itemCenterX - centerX;
+            const deltaY = itemCenterY - centerY;
+            
+            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+            const repulsionStrength = 80; // pixels to push away
+            
+            if (distance > 0) {
+                const pushX = (deltaX / distance) * repulsionStrength;
+                const pushY = (deltaY / distance) * repulsionStrength;
+                
+                const originalPos = originalPositions.get(item);
+                
+                // Apply push based on original position
+                if (originalPos.right && originalPos.right !== 'auto') {
+                    item.style.right = `calc(${originalPos.right} + ${pushX}px)`;
+                } else if (originalPos.left) {
+                    item.style.left = `calc(${originalPos.left} + ${pushX}px)`;
+                }
+                
+                if (originalPos.bottom && originalPos.bottom !== 'auto') {
+                    item.style.bottom = `calc(${originalPos.bottom} + ${pushY}px)`;
+                } else if (originalPos.top) {
+                    item.style.top = `calc(${originalPos.top} + ${pushY}px)`;
+                }
+            }
+        }
+
+        function restoreOriginalPosition(item) {
+            const originalPos = originalPositions.get(item);
+            if (originalPos) {
+                item.style.top = originalPos.top;
+                item.style.left = originalPos.left;
+                item.style.right = originalPos.right;
+                item.style.bottom = originalPos.bottom;
+            }
+        }
+    </script>
+</body>
+</html>

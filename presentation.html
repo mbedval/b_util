@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #3a3a3a 0%, #2a2a2a 50%, #1a1a1a 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+        }
+
+        .presentation-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .presentation-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            cursor: pointer;
+            position: absolute;
+            transition: all 1.5s ease-in-out;
+        }
+
+        .presentation-image.hidden {
+            opacity: 0;
+        }
+
+        /* Transition Effects */
+        .transition-fade {
+            animation: fadeTransition 1.5s ease-in-out;
+        }
+
+        .transition-dissolve {
+            animation: dissolveTransition 1.5s ease-in-out;
+        }
+
+        .transition-slide-left {
+            animation: slideLeftTransition 1.5s ease-in-out;
+        }
+
+        .transition-slide-right {
+            animation: slideRightTransition 1.5s ease-in-out;
+        }
+
+        .transition-slide-up {
+            animation: slideUpTransition 1.5s ease-in-out;
+        }
+
+        .transition-slide-down {
+            animation: slideDownTransition 1.5s ease-in-out;
+        }
+
+        .transition-zoom-in {
+            animation: zoomInTransition 1.5s ease-in-out;
+        }
+
+        .transition-zoom-out {
+            animation: zoomOutTransition 1.5s ease-in-out;
+        }
+
+        .transition-rotate {
+            animation: rotateTransition 1.5s ease-in-out;
+        }
+
+        .transition-scale-fade {
+            animation: scaleFadeTransition 1.5s ease-in-out;
+        }
+
+        .transition-swipe-left {
+            animation: swipeLeftTransition 4s ease-in-out;
+        }
+
+        .transition-swipe-right {
+            animation: swipeRightTransition 4s ease-in-out;
+        }
+
+        @keyframes fadeTransition {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes dissolveTransition {
+            0% { opacity: 0; filter: blur(10px); }
+            50% { opacity: 0.5; filter: blur(5px); }
+            100% { opacity: 1; filter: blur(0); }
+        }
+
+        @keyframes slideLeftTransition {
+            0% { opacity: 0; transform: translateX(100px); }
+            100% { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes slideRightTransition {
+            0% { opacity: 0; transform: translateX(-100px); }
+            100% { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes slideUpTransition {
+            0% { opacity: 0; transform: translateY(100px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideDownTransition {
+            0% { opacity: 0; transform: translateY(-100px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes zoomInTransition {
+            0% { opacity: 0; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes zoomOutTransition {
+            0% { opacity: 0; transform: scale(1.2); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes rotateTransition {
+            0% { opacity: 0; transform: rotate(-10deg) scale(0.9); }
+            100% { opacity: 1; transform: rotate(0deg) scale(1); }
+        }
+
+        @keyframes scaleFadeTransition {
+            0% { opacity: 0; transform: scale(0.5); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes swipeLeftTransition {
+            0% { 
+                opacity: 0; 
+                transform: translateX(-100vw) rotate(-3deg) scale(0.95); 
+            }
+            25% {
+                opacity: 1;
+                transform: translateX(0) rotate(0deg) scale(1);
+            }
+            75% {
+                opacity: 1;
+                transform: translateX(0) rotate(0deg) scale(1);
+            }
+            100% { 
+                opacity: 0; 
+                transform: translateX(100vw) rotate(3deg) scale(0.95); 
+            }
+        }
+
+        @keyframes swipeRightTransition {
+            0% { 
+                opacity: 0; 
+                transform: translateX(100vw) rotate(3deg) scale(0.95); 
+            }
+            25% {
+                opacity: 1;
+                transform: translateX(0) rotate(0deg) scale(1);
+            }
+            75% {
+                opacity: 1;
+                transform: translateX(0) rotate(0deg) scale(1);
+            }
+            100% { 
+                opacity: 0; 
+                transform: translateX(-100vw) rotate(-3deg) scale(0.95); 
+            }
+        }
+
+        .thank-you-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            font-size: 8rem;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 0 20px rgba(255, 107, 107, 0.8), 0 0 40px rgba(78, 205, 196, 0.6), 0 0 60px rgba(69, 183, 209, 0.4);
+            z-index: 1000;
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            text-align: center;
+            letter-spacing: 10px;
+        }
+
+        .thank-you-message.visible {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+        }
+
+        .thank-you-message.animate {
+            animation: thankYouAnimation 2s ease-in-out infinite;
+        }
+
+        @keyframes thankYouAnimation {
+            0%, 100% {
+                text-shadow: 0 0 20px rgba(255, 107, 107, 0.8), 0 0 40px rgba(78, 205, 196, 0.6), 0 0 60px rgba(69, 183, 209, 0.4);
+                transform: translate(-50%, -50%) scale(1) rotate(0deg);
+            }
+            25% {
+                text-shadow: 0 0 30px rgba(255, 107, 107, 1), 0 0 50px rgba(78, 205, 196, 0.8), 0 0 70px rgba(69, 183, 209, 0.6);
+                transform: translate(-50%, -50%) scale(1.05) rotate(2deg);
+            }
+            50% {
+                text-shadow: 0 0 40px rgba(255, 107, 107, 0.8), 0 0 60px rgba(78, 205, 196, 0.6), 0 0 80px rgba(69, 183, 209, 0.4);
+                transform: translate(-50%, -50%) scale(1) rotate(0deg);
+            }
+            75% {
+                text-shadow: 0 0 30px rgba(255, 107, 107, 1), 0 0 50px rgba(78, 205, 196, 0.8), 0 0 70px rgba(69, 183, 209, 0.6);
+                transform: translate(-50%, -50%) scale(1.05) rotate(-2deg);
+            }
+        }
+
+        .no-content {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 1.5rem;
+            text-align: center;
+            z-index: 10;
+        }
+
+        .pause-indicator {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 1rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 100;
+        }
+
+        .pause-indicator.visible {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="presentation-container">
+        <img class="presentation-image" id="presentationImage" src="" alt="Presentation">
+        <div class="no-content" id="noContent">Add content to wallpapers folder</div>
+        <div class="thank-you-message" id="thankYouMessage">Thank You</div>
+        <div class="pause-indicator" id="pauseIndicator">Paused - Click to resume</div>
+    </div>
+
+    <script>
+        // Supported image formats
+        const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'];
+        
+        // Initial image files
+        const initialImages = [
+            'wallpapers/stock-photo-23211029.jpg',
+            'wallpapers/stock-photo-24160915.jpg',
+            'wallpapers/stock-photo-24959177.jpg',
+            'wallpapers/stock-photo-51318986.jpg',
+            'wallpapers/stock-photo-54505036.jpg'
+        ];
+
+        // Pool of all available images
+        let imagePool = [...initialImages];
+        let currentImages = [...initialImages];
+        let currentIndex = 0;
+        let isPaused = false;
+        let slideshowInterval = null;
+        const slideshowDelay = 3000; // 3 seconds per image
+
+        // Transition effects
+        const transitions = [
+            'transition-fade',
+            'transition-dissolve',
+            'transition-slide-left',
+            'transition-slide-right',
+            'transition-slide-up',
+            'transition-slide-down',
+            'transition-zoom-in',
+            'transition-zoom-out',
+            'transition-rotate',
+            'transition-scale-fade',
+            'transition-swipe-left',
+            'transition-swipe-right'
+        ];
+
+        // Try to detect additional image files
+        async function detectAdditionalFiles() {
+            try {
+                const response = await fetch('wallpapers/');
+                if (response.ok) {
+                    const text = await response.text();
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(text, 'text/html');
+                    const links = doc.querySelectorAll('a');
+                    const newFiles = [];
+                    
+                    links.forEach(link => {
+                        const href = link.getAttribute('href');
+                        if (href) {
+                            const ext = href.substring(href.lastIndexOf('.')).toLowerCase();
+                            if (imageExtensions.includes(ext) && !imagePool.includes('wallpapers/' + href)) {
+                                newFiles.push('wallpapers/' + href);
+                            }
+                        }
+                    });
+                    
+                    if (newFiles.length > 0) {
+                        imagePool = [...imagePool, ...newFiles];
+                        console.log(`Detected ${newFiles.length} additional image files`);
+                    }
+                }
+            } catch (e) {
+                console.log('Could not detect additional image files (server may not allow directory listing)');
+            }
+        }
+
+        // Shuffle array using Fisher-Yates algorithm
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        // Start presentation
+        function startPresentation() {
+            if (imagePool.length === 0) {
+                document.getElementById('noContent').style.display = 'block';
+                return;
+            }
+            
+            document.getElementById('noContent').style.display = 'none';
+            currentImages = shuffleArray(imagePool);
+            currentIndex = 0;
+            
+            const image = document.getElementById('presentationImage');
+            image.src = currentImages[currentIndex];
+            
+            // Start slideshow
+            startSlideshow();
+        }
+
+        // Start slideshow interval
+        function startSlideshow() {
+            if (slideshowInterval) {
+                clearInterval(slideshowInterval);
+            }
+            
+            slideshowInterval = setInterval(() => {
+                if (!isPaused) {
+                    nextImage();
+                }
+            }, slideshowDelay);
+        }
+
+        // Show next image
+        function nextImage() {
+            const image = document.getElementById('presentationImage');
+            
+            // Remove all transition classes
+            transitions.forEach(t => image.classList.remove(t));
+            
+            // Fade out
+            image.classList.add('hidden');
+            
+            setTimeout(() => {
+                currentIndex = (currentIndex + 1) % currentImages.length;
+                image.src = currentImages[currentIndex];
+                
+                // Apply random transition
+                const randomTransition = transitions[Math.floor(Math.random() * transitions.length)];
+                image.classList.add(randomTransition);
+                
+                // Determine animation duration based on transition type
+                const isSwipeTransition = randomTransition.includes('swipe');
+                const animationDuration = isSwipeTransition ? 4100 : 1600;
+                
+                // Fade in with transition
+                setTimeout(() => {
+                    image.classList.remove('hidden');
+                }, 100);
+                
+                // Remove transition class after animation completes
+                setTimeout(() => {
+                    image.classList.remove(randomTransition);
+                }, animationDuration);
+            }, 500);
+        }
+
+        // Toggle pause/resume
+        function togglePause() {
+            isPaused = !isPaused;
+            
+            const indicator = document.getElementById('pauseIndicator');
+            if (isPaused) {
+                indicator.classList.add('visible');
+            } else {
+                indicator.classList.remove('visible');
+            }
+        }
+
+        // Show thank you message
+        function showThankYou() {
+            const message = document.getElementById('thankYouMessage');
+            const image = document.getElementById('presentationImage');
+            const indicator = document.getElementById('pauseIndicator');
+            
+            // Stop slideshow
+            if (slideshowInterval) {
+                clearInterval(slideshowInterval);
+                slideshowInterval = null;
+            }
+            
+            // Hide image
+            image.style.display = 'none';
+            indicator.classList.remove('visible');
+            
+            // Show thank you message with animation
+            message.classList.add('visible');
+            setTimeout(() => {
+                message.classList.add('animate');
+            }, 500);
+        }
+
+        // Click handler for pause/resume
+        document.getElementById('presentationImage').addEventListener('click', () => {
+            togglePause();
+        });
+
+        // ESC key handler
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                showThankYou();
+            }
+        });
+
+        // Initialize
+        detectAdditionalFiles();
+        startPresentation();
+    </script>
+</body>
+</html>
