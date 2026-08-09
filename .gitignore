@@ -1,1 +1,4 @@
 backup/*
+assets/*
+backup_junk/*
+node_modules/

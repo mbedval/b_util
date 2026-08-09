@@ -1,9 +1,10 @@
-sho<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Animation Collage</title>
+    <script src="files.js"></script>
     <style>
         * {
             margin: 0;
@@ -328,16 +329,9 @@ sho<!DOCTYPE html>
     </div>
 
     <script>
-        // Initial image files
-        const initialImages = [
-            'animation/1754038126809.gif',
-            'animation/1754303696108.gif',
-            'animation/youtube_Architecture.gif'
-        ];
-
-        // Pool of all available images (will be expanded if more files are detected)
-        let imagePool = [...initialImages];
-        let currentImages = [...initialImages];
+        // Pool of all available images
+        let imagePool = [];
+        let currentImages = [];
         let isShuffling = false;
         let scrollTimeout = null;
         let focusedItem = null;
@@ -346,36 +340,20 @@ sho<!DOCTYPE html>
         // Supported image formats
         const imageExtensions = ['.gif', '.webp', '.jpg', '.jpeg', '.png', '.bmp', '.svg'];
 
-        // Try to detect additional animation files
+        // Try to detect additional animation files via API
         async function detectAdditionalFiles() {
             try {
-                // Try to fetch directory listing (this may not work on all servers)
-                const response = await fetch('animation/');
+                const response = await fetch('/api/files?folder=animation');
                 if (response.ok) {
-                    const text = await response.text();
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(text, 'text/html');
-                    const links = doc.querySelectorAll('a');
-                    const newFiles = [];
-                    
-                    links.forEach(link => {
-                        const href = link.getAttribute('href');
-                        if (href) {
-                            const ext = href.substring(href.lastIndexOf('.')).toLowerCase();
-                            if (imageExtensions.includes(ext) && !imagePool.includes('animation/' + href)) {
-                                newFiles.push('animation/' + href);
-                            }
-                        }
-                    });
-                    
+                    const files = await response.json();
+                    const newFiles = files.filter(filePath => !imagePool.includes(filePath));
                     if (newFiles.length > 0) {
                         imagePool = [...imagePool, ...newFiles];
-                        console.log(`Detected ${newFiles.length} additional files`);
+                        console.log(`[API] Detected ${newFiles.length} additional animation files`);
                     }
                 }
             } catch (e) {
-                // Directory listing not available, that's okay
-                console.log('Could not detect additional files (server may not allow directory listing)');
+                console.log('Could not fetch via API, relying on files.js fallback');
             }
         }
 
@@ -395,11 +373,9 @@ sho<!DOCTYPE html>
                 return [];
             }
             if (imagePool.length >= 8) {
-                // If we have enough files, pick 8 random ones
                 const shuffled = shuffleArray(imagePool);
                 return shuffled.slice(0, 8);
             } else {
-                // If limited files, return only available images
                 return shuffleArray(imagePool);
             }
         }
@@ -410,7 +386,6 @@ sho<!DOCTYPE html>
             const availableCount = imagePool.length;
             
             if (availableCount === 0) {
-                // Show "add content" message
                 items.forEach(item => {
                     item.style.display = 'none';
                 });
@@ -426,13 +401,11 @@ sho<!DOCTYPE html>
                 return;
             }
             
-            // Hide "add content" message if it exists
             const noContent = document.querySelector('.no-content');
             if (noContent) {
                 noContent.style.display = 'none';
             }
             
-            // Show only as many frames as there are images
             items.forEach((item, index) => {
                 if (index < availableCount) {
                     item.style.display = 'block';
@@ -450,15 +423,12 @@ sho<!DOCTYPE html>
             const items = document.querySelectorAll('.collage-item');
             const newImages = getNewImageSet();
             
-            // Only update visible items
             const visibleItems = Array.from(items).filter(item => item.style.display !== 'none');
 
-            // Fade out all visible items
             visibleItems.forEach(item => {
                 item.classList.add('shuffling');
             });
 
-            // After fade out, update images and fade in
             setTimeout(() => {
                 visibleItems.forEach((item, index) => {
                     const img = item.querySelector('img');
@@ -467,7 +437,6 @@ sho<!DOCTYPE html>
                     }
                 });
 
-                // Fade in with staggered delay
                 visibleItems.forEach((item, index) => {
                     setTimeout(() => {
                         item.classList.remove('shuffling');
@@ -487,26 +456,64 @@ sho<!DOCTYPE html>
             e.preventDefault();
             scrollDelta += Math.abs(e.deltaY);
 
-            if (scrollDelta >= scrollThreshold && !isShuffling) {
+            if (scrollDelta >= scrollThreshold && !isShuffling && imagePool.length > 0) {
                 shuffleImages();
                 scrollDelta = 0;
             }
         }, { passive: false });
 
-        // Initialize
-        detectAdditionalFiles();
-        updateVisibleFrames();
-
-        // Store original positions
-        document.querySelectorAll('.collage-item').forEach(item => {
-            const computedStyle = window.getComputedStyle(item);
-            originalPositions.set(item, {
-                top: item.style.top || computedStyle.top,
-                left: item.style.left || computedStyle.left,
-                right: item.style.right || computedStyle.right,
-                bottom: item.style.bottom || computedStyle.bottom
+        // Store original positions for magnetic repulsion
+        function storeOriginalPositions() {
+            originalPositions.clear();
+            document.querySelectorAll('.collage-item').forEach(item => {
+                const computedStyle = window.getComputedStyle(item);
+                originalPositions.set(item, {
+                    top: item.style.top || computedStyle.top,
+                    left: item.style.left || computedStyle.left,
+                    right: item.style.right || computedStyle.right,
+                    bottom: item.style.bottom || computedStyle.bottom
+                });
             });
-        });
+        }
+
+        // Async Initialization
+        async function init() {
+            // 1. Try static list from files.js
+            if (window.collageFiles && window.collageFiles.animation) {
+                imagePool = [...window.collageFiles.animation];
+            }
+
+            // 2. Try API detection
+            await detectAdditionalFiles();
+
+            // 3. Fallback to repository defaults if empty
+            if (imagePool.length === 0) {
+                imagePool = [
+                    'animation/tumblr_06d3d3a87634d03e6be7bedbfa1b015f_7d7ed30b_640.webp',
+                    'animation/tumblr_9247a88b3634a3c931da463fbf1be0db_69f69ace_400.webp',
+                    'animation/tumblr_e56160b0d5411fa177ff05ed91e16697_153f423c_400.webp'
+                ];
+            }
+
+            // Setup frames layout
+            updateVisibleFrames();
+
+            // Initialize image sources to prevent broken icons
+            const items = document.querySelectorAll('.collage-item');
+            const initialSet = getNewImageSet();
+            items.forEach((item, index) => {
+                const img = item.querySelector('img');
+                if (img && initialSet[index]) {
+                    img.src = initialSet[index];
+                }
+            });
+
+            // Store positions
+            storeOriginalPositions();
+        }
+
+        // Run initialization
+        window.addEventListener('DOMContentLoaded', init);
 
         // Click handler for focusing images
         document.querySelectorAll('.collage-item').forEach(item => {
@@ -514,10 +521,8 @@ sho<!DOCTYPE html>
                 e.stopPropagation();
                 
                 if (focusedItem === item) {
-                    // Clicking the focused item returns to normal state
                     resetFocus();
                 } else {
-                    // Focus the clicked item
                     focusItem(item);
                 }
             });
@@ -535,12 +540,10 @@ sho<!DOCTYPE html>
         });
 
         function focusItem(item) {
-            // Reset previous focus if any
             if (focusedItem) {
                 focusedItem.classList.remove('focused');
             }
             
-            // Dim all items and apply magnetic repulsion
             document.querySelectorAll('.collage-item').forEach(i => {
                 if (i !== item) {
                     i.classList.add('dimmed');
@@ -548,12 +551,10 @@ sho<!DOCTYPE html>
                 }
             });
             
-            // Focus the clicked item
             item.classList.remove('dimmed');
             item.classList.add('focused');
             focusedItem = item;
             
-            // Show close button
             document.getElementById('closeButton').classList.add('visible');
         }
 
@@ -564,8 +565,6 @@ sho<!DOCTYPE html>
                 restoreOriginalPosition(i);
             });
             focusedItem = null;
-            
-            // Hide close button
             document.getElementById('closeButton').classList.remove('visible');
         }
 
@@ -584,7 +583,7 @@ sho<!DOCTYPE html>
             const deltaY = itemCenterY - centerY;
             
             const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-            const repulsionStrength = 80; // pixels to push away
+            const repulsionStrength = 80;
             
             if (distance > 0) {
                 const pushX = (deltaX / distance) * repulsionStrength;
@@ -592,7 +591,6 @@ sho<!DOCTYPE html>
                 
                 const originalPos = originalPositions.get(item);
                 
-                // Apply push based on original position
                 if (originalPos.right && originalPos.right !== 'auto') {
                     item.style.right = `calc(${originalPos.right} + ${pushX}px)`;
                 } else if (originalPos.left) {
@@ -615,6 +613,40 @@ sho<!DOCTYPE html>
                 item.style.right = originalPos.right;
                 item.style.bottom = originalPos.bottom;
             }
+        }
+
+        // Handle Left/Right arrow key navigation
+        document.addEventListener('keydown', (e) => {
+            if (imagePool.length === 0) return;
+            
+            if (e.key === 'ArrowLeft') {
+                if (focusedItem) {
+                    navigateFocused(-1);
+                } else {
+                    shuffleImages();
+                }
+            } else if (e.key === 'ArrowRight') {
+                if (focusedItem) {
+                    navigateFocused(1);
+                } else {
+                    shuffleImages();
+                }
+            }
+        });
+
+        function navigateFocused(direction) {
+            const items = Array.from(document.querySelectorAll('.collage-item'));
+            const visibleItems = items.filter(item => item.style.display !== 'none');
+            if (visibleItems.length <= 1) return;
+            
+            let currentIndex = visibleItems.indexOf(focusedItem);
+            if (currentIndex === -1) return;
+            
+            let nextIndex = (currentIndex + direction + visibleItems.length) % visibleItems.length;
+            const nextItem = visibleItems[nextIndex];
+            
+            resetFocus();
+            focusItem(nextItem);
         }
     </script>
 </body>

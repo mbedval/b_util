@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Presentation</title>
+    <script src="files.js"></script>
     <style>
         * {
             margin: 0;
@@ -269,18 +270,9 @@
         // Supported image formats
         const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'];
         
-        // Initial image files
-        const initialImages = [
-            'wallpapers/stock-photo-23211029.jpg',
-            'wallpapers/stock-photo-24160915.jpg',
-            'wallpapers/stock-photo-24959177.jpg',
-            'wallpapers/stock-photo-51318986.jpg',
-            'wallpapers/stock-photo-54505036.jpg'
-        ];
-
         // Pool of all available images
-        let imagePool = [...initialImages];
-        let currentImages = [...initialImages];
+        let imagePool = [];
+        let currentImages = [];
         let currentIndex = 0;
         let isPaused = false;
         let slideshowInterval = null;
@@ -302,34 +294,20 @@
             'transition-swipe-right'
         ];
 
-        // Try to detect additional image files
+        // Try to detect additional image files via API
         async function detectAdditionalFiles() {
             try {
-                const response = await fetch('wallpapers/');
+                const response = await fetch('/api/files?folder=wallpapers');
                 if (response.ok) {
-                    const text = await response.text();
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(text, 'text/html');
-                    const links = doc.querySelectorAll('a');
-                    const newFiles = [];
-                    
-                    links.forEach(link => {
-                        const href = link.getAttribute('href');
-                        if (href) {
-                            const ext = href.substring(href.lastIndexOf('.')).toLowerCase();
-                            if (imageExtensions.includes(ext) && !imagePool.includes('wallpapers/' + href)) {
-                                newFiles.push('wallpapers/' + href);
-                            }
-                        }
-                    });
-                    
+                    const files = await response.json();
+                    const newFiles = files.filter(filePath => !imagePool.includes(filePath));
                     if (newFiles.length > 0) {
                         imagePool = [...imagePool, ...newFiles];
-                        console.log(`Detected ${newFiles.length} additional image files`);
+                        console.log(`[API] Detected ${newFiles.length} additional image files`);
                     }
                 }
             } catch (e) {
-                console.log('Could not detect additional image files (server may not allow directory listing)');
+                console.log('Could not fetch via API, relying on files.js fallback');
             }
         }
 
@@ -405,6 +383,39 @@
                 setTimeout(() => {
                     image.classList.remove(randomTransition);
                 }, animationDuration);
+        }
+
+        // Show previous image
+        function prevImage() {
+            const image = document.getElementById('presentationImage');
+            
+            // Remove all transition classes
+            transitions.forEach(t => image.classList.remove(t));
+            
+            // Fade out
+            image.classList.add('hidden');
+            
+            setTimeout(() => {
+                currentIndex = (currentIndex - 1 + currentImages.length) % currentImages.length;
+                image.src = currentImages[currentIndex];
+                
+                // Apply random transition
+                const randomTransition = transitions[Math.floor(Math.random() * transitions.length)];
+                image.classList.add(randomTransition);
+                
+                // Determine animation duration based on transition type
+                const isSwipeTransition = randomTransition.includes('swipe');
+                const animationDuration = isSwipeTransition ? 4100 : 1600;
+                
+                // Fade in with transition
+                setTimeout(() => {
+                    image.classList.remove('hidden');
+                }, 100);
+                
+                // Remove transition class after animation completes
+                setTimeout(() => {
+                    image.classList.remove(randomTransition);
+                }, animationDuration);
             }, 500);
         }
 
@@ -448,16 +459,48 @@
             togglePause();
         });
 
-        // ESC key handler
+        // Keyboard event handler (ESC and Arrow keys)
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 showThankYou();
+            } else if (imagePool.length > 0) {
+                if (e.key === 'ArrowLeft') {
+                    prevImage();
+                    if (slideshowInterval) {
+                        startSlideshow();
+                    }
+                } else if (e.key === 'ArrowRight') {
+                    nextImage();
+                    if (slideshowInterval) {
+                        startSlideshow();
+                    }
+                }
             }
         });
 
-        // Initialize
-        detectAdditionalFiles();
-        startPresentation();
+        // Async Initialization
+        async function init() {
+            // 1. Try static list from files.js
+            if (window.collageFiles && window.collageFiles.wallpapers) {
+                imagePool = [...window.collageFiles.wallpapers];
+            }
+
+            // 2. Try API detection
+            await detectAdditionalFiles();
+
+            // 3. Fallback to repository defaults if empty
+            if (imagePool.length === 0) {
+                imagePool = [
+                    'wallpapers/tumblr_097efc04a36d9730c3f604e131df2904_0fe9eb8a_2048.jpg',
+                    'wallpapers/tumblr_1d8f3a0b0afaedf54068fc57472fc90d_d9b5b757_1280.jpg'
+                ];
+            }
+
+            startPresentation();
+        }
+
+        // Run initialization
+        window.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>

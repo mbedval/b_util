@@ -1,0 +1,13 @@
+{
+  "name": "collage-server",
+  "version": "1.0.0",
+  "description": "Local server and file watcher for collage applications",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "generate": "node generate.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0"
+  }
+}

@@ -2,6 +2,35 @@
 
 This repository contains two interactive collage applications for displaying animations and videos in an artistic, interactive layout.
 
+## Getting Started & How to Use
+
+To make resources load dynamically when they are added or changed in the asset folders, we use a lightweight local server and directory watcher.
+
+### Option 1: Using the Local Server (Recommended)
+This runs a watcher that updates your asset lists automatically as you add/remove files:
+1. Ensure you have **Node.js** installed.
+2. In the project directory, install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the server and watcher:
+   ```bash
+   npm start
+   ```
+4. Open **`http://localhost:3000`** in your browser.
+5. Add, remove, or rename files inside `assets/animation`, `assets/videos`, or `assets/wallpapers`. The watcher will automatically update the file list (`files.js`) in real-time.
+
+### Option 2: Running Static (Without Web Server)
+If you prefer to run files using the `file://` protocol (double-clicking the `.html` files directly):
+1. Install dependencies once: `npm install`
+2. Whenever you modify files in the `assets/` folders, run the generator script once:
+   ```bash
+   npm run generate
+   ```
+3. Open `index.html` (or any app page) directly in your browser. It will use the generated list from `files.js`.
+
+---
+
 ## Applications
 
 ### 🎨 Animation Collage (animation.html)
@@ -99,30 +128,32 @@ collage/
 ├── index.html          # Main landing page with app list
 ├── animation.html      # Animation collage application
 ├── video.html          # Video collage application
-├── readme.md          # This documentation file
-├── animation/         # Folder for GIF/WebP files
-│   └── (8 animation files)
-└── videos/            # Folder for video files
-    └── (66 MP4 files)
+├── presentation.html   # Presentation slideshow application
+├── diagonal.html       # Diagonal split-screen application
+├── readme.md           # This documentation file
+├── package.json        # Node.js project configuration
+├── generate.js         # Static assets list generator
+├── server.js           # Local Web Server and Folder Watcher
+├── files.js            # Auto-generated asset list (window.collageFiles)
+└── assets/             # Active asset folder (ignores backup* folders)
+    ├── animation/      # GIF and WebP animation files
+    ├── videos/         # MP4 and WebM video files
+    └── wallpapers/     # Slideshow and wallpaper image files
 ```
 
-## Getting Started
-
-1. Clone or download this repository
-2. Open `index.html` in a web browser
-3. Click on either app card to launch the desired application
-4. Alternatively, open `animation.html` or `video.html` directly
 
 ## Customization
 
 To add your own files:
-- **Animations**: Place GIF/WebP files in the `animation/` folder
-- **Videos**: Place video files in the `videos/` folder
-- Update the file arrays in the HTML if needed for hardcoded paths
+- **Animations**: Place GIF/WebP/images in `assets/animation/`
+- **Videos**: Place MP4/WebM/videos in `assets/videos/`
+- **Wallpapers**: Place JPEG/PNG/images in `assets/wallpapers/`
+- *Note:* Files are indexed automatically on server start or folder change. You do not need to edit any HTML files.
 
 ## Performance Notes
 
-- Videos are preloaded with metadata only for faster initial load
-- Full video loading occurs when clicked
-- Shuffling pauses all videos during transition
-- State is preserved across shuffles for seamless experience
+- Videos are preloaded with metadata only for faster initial load.
+- Full video loading occurs when clicked.
+- Shuffling pauses all videos during transition.
+- State is preserved across shuffles for a seamless experience.
+

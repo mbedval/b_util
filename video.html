@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Video Collage</title>
+    <script src="files.js"></script>
     <style>
         * {
             margin: 0;
@@ -97,6 +98,12 @@
             transform: none !important;
             margin: 0;
             padding: 0;
+        }
+
+        .collage-item.exiting {
+            opacity: 0 !important;
+            transform: scale(0.5) !important;
+            transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.6s ease !important;
         }
 
         .collage-item.focused video {
@@ -297,51 +304,32 @@
     <button class="close-button" id="closeButton">×</button>
 
     <script>
-        // Initial video files
-        const initialVideos = [
-            'videos/kling_20250830_Image_to_Video_push_in__3966_0.mp4'
-        ];
-
-        // Supported video formats
-        const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv'];
-        
         // Pool of all available videos
-        let videoPool = [...initialVideos];
-        let currentVideos = [...initialVideos];
+        let videoPool = [];
+        let currentVideos = [];
         let isShuffling = false;
         let scrollTimeout = null;
         let focusedItem = null;
         let originalPositions = new Map();
         let isPlaying = false;
 
-        // Try to detect additional video files
+        // Supported video formats
+        const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv'];
+
+        // Try to detect additional video files via API
         async function detectAdditionalFiles() {
             try {
-                const response = await fetch('videos/');
+                const response = await fetch('/api/files?folder=videos');
                 if (response.ok) {
-                    const text = await response.text();
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(text, 'text/html');
-                    const links = doc.querySelectorAll('a');
-                    const newFiles = [];
-                    
-                    links.forEach(link => {
-                        const href = link.getAttribute('href');
-                        if (href) {
-                            const ext = href.substring(href.lastIndexOf('.')).toLowerCase();
-                            if (videoExtensions.includes(ext) && !videoPool.includes('videos/' + href)) {
-                                newFiles.push('videos/' + href);
-                            }
-                        }
-                    });
-                    
+                    const files = await response.json();
+                    const newFiles = files.filter(filePath => !videoPool.includes(filePath));
                     if (newFiles.length > 0) {
                         videoPool = [...videoPool, ...newFiles];
-                        console.log(`Detected ${newFiles.length} additional video files`);
+                        console.log(`[API] Detected ${newFiles.length} additional video files`);
                     }
                 }
             } catch (e) {
-                console.log('Could not detect additional video files (server may not allow directory listing)');
+                console.log('Could not fetch via API, relying on files.js fallback');
             }
         }
 
@@ -364,7 +352,6 @@
                 const shuffled = shuffleArray(videoPool);
                 return shuffled.slice(0, 8);
             } else {
-                // If limited files, return only available videos
                 return shuffleArray(videoPool);
             }
         }
@@ -375,7 +362,6 @@
             const availableCount = videoPool.length;
             
             if (availableCount === 0) {
-                // Show "add content" message
                 items.forEach(item => {
                     item.style.display = 'none';
                 });
@@ -387,13 +373,11 @@
                 return;
             }
             
-            // Hide "no videos" message if it exists
             const noVideos = document.getElementById('noVideos');
             if (noVideos) {
                 noVideos.style.display = 'none';
             }
             
-            // Show only as many frames as there are videos
             items.forEach((item, index) => {
                 if (index < availableCount) {
                     item.style.display = 'block';
@@ -415,7 +399,7 @@
             
             noVideos.style.display = 'none';
             
-            // Clear existing video items (except title and no-videos message)
+            // Clear existing video items
             const existingItems = container.querySelectorAll('.collage-item');
             existingItems.forEach(item => item.remove());
             
@@ -432,8 +416,12 @@
                     video.src = videoSrc;
                     video.preload = 'metadata';
                     video.muted = true;
-                    video.loop = true;
+                    video.loop = false;
                     video.playsInline = true;
+                    
+                    video.addEventListener('ended', () => {
+                        exitFocused();
+                    });
                     
                     item.appendChild(video);
                     container.appendChild(item);
@@ -441,6 +429,7 @@
             });
             
             // Store original positions
+            originalPositions.clear();
             document.querySelectorAll('.collage-item').forEach(item => {
                 const computedStyle = window.getComputedStyle(item);
                 originalPositions.set(item, {
@@ -463,7 +452,6 @@
                     const video = item.querySelector('video');
                     
                     if (focusedItem === item) {
-                        // Clicking the focused item toggles play/pause
                         if (video.paused) {
                             video.play();
                             video.muted = false;
@@ -473,7 +461,6 @@
                             isPlaying = false;
                         }
                     } else {
-                        // Focus the clicked item and play
                         if (focusedItem) {
                             const prevVideo = focusedItem.querySelector('video');
                             if (prevVideo) {
@@ -486,7 +473,6 @@
                         
                         focusItem(item);
                         
-                        // Play the video
                         video.muted = false;
                         video.play();
                         isPlaying = true;
@@ -494,20 +480,28 @@
                 });
             });
 
-            // Click on container to reset focus
             document.querySelector('.collage-container').addEventListener('click', () => {
-                resetFocus();
+                exitFocused();
             });
             
-            // Close button handler
             document.getElementById('closeButton').addEventListener('click', (e) => {
                 e.stopPropagation();
-                resetFocus();
+                exitFocused();
             });
         }
 
+        function exitFocused() {
+            if (!focusedItem) return;
+            const item = focusedItem;
+            item.classList.add('exiting');
+            document.getElementById('closeButton').classList.remove('visible');
+            setTimeout(() => {
+                resetFocus();
+                item.classList.remove('exiting');
+            }, 600);
+        }
+
         function focusItem(item) {
-            // Dim all items and apply magnetic repulsion
             document.querySelectorAll('.collage-item').forEach(i => {
                 if (i !== item) {
                     i.classList.add('dimmed');
@@ -520,12 +514,10 @@
                 }
             });
             
-            // Focus the clicked item
             item.classList.remove('dimmed');
             item.classList.add('focused');
             focusedItem = item;
             
-            // Show close button
             document.getElementById('closeButton').classList.add('visible');
         }
 
@@ -544,7 +536,6 @@
             focusedItem = null;
             isPlaying = false;
             
-            // Hide close button
             document.getElementById('closeButton').classList.remove('visible');
         }
 
@@ -603,13 +594,10 @@
             const items = document.querySelectorAll('.collage-item');
             const newVideos = getNewVideoSet();
             
-            // Only update visible items
             const visibleItems = Array.from(items).filter(item => item.style.display !== 'none');
             
-            // Store the current play state
             const wasPlaying = isPlaying;
 
-            // Pause all videos
             visibleItems.forEach(item => {
                 const video = item.querySelector('video');
                 if (video) {
@@ -619,7 +607,6 @@
                 item.classList.add('shuffling');
             });
 
-            // After fade out, update videos and fade in
             setTimeout(() => {
                 visibleItems.forEach((item, index) => {
                     const video = item.querySelector('video');
@@ -629,7 +616,6 @@
                     }
                 });
 
-                // Fade in with staggered delay
                 visibleItems.forEach((item, index) => {
                     setTimeout(() => {
                         item.classList.remove('shuffling');
@@ -639,7 +625,6 @@
                 currentVideos = newVideos;
                 isShuffling = false;
                 
-                // If a video was playing before shuffle, play the focused video after shuffle
                 if (wasPlaying && focusedItem) {
                     const video = focusedItem.querySelector('video');
                     if (video) {
@@ -664,10 +649,71 @@
             }
         }, { passive: false });
 
-        // Initialize
-        detectAdditionalFiles();
-        updateVisibleFrames();
-        renderVideos();
+        // Async Initialization
+        async function init() {
+            // 1. Try static list from files.js
+            if (window.collageFiles && window.collageFiles.videos) {
+                videoPool = [...window.collageFiles.videos];
+            }
+
+            // 2. Try API detection
+            await detectAdditionalFiles();
+
+            // 3. Fallback to repository defaults if empty
+            if (videoPool.length === 0) {
+                videoPool = [
+                    'videos/tumblr_0a3f03f882b557143357653b5d740a64_55f2d1d4_720.mp4'
+                ];
+            }
+
+            // Setup frames layout and render videos
+            updateVisibleFrames();
+            renderVideos();
+        }
+
+        // Run initialization
+        window.addEventListener('DOMContentLoaded', init);
+
+        // Handle Left/Right arrow key navigation
+        document.addEventListener('keydown', (e) => {
+            if (videoPool.length === 0) return;
+            
+            if (e.key === 'ArrowLeft') {
+                if (focusedItem) {
+                    navigateFocused(-1);
+                } else {
+                    shuffleVideos();
+                }
+            } else if (e.key === 'ArrowRight') {
+                if (focusedItem) {
+                    navigateFocused(1);
+                } else {
+                    shuffleVideos();
+                }
+            }
+        });
+
+        function navigateFocused(direction) {
+            const items = Array.from(document.querySelectorAll('.collage-item'));
+            const visibleItems = items.filter(item => item.style.display !== 'none');
+            if (visibleItems.length <= 1) return;
+            
+            let currentIndex = visibleItems.indexOf(focusedItem);
+            if (currentIndex === -1) return;
+            
+            let nextIndex = (currentIndex + direction + visibleItems.length) % visibleItems.length;
+            const nextItem = visibleItems[nextIndex];
+            
+            resetFocus();
+            focusItem(nextItem);
+            
+            const video = nextItem.querySelector('video');
+            if (video) {
+                video.muted = false;
+                video.play();
+                isPlaying = true;
+            }
+        }
     </script>
 </body>
 </html>
