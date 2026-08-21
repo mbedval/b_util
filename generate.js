@@ -2,12 +2,14 @@ const fs = require('fs');
 const path = require('path');
 
 const BASE_DIR = path.join(__dirname, 'assets');
-const FOLDERS = ['animation', 'wallpapers', 'videos'];
+const FOLDERS = ['animation', 'wallpapers', 'videos', 'gif2video', 'television'];
 
 const EXTENSIONS = {
   animation: ['.gif', '.webp', '.jpg', '.jpeg', '.png', '.bmp', '.svg'],
   wallpapers: ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'],
-  videos: ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv']
+  videos: ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv'],
+  gif2video: ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'],
+  television: ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv']
 };
 
 function getFilesForFolder(folder) {
@@ -59,7 +61,7 @@ function generateFilesJs() {
   
   const content = `// This file is auto-generated. Do not edit manually.\nwindow.collageFiles = ${JSON.stringify(collageFiles, null, 2)};\n`;
   fs.writeFileSync(path.join(__dirname, 'files.js'), content, 'utf-8');
-  console.log(`Generated files.js with:\n - ${collageFiles.animation.length} animations\n - ${collageFiles.wallpapers.length} wallpapers\n - ${collageFiles.videos.length} videos`);
+  console.log(`Generated files.js with:\n - ${collageFiles.animation.length} animations\n - ${collageFiles.wallpapers.length} wallpapers\n - ${collageFiles.videos.length} videos\n - ${collageFiles.gif2video.length} gif2video\n - ${collageFiles.television.length} television`);
 }
 
 if (require.main === module) {

@@ -1,0 +1,1572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retro Television Dashboard</title>
+    <!-- Include auto-generated files list -->
+    <script src="files.js" onerror="console.warn('files.js not found. Using fallback files.')"></script>
+    <style>
+        :root {
+            --cabinet-wood: #5c3a21;
+            --cabinet-bezel: #2b2b2b;
+            --tv-accent: #00ff66;
+            --tv-accent-glow: rgba(0, 255, 102, 0.4);
+            --crt-glow: #e0fcf0;
+            --remote-bg: #1e1e1e;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: radial-gradient(circle at center, #2e1d11 0%, #0d0603 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        /* Main TV Wrapper */
+        .tv-wrapper {
+            position: relative;
+            display: flex;
+            gap: 40px;
+            align-items: center;
+            max-width: 1400px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        @media (max-width: 1024px) {
+            .tv-wrapper {
+                flex-direction: column;
+                gap: 20px;
+            }
+        }
+
+        /* Outer Wood TV Cabinet */
+        .tv-cabinet {
+            width: 820px;
+            height: 560px;
+            background: linear-gradient(135deg, #6e473b 0%, #4a2d24 100%);
+            border: 15px solid #2e1a15;
+            border-radius: 40px;
+            box-shadow: 
+                0 30px 60px rgba(0,0,0,0.8),
+                inset 0 4px 15px rgba(255,255,255,0.1),
+                inset 0 -10px 20px rgba(0,0,0,0.6);
+            display: grid;
+            grid-template-columns: 1fr 150px;
+            padding: 20px;
+            position: relative;
+            z-index: 10;
+        }
+
+        @media (max-width: 900px) {
+            .tv-cabinet {
+                width: 100%;
+                max-width: 700px;
+                height: 480px;
+                grid-template-columns: 1fr 120px;
+            }
+        }
+
+        /* Left Side: TV Screen Frame */
+        .screen-frame {
+            background: var(--cabinet-bezel);
+            border-radius: 30px;
+            border: 10px solid #1a1a1a;
+            box-shadow: 
+                inset 0 10px 20px rgba(0,0,0,0.8),
+                0 2px 4px rgba(255,255,255,0.05);
+            padding: 12px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* Glass CRT curved screen mask */
+        .crt-mask {
+            width: 100%;
+            height: 100%;
+            background: #050505;
+            border-radius: 35px / 25px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 80px rgba(0,0,0,1);
+        }
+
+        /* Scanlines Overlay */
+        .crt-scanlines {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+            background-size: 100% 4px;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        /* Glass Reflection Sheen */
+        .crt-sheen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 20%, rgba(255,255,255,0) 40%);
+            z-index: 101;
+            pointer-events: none;
+        }
+
+        /* TV Content Viewport */
+        .tv-screen-content {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        /* STATE: TV POWER OFF */
+        .screen-off {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #000;
+            z-index: 90;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s ease;
+        }
+
+        .screen-off.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* TV Tube power off collapse animation */
+        .crt-static-burst {
+            width: 100%; height: 100%;
+            background: #fff;
+            position: absolute;
+            top: 0; left: 0;
+            z-index: 95;
+            display: none;
+        }
+
+        .crt-static-burst.active {
+            display: block;
+            animation: collapseAnim 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        @keyframes collapseAnim {
+            0% { transform: scaleY(1) scaleX(1); opacity: 1; filter: brightness(2); }
+            50% { transform: scaleY(0.01) scaleX(1); opacity: 1; filter: brightness(5); }
+            90% { transform: scaleY(0.01) scaleX(0.01); opacity: 0.8; filter: brightness(10); }
+            100% { transform: scaleY(0) scaleX(0); opacity: 0; }
+        }
+
+        /* STATE: NO SIGNAL SMPTE COLOR BARS */
+        .no-signal-view {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            z-index: 50;
+        }
+
+        .no-signal-view.hidden {
+            display: none;
+        }
+
+        .smpte-bars {
+            flex-grow: 1;
+            display: flex;
+        }
+
+        .smpte-bar {
+            flex: 1;
+            height: 100%;
+        }
+
+        .smpte-bar.white   { background: #ffffff; }
+        .smpte-bar.yellow  { background: #ffff00; }
+        .smpte-bar.cyan    { background: #00ffff; }
+        .smpte-bar.green   { background: #00ff00; }
+        .smpte-bar.magenta { background: #ff00ff; }
+        .smpte-bar.red     { background: #ff0000; }
+        .smpte-bar.blue    { background: #0000ff; }
+
+        .smpte-bottom {
+            height: 25%;
+            display: flex;
+        }
+
+        .smpte-block {
+            flex: 1;
+            height: 100%;
+        }
+        .smpte-block.i     { background: #002147; }
+        .smpte-block.q     { background: #ffffff; }
+        .smpte-block.black { background: #000000; }
+        .smpte-block.gray  { background: #333333; }
+
+        .no-signal-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.85);
+            border: 2px solid #fff;
+            padding: 10px 20px;
+            font-family: monospace;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            color: #fff;
+            text-align: center;
+            font-weight: bold;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            animation: blink 1.2s step-end infinite;
+        }
+
+        /* Screen Static Glitch Overlay */
+        .static-noise-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('data:image/svg+xml,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)"/%3E%3C/svg%3E');
+            opacity: 0;
+            z-index: 80;
+            pointer-events: none;
+        }
+
+        .static-noise-overlay.active {
+            opacity: 0.18;
+            animation: staticNoise 0.15s steps(4) infinite;
+        }
+
+        .static-noise-overlay.full-glitch {
+            opacity: 0.85;
+            animation: staticNoise 0.15s steps(4) infinite;
+            z-index: 85;
+        }
+
+        @keyframes staticNoise {
+            0% { background-position: 0 0; }
+            100% { background-position: 100% 100%; }
+        }
+
+        /* STATE: BOOT LOADING SCREEN */
+        .boot-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #111;
+            z-index: 45;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .boot-screen.hidden {
+            display: none;
+        }
+
+        .boot-logo {
+            font-family: monospace;
+            font-size: 1.5rem;
+            letter-spacing: 4px;
+            color: var(--tv-accent);
+            text-shadow: 0 0 10px var(--tv-accent-glow);
+            animation: pulse 1.5s ease infinite;
+        }
+
+        .boot-loader {
+            width: 140px; height: 4px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .boot-loader-fill {
+            height: 100%; width: 0%;
+            background: var(--tv-accent);
+            box-shadow: 0 0 8px var(--tv-accent);
+        }
+
+        /* STATE: SMART TV DASHBOARD */
+        .android-dashboard {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #0f1016;
+            z-index: 30;
+            display: grid;
+            grid-template-columns: 80px 1fr;
+            padding: 15px;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            overflow: hidden;
+        }
+
+        .android-dashboard.hidden {
+            display: none;
+        }
+
+        /* Smart TV Sidebar */
+        .android-sidebar {
+            border-right: 1px solid rgba(255,255,255,0.06);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            padding-right: 10px;
+        }
+
+        .sidebar-icon {
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.03);
+            color: rgba(255,255,255,0.4);
+            font-size: 1.25rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sidebar-icon.focused {
+            background: var(--tv-accent);
+            color: #000;
+            box-shadow: 0 0 12px var(--tv-accent-glow);
+            transform: scale(1.1);
+        }
+
+        /* Smart TV Content Rows */
+        .android-content {
+            padding-left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+            height: 100%;
+        }
+
+        .android-content::-webkit-scrollbar {
+            display: none; /* keep tv interface clean */
+        }
+
+        .hero-banner {
+            background: linear-gradient(90deg, #1b1e2a 0%, #0d0f15 100%);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 15px 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 6px;
+            height: 110px;
+        }
+
+        .hero-banner h2 {
+            font-size: 1rem;
+            color: var(--tv-accent);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .hero-banner p {
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.6);
+            max-width: 450px;
+        }
+
+        .content-row {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .content-row h3 {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255,255,255,0.5);
+        }
+
+        .row-scroller {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding: 5px 0;
+            scroll-behavior: smooth;
+        }
+
+        .row-scroller::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Smart TV Cards */
+        .video-card {
+            flex: 0 0 140px;
+            height: 95px;
+            background: #191b24;
+            border: 2px solid rgba(255,255,255,0.08);
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        /* Thumbnail placeholder styling */
+        .card-thumb-bg {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, #1c2e26 0%, #0c1410 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(0, 255, 102, 0.2);
+            font-size: 2rem;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .card-thumb-bg video, .card-thumb-bg img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            opacity: 0.6;
+        }
+
+        .video-card.focused {
+            transform: scale(1.08);
+            border-color: var(--tv-accent);
+            box-shadow: 0 0 15px var(--tv-accent-glow);
+            z-index: 5;
+        }
+
+        .video-card.focused .card-thumb-bg video {
+            opacity: 0.95;
+        }
+
+        .video-card.focused .card-thumb-bg img {
+            opacity: 0.95;
+        }
+
+        .card-title {
+            position: relative;
+            z-index: 2;
+            background: rgba(10,12,18,0.9);
+            padding: 4px 8px;
+            font-size: 0.65rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            text-transform: capitalize;
+        }
+
+        /* STATE: TV CHANNEL VIDEO PLAYBACK */
+        .channel-playback-view {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 20;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .channel-playback-view.hidden {
+            display: none;
+        }
+
+        .channel-playback-view video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        /* Retro TV LED Badges */
+        .tv-led-badge {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid var(--tv-accent);
+            border-radius: 4px;
+            color: var(--tv-accent);
+            font-family: monospace;
+            font-size: 1rem;
+            font-weight: bold;
+            padding: 4px 10px;
+            z-index: 110;
+            text-transform: uppercase;
+            box-shadow: 0 0 10px rgba(0,255,102,0.3);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .tv-led-badge.visible {
+            opacity: 1;
+        }
+
+        /* Retro filters inside screen */
+        .tv-screen-content.filter-bw video {
+            filter: grayscale(1) contrast(1.4) brightness(1.05);
+        }
+
+        .tv-screen-content.filter-sepia video {
+            filter: grayscale(0.5) sepia(1) contrast(1.1) brightness(0.9);
+        }
+
+        /* Right Side: TV Cabinet Control Console */
+        .tv-controls {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding-left: 10px;
+            height: 100%;
+        }
+
+        /* Rotary TV dial */
+        .tv-dial-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .dial-label {
+            font-size: 0.65rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            color: #c79e8c;
+            text-transform: uppercase;
+        }
+
+        .tv-dial {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: radial-gradient(circle at center, #3a3a3a 0%, #151515 100%);
+            border: 4px solid #111;
+            position: relative;
+            box-shadow: 
+                0 4px 10px rgba(0,0,0,0.5),
+                inset 0 2px 5px rgba(255,255,255,0.1);
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .tv-dial::after {
+            content: "";
+            position: absolute;
+            top: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 18px;
+            background: #d9534f;
+            border-radius: 2px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.4);
+        }
+
+        /* Grill grid layout for TV speakers */
+        .tv-speaker {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            width: 80px;
+            margin: 15px 0;
+        }
+
+        .speaker-bar {
+            height: 4px;
+            background: rgba(0,0,0,0.45);
+            border-radius: 2px;
+            box-shadow: 0 1px 1px rgba(255,255,255,0.05);
+        }
+
+        /* Large Red Power Button */
+        .tv-power-block {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .power-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: radial-gradient(circle at center, #ff4d4d 0%, #990000 100%);
+            border: 4px solid #1f120f;
+            cursor: pointer;
+            box-shadow: 
+                0 6px 12px rgba(0,0,0,0.6),
+                inset 0 2px 4px rgba(255,255,255,0.3);
+            transition: transform 0.1s, box-shadow 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255,255,255,0.7);
+            font-size: 0.85rem;
+        }
+
+        .power-btn:active {
+            transform: scale(0.94);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+
+        .power-led {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #300;
+            box-shadow: 0 0 2px rgba(0,0,0,0.8);
+            transition: background 0.3s, box-shadow 0.3s;
+        }
+
+        .power-led.on {
+            background: #ff3333;
+            box-shadow: 0 0 10px #ff3333, 0 0 20px #ff3333;
+        }
+
+        /* Dynamic CRT screen curvature grid lines */
+        .crt-curve-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            box-shadow: inset 0 0 45px rgba(0,0,0,0.9);
+            z-index: 102;
+            pointer-events: none;
+        }
+
+        /* REMOTE CONTROL BOX */
+        .remote-control {
+            width: 180px;
+            background: var(--remote-bg);
+            border: 4px solid #111;
+            border-radius: 20px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: 
+                0 20px 40px rgba(0,0,0,0.7),
+                inset 0 2px 5px rgba(255,255,255,0.1);
+            align-self: center;
+        }
+
+        @media (max-width: 1024px) {
+            .remote-control {
+                flex-direction: row;
+                width: 100%;
+                max-width: 700px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+
+        .remote-title {
+            font-size: 0.6rem;
+            color: rgba(255,255,255,0.3);
+            text-align: center;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .remote-dpad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 5px;
+            width: 120px;
+            height: 120px;
+            margin: 0 auto;
+        }
+
+        .dpad-btn {
+            background: #333;
+            border: 2px solid #222;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ccc;
+            font-size: 0.9rem;
+            font-weight: bold;
+            transition: background 0.1s;
+        }
+
+        .dpad-btn:hover {
+            background: #444;
+            color: #fff;
+        }
+
+        .dpad-btn:active {
+            background: var(--tv-accent);
+            color: #000;
+        }
+
+        .dpad-btn.center-ok {
+            background: #555;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+        }
+
+        .remote-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .remote-btn {
+            background: #2a2a2a;
+            border: 1px solid #3a3a3a;
+            border-radius: 6px;
+            padding: 6px;
+            font-family: inherit;
+            font-size: 0.65rem;
+            color: #aaa;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+            text-transform: uppercase;
+        }
+
+        .remote-btn:hover {
+            background: #3a3a3a;
+            color: #fff;
+        }
+
+        .remote-btn.red-btn {
+            background: #d9534f;
+            border-color: #d43f3a;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .remote-btn.red-btn:hover {
+            background: #c9302c;
+        }
+
+        /* TV Base / Legs */
+        .tv-base-stand {
+            position: absolute;
+            bottom: -35px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 400px;
+            height: 35px;
+            background: #1f120f;
+            clip-path: polygon(10% 0%, 90% 0%, 100% 100%, 0% 100%);
+            z-index: 5;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Outer TV elements wrapper -->
+    <div class="tv-wrapper">
+        
+        <!-- Wood Cabinet -->
+        <div class="tv-cabinet">
+            
+            <!-- Left Grid: TV Screen frame wrapper -->
+            <div class="screen-frame">
+                <div class="crt-mask">
+                    
+                    <!-- Scanlines overlay layer -->
+                    <div class="crt-scanlines"></div>
+                    <div class="crt-sheen"></div>
+                    <div class="crt-curve-overlay"></div>
+                    
+                    <!-- Dynamic screen modes container -->
+                    <div class="tv-screen-content" id="tv-screen-content">
+                        
+                        <!-- Floating system text displays -->
+                        <div class="tv-led-badge" id="tv-led-badge">CH 01</div>
+
+                        <!-- 1. Off Screen -->
+                        <div class="screen-off" id="screen-off-layer"></div>
+
+                        <!-- 2. TV power transition collapse screen -->
+                        <div class="crt-static-burst" id="static-burst"></div>
+
+                        <!-- 3. Dynamic Static noise overlay -->
+                        <div class="static-noise-overlay" id="static-noise"></div>
+
+                        <!-- 4. No Signal Color bars -->
+                        <div class="no-signal-view" id="no-signal-layer">
+                            <div class="smpte-bars">
+                                <div class="smpte-bar white"></div>
+                                <div class="smpte-bar yellow"></div>
+                                <div class="smpte-bar cyan"></div>
+                                <div class="smpte-bar green"></div>
+                                <div class="smpte-bar magenta"></div>
+                                <div class="smpte-bar red"></div>
+                                <div class="smpte-bar blue"></div>
+                            </div>
+                            <div class="smpte-bottom">
+                                <div class="smpte-block i"></div>
+                                <div class="smpte-block q"></div>
+                                <div class="smpte-block black"></div>
+                                <div class="smpte-block gray"></div>
+                                <div class="smpte-block black"></div>
+                                <div class="smpte-block gray"></div>
+                            </div>
+                            <div class="no-signal-text">NO SIGNAL</div>
+                        </div>
+
+                        <!-- 5. Android smart TV loader screen -->
+                        <div class="boot-screen hidden" id="boot-layer">
+                            <div class="boot-logo">AGY-TRON CRT</div>
+                            <div class="boot-loader">
+                                <div class="boot-loader-fill" id="boot-loader-fill"></div>
+                            </div>
+                            <div style="font-size: 0.6rem; font-family: monospace; color: var(--tv-accent);">BOOTING SMART DRIVERS...</div>
+                        </div>
+
+                        <!-- 6. Android Smart TV Dashboard View -->
+                        <div class="android-dashboard hidden" id="dashboard-layer">
+                            
+                            <!-- Menu row icons -->
+                            <div class="android-sidebar">
+                                <div class="sidebar-icon focused" data-menu="home" title="Smart Home">🏠</div>
+                                <div class="sidebar-icon" data-menu="video" title="Video Channels">🎥</div>
+                                <div class="sidebar-icon" data-menu="art" title="Art Gallery">🎨</div>
+                                <div class="sidebar-icon" data-menu="input" title="Source Inputs">⚙️</div>
+                            </div>
+
+                            <!-- Channels content panels -->
+                            <div class="android-content" id="android-content">
+                                <div class="hero-banner">
+                                    <h2>Smart TV Launcher</h2>
+                                    <p>Select any channel to view inside the television. Use your keyboard arrow keys to navigate or click directly on the items.</p>
+                                </div>
+
+                                <!-- Row 1: Video streams -->
+                                <div class="content-row">
+                                    <h3>🎥 Video Streams</h3>
+                                    <div class="row-scroller" id="row-videos">
+                                        <!-- Populated by script -->
+                                    </div>
+                                </div>
+
+                                <!-- Row 2: Art Animations -->
+                                <div class="content-row">
+                                    <h3>🎨 Art Animations</h3>
+                                    <div class="row-scroller" id="row-animations">
+                                        <!-- Populated by script -->
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- 7. CRT Active Channel Video View -->
+                        <div class="channel-playback-view hidden" id="playback-layer">
+                            <video id="tv-video" loop playsinline></video>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Grid: Cabinet controls dials -->
+            <div class="tv-controls">
+                
+                <!-- Channel dial -->
+                <div class="tv-dial-wrapper">
+                    <div class="dial-label">Channel</div>
+                    <div class="tv-dial" id="dial-channel" title="Click to rotate channels"></div>
+                </div>
+
+                <!-- Speakers lines pattern -->
+                <div class="tv-speaker">
+                    <div class="speaker-bar"></div>
+                    <div class="speaker-bar"></div>
+                    <div class="speaker-bar"></div>
+                    <div class="speaker-bar"></div>
+                    <div class="speaker-bar"></div>
+                    <div class="speaker-bar"></div>
+                    <div class="speaker-bar"></div>
+                    <div class="speaker-bar"></div>
+                </div>
+
+                <!-- Power push button -->
+                <div class="tv-power-block">
+                    <div class="power-led" id="power-led"></div>
+                    <button class="power-btn" id="power-btn" title="Toggle TV Power (Space)">ON</button>
+                    <div class="dial-label" style="font-size:0.55rem; color: #ff8888;">Power</div>
+                </div>
+                
+            </div>
+
+            <!-- TV Base stand bottom -->
+            <div class="tv-base-stand"></div>
+        </div>
+
+        <!-- Remote Control panel -->
+        <div class="remote-control">
+            <div class="remote-title">AGY-TRON Remote</div>
+            
+            <div class="remote-buttons" style="grid-template-columns: 1fr;">
+                <button class="remote-btn red-btn" id="remote-power">POWER</button>
+            </div>
+
+            <!-- D-Pad navigator -->
+            <div class="remote-dpad">
+                <div></div>
+                <button class="dpad-btn" id="dpad-up">▲</button>
+                <div></div>
+                
+                <button class="dpad-btn" id="dpad-left">◀</button>
+                <button class="dpad-btn center-ok" id="dpad-ok">OK</button>
+                <button class="dpad-btn" id="dpad-right">▶</button>
+                
+                <div></div>
+                <button class="dpad-btn" id="dpad-down">▼</button>
+                <div></div>
+            </div>
+
+            <div class="remote-buttons">
+                <button class="remote-btn" id="remote-back">Return ↩</button>
+                <button class="remote-btn" id="remote-input">Input 📺</button>
+                <button class="remote-btn" id="remote-filter">Filter 🎨</button>
+                <button class="remote-btn" id="remote-mute">Mute 🔇</button>
+            </div>
+            
+            <div class="help-panel" style="font-size: 0.55rem; color: rgba(255,255,255,0.4); text-align: center;">
+                Use keyboard arrows to navigate dashboard items. Enter to Play.
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Scripting interactive television behavior -->
+    <script>
+        // Fallback assets
+        const fallbackVideos = [
+            "assets/television/tumblr_45c759f539442fcdf9fb76482cc2ed1b_01e5cf0c_720.mp4",
+            "assets/television/tumblr_6c165d154cdd54f6df406b0a56eed100_eb8f1637_720.mp4"
+        ];
+
+        const fallbackAnimations = [
+            "assets/animation/tumblr_06d3d3a87634d03e6be7bedbfa1b015f_7d7ed30b_640.webp",
+            "assets/animation/tumblr_9247a88b3634a3c931da463fbf1be0db_69f69ace_400.webp",
+            "assets/animation/tumblr_e56160b0d5411fa177ff05ed91e16697_153f423c_400.webp",
+            "assets/animation/tumblr_mq75c6MRJ51sbyuoro1_r1_500.webp"
+        ];
+
+        // Retrieve media assets list
+        let videoList = [];
+        let animationList = [];
+
+        if (window.collageFiles) {
+            if (Array.isArray(window.collageFiles.television)) videoList = window.collageFiles.television;
+            if (Array.isArray(window.collageFiles.animation)) animationList = window.collageFiles.animation;
+        }
+
+        if (videoList.length === 0) videoList = fallbackVideos;
+        if (animationList.length === 0) animationList = fallbackAnimations;
+
+        // Build video channels. Round up to next multiple of 10, minimum 10.
+        const totalVideoChannels = Math.max(10, Math.ceil(videoList.length / 10) * 10);
+        const tvChannels = [];
+        for (let i = 0; i < totalVideoChannels; i++) {
+            if (i < videoList.length) {
+                tvChannels.push({
+                    type: 'video',
+                    src: videoList[i],
+                    title: `Channel ${String(i + 1).padStart(2, '0')}`,
+                    hasSignal: true
+                });
+            } else {
+                tvChannels.push({
+                    type: 'nosignal',
+                    src: '',
+                    title: `Channel ${String(i + 1).padStart(2, '0')}`,
+                    hasSignal: false
+                });
+            }
+        }
+
+        // App States
+        let tvPowerOn = false;
+        let isBooted = false;
+        let isMuted = false;
+        let currentFilter = 'normal'; // 'normal', 'bw', 'sepia'
+        let currentScreenState = 'off'; // 'off', 'nosignal', 'boot', 'dashboard', 'playback'
+        let currentChannelIndex = 0;
+        let dialRotationAngle = 0;
+
+        // Navigation state matrices for Android TV dashboard
+        let focusArea = 'menu'; // 'menu', 'row-videos', 'row-animations'
+        let menuFocusedIndex = 0; // 0: Home, 1: Videos, 2: Art, 3: Settings
+        let videoFocusedIndex = 0;
+        let animationFocusedIndex = 0;
+
+        // Web Audio white noise generator variables
+        let audioCtx = null;
+        let noiseSource = null;
+        let noiseGain = null;
+
+        // Elements
+        const screenOffLayer = document.getElementById('screen-off-layer');
+        const staticBurst = document.getElementById('static-burst');
+        const staticNoise = document.getElementById('static-noise');
+        const noSignalLayer = document.getElementById('no-signal-layer');
+        const bootLayer = document.getElementById('boot-layer');
+        const dashboardLayer = document.getElementById('dashboard-layer');
+        const playbackLayer = document.getElementById('playback-layer');
+        const tvVideo = document.getElementById('tv-video');
+        const tvLedBadge = document.getElementById('tv-led-badge');
+        const powerLed = document.getElementById('power-led');
+        const screenContent = document.getElementById('tv-screen-content');
+
+        // Init Smart Dashboard elements
+        const rowVideos = document.getElementById('row-videos');
+        const rowAnimations = document.getElementById('row-animations');
+
+        function generateDashboardCards() {
+            rowVideos.innerHTML = '';
+            // Build Video Cards (including No Signal slots)
+            tvChannels.forEach((ch, idx) => {
+                const card = document.createElement('div');
+                card.className = 'video-card';
+                card.setAttribute('data-index', idx);
+                card.setAttribute('data-type', ch.type);
+                
+                if (ch.hasSignal) {
+                    card.innerHTML = `
+                        <div class="card-thumb-bg">
+                            <video src="${ch.src}" muted preload="metadata" playsinline></video>
+                        </div>
+                        <div class="card-title">${ch.title}</div>
+                    `;
+                } else {
+                    card.innerHTML = `
+                        <div class="card-thumb-bg" style="display: flex; flex-direction: column; gap: 2px; background: #000; padding: 5px;">
+                            <div style="display: flex; width: 100%; height: 70%; border: 1px solid rgba(255,255,255,0.1);">
+                                <div style="flex:1; height:100%; background:#ffffff;"></div>
+                                <div style="flex:1; height:100%; background:#ffff00;"></div>
+                                <div style="flex:1; height:100%; background:#00ffff;"></div>
+                                <div style="flex:1; height:100%; background:#00ff00;"></div>
+                                <div style="flex:1; height:100%; background:#ff00ff;"></div>
+                                <div style="flex:1; height:100%; background:#ff0000;"></div>
+                                <div style="flex:1; height:100%; background:#0000ff;"></div>
+                            </div>
+                            <div style="font-size: 8px; color: #ff3b3b; font-family: monospace; font-weight: bold; text-align: center;">NO SIGNAL</div>
+                        </div>
+                        <div class="card-title">${ch.title} (No Signal)</div>
+                    `;
+                }
+                
+                card.addEventListener('click', () => {
+                    playChannel(idx);
+                });
+                
+                rowVideos.appendChild(card);
+            });
+
+            rowAnimations.innerHTML = '';
+            // Build Animation Cards
+            animationList.slice(0, 10).forEach((path, idx) => {
+                const card = document.createElement('div');
+                card.className = 'video-card';
+                card.setAttribute('data-index', idx);
+                card.setAttribute('data-type', 'animation');
+                
+                card.innerHTML = `
+                    <div class="card-thumb-bg">
+                        <img src="${path}" alt="Animation Feed ${idx + 1}">
+                    </div>
+                    <div class="card-title">Anim Feed ${String(idx + 1).padStart(2, '0')}</div>
+                `;
+                
+                card.addEventListener('click', () => {
+                    if (!tvPowerOn) return;
+                    setScreenState('nosignal');
+                    staticNoise.classList.add('full-glitch');
+                    playStaticNoiseSound();
+                    
+                    setTimeout(() => {
+                        setScreenState('playback');
+                        showLEDChannelBadge(`ANIM ${String(idx + 1).padStart(2, '0')}`);
+                        tvVideo.src = path;
+                        tvVideo.play().catch(e => {});
+                        updateAudioState();
+                    }, 450);
+                });
+                
+                rowAnimations.appendChild(card);
+            });
+        }
+
+        // Web Audio Synthesizer for Television static sound
+        function playStaticNoiseSound() {
+            try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                
+                if (noiseSource) return; // already playing
+                
+                const bufferSize = audioCtx.sampleRate * 2;
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                
+                noiseSource = audioCtx.createBufferSource();
+                noiseSource.buffer = buffer;
+                noiseSource.loop = true;
+                
+                noiseGain = audioCtx.createGain();
+                // Extremely low volume so it's not irritating
+                noiseGain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+                
+                noiseSource.connect(noiseGain);
+                noiseGain.connect(audioCtx.destination);
+                noiseSource.start();
+            } catch (e) {
+                console.warn("Web Audio API not supported or blocked by browser policies.");
+            }
+        }
+
+        function stopStaticNoiseSound() {
+            if (noiseSource) {
+                try {
+                    noiseSource.stop();
+                } catch(e) {}
+                noiseSource.disconnect();
+                noiseSource = null;
+            }
+        }
+
+        // Channel playback unmuter
+        function updateAudioState() {
+            tvVideo.muted = isMuted;
+        }
+
+        // Power switch toggling
+        function togglePower() {
+            tvPowerOn = !tvPowerOn;
+            
+            if (tvPowerOn) {
+                // TV TURNING ON
+                powerLed.classList.add('on');
+                screenOffLayer.classList.add('hidden');
+                
+                // Show physical scanlines static burst
+                staticBurst.classList.add('active');
+                playStaticNoiseSound();
+                
+                setTimeout(() => {
+                    staticBurst.classList.remove('active');
+                    if (!isBooted) {
+                        setScreenState('nosignal');
+                    } else {
+                        setScreenState('dashboard');
+                    }
+                }, 350);
+            } else {
+                // TV TURNING OFF
+                powerLed.classList.remove('on');
+                stopStaticNoiseSound();
+                tvVideo.pause();
+                
+                staticBurst.classList.add('active');
+                setTimeout(() => {
+                    staticBurst.classList.remove('active');
+                    screenOffLayer.classList.remove('hidden');
+                    setScreenState('off');
+                }, 300);
+            }
+        }
+
+        // Screen state driver
+        function setScreenState(state) {
+            currentScreenState = state;
+            
+            // Hide all layers
+            noSignalLayer.classList.add('hidden');
+            bootLayer.classList.add('hidden');
+            dashboardLayer.classList.add('hidden');
+            playbackLayer.classList.add('hidden');
+            staticNoise.classList.remove('active', 'full-glitch');
+            stopStaticNoiseSound();
+
+            if (state === 'nosignal') {
+                noSignalLayer.classList.remove('hidden');
+                staticNoise.classList.add('active');
+                if (tvPowerOn) playStaticNoiseSound();
+            } else if (state === 'boot') {
+                bootLayer.classList.remove('hidden');
+                runBootSequence();
+            } else if (state === 'dashboard') {
+                dashboardLayer.classList.remove('hidden');
+                updateDashboardFocusDOM();
+            } else if (state === 'playback') {
+                playbackLayer.classList.remove('hidden');
+            }
+        }
+
+        // Android boot simulator
+        function runBootSequence() {
+            const bar = document.getElementById('boot-loader-fill');
+            bar.style.width = '0%';
+            
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.floor(Math.random() * 15) + 5;
+                if (progress >= 100) {
+                    progress = 100;
+                    bar.style.width = '100%';
+                    clearInterval(interval);
+                    
+                    setTimeout(() => {
+                        isBooted = true;
+                        setScreenState('dashboard');
+                    }, 400);
+                } else {
+                    bar.style.width = progress + '%';
+                }
+            }, 100);
+        }
+
+        // play selected channel inside television
+        function playChannel(channelIndex) {
+            if (!tvPowerOn) return;
+            
+            // Trigger momentary analog static delay
+            setScreenState('nosignal');
+            staticNoise.classList.add('full-glitch');
+            playStaticNoiseSound();
+            
+            currentChannelIndex = channelIndex;
+            const channel = tvChannels[channelIndex];
+ 
+            // Rotate Dial
+            dialRotationAngle = (dialRotationAngle + 36) % 360;
+            document.getElementById('dial-channel').style.transform = `rotate(${dialRotationAngle}deg)`;
+ 
+            setTimeout(() => {
+                showLEDChannelBadge(channel.title + (channel.hasSignal ? "" : " (NO SIGNAL)"));
+                
+                if (channel.hasSignal) {
+                    setScreenState('playback');
+                    tvVideo.src = channel.src;
+                    tvVideo.play().catch(e => console.log("Play failed, click required first."));
+                    updateAudioState();
+                } else {
+                    // Turn on No Signal screen & keep the synthesised white noise playing
+                    setScreenState('nosignal');
+                }
+            }, 450);
+        }
+
+        // play selected animation feed inside television
+        function playAnimation(idx) {
+            if (!tvPowerOn) return;
+            setScreenState('nosignal');
+            staticNoise.classList.add('full-glitch');
+            playStaticNoiseSound();
+            
+            setTimeout(() => {
+                setScreenState('playback');
+                showLEDChannelBadge(`ANIM ${String(idx + 1).padStart(2, '0')}`);
+                tvVideo.src = animationList[idx];
+                tvVideo.play().catch(e => {});
+                updateAudioState();
+            }, 450);
+        }
+
+        // Show green segment LED indicator on TV screen
+        function showLEDChannelBadge(text) {
+            tvLedBadge.innerText = text;
+            tvLedBadge.classList.add('visible');
+            
+            // Clear previous timeout
+            if (window.badgeTimeout) clearTimeout(window.badgeTimeout);
+            window.badgeTimeout = setTimeout(() => {
+                tvLedBadge.classList.remove('visible');
+            }, 3000);
+        }
+
+        // Dashboard Focus Handler
+        function updateDashboardFocusDOM() {
+            // Remove focus rings
+            document.querySelectorAll('.sidebar-icon').forEach(e => e.classList.remove('focused'));
+            document.querySelectorAll('.video-card').forEach(e => {
+                e.classList.remove('focused');
+                const v = e.querySelector('video');
+                if (v) v.pause();
+            });
+
+            if (focusArea === 'menu') {
+                const menus = document.querySelectorAll('.sidebar-icon');
+                if (menus[menuFocusedIndex]) menus[menuFocusedIndex].classList.add('focused');
+            } else if (focusArea === 'row-videos') {
+                const cards = rowVideos.querySelectorAll('.video-card');
+                const activeCard = cards[videoFocusedIndex];
+                if (activeCard) {
+                    activeCard.classList.add('focused');
+                    // Play preview
+                    const v = activeCard.querySelector('video');
+                    if (v) v.play().catch(e => {});
+                    // Scroll row if needed
+                    activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                }
+            } else if (focusArea === 'row-animations') {
+                const cards = rowAnimations.querySelectorAll('.video-card');
+                const activeCard = cards[animationFocusedIndex];
+                if (activeCard) {
+                    activeCard.classList.add('focused');
+                    activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                }
+            }
+        }
+
+        // Remote Navigation D-PAD handling
+        function handleNavigate(dir) {
+            if (currentScreenState === 'playback') {
+                // In video playback mode: Up/Down changes volume, Left/Right changes channel
+                if (dir === 'left') {
+                    let nextCh = (currentChannelIndex - 1 + tvChannels.length) % tvChannels.length;
+                    playChannel(nextCh);
+                } else if (dir === 'right') {
+                    let nextCh = (currentChannelIndex + 1) % tvChannels.length;
+                    playChannel(nextCh);
+                } else if (dir === 'up') {
+                    // Show Volume overlay
+                    showLEDChannelBadge("VOL UP");
+                } else if (dir === 'down') {
+                    showLEDChannelBadge("VOL DOWN");
+                }
+                return;
+            }
+
+            if (currentScreenState !== 'dashboard') return;
+
+            const videoCount = rowVideos.querySelectorAll('.video-card').length;
+            const animCount = rowAnimations.querySelectorAll('.video-card').length;
+
+            if (dir === 'right') {
+                if (focusArea === 'menu') {
+                    focusArea = 'row-videos';
+                } else if (focusArea === 'row-videos') {
+                    videoFocusedIndex = Math.min(videoFocusedIndex + 1, videoCount - 1);
+                } else if (focusArea === 'row-animations') {
+                    animationFocusedIndex = Math.min(animationFocusedIndex + 1, animCount - 1);
+                }
+            } else if (dir === 'left') {
+                if (focusArea === 'row-videos') {
+                    if (videoFocusedIndex === 0) focusArea = 'menu';
+                    else videoFocusedIndex = Math.max(0, videoFocusedIndex - 1);
+                } else if (focusArea === 'row-animations') {
+                    if (animationFocusedIndex === 0) focusArea = 'menu';
+                    else animationFocusedIndex = Math.max(0, animationFocusedIndex - 1);
+                }
+            } else if (dir === 'down') {
+                if (focusArea === 'menu') {
+                    menuFocusedIndex = Math.min(menuFocusedIndex + 1, 3);
+                } else if (focusArea === 'row-videos') {
+                    focusArea = 'row-animations';
+                }
+            } else if (dir === 'up') {
+                if (focusArea === 'menu') {
+                    menuFocusedIndex = Math.max(0, menuFocusedIndex - 1);
+                } else if (focusArea === 'row-animations') {
+                    focusArea = 'row-videos';
+                }
+            }
+
+            updateDashboardFocusDOM();
+        }
+
+        // Remote D-Pad OK click selection
+        function handleOKSelect() {
+            if (currentScreenState === 'nosignal') {
+                setScreenState('boot');
+                return;
+            }
+
+            if (currentScreenState === 'playback') {
+                // Pause/play video
+                if (tvVideo.paused) {
+                    tvVideo.play();
+                    showLEDChannelBadge("PLAY");
+                } else {
+                    tvVideo.pause();
+                    showLEDChannelBadge("PAUSE");
+                }
+                return;
+            }
+
+            if (currentScreenState !== 'dashboard') return;
+
+            if (focusArea === 'row-videos') {
+                const videosIndex = videoFocusedIndex;
+                playChannel(videosIndex);
+            } else if (focusArea === 'row-animations') {
+                playAnimation(animationFocusedIndex);
+            }
+        }
+
+        // Setup dial and physical buttons binds
+        function bindTVHardware() {
+            // Power click
+            document.getElementById('power-btn').addEventListener('click', togglePower);
+            document.getElementById('remote-power').addEventListener('click', togglePower);
+
+            // Channel dial click
+            document.getElementById('dial-channel').addEventListener('click', () => {
+                if (!tvPowerOn) {
+                    togglePower();
+                    return;
+                }
+                
+                if (currentScreenState === 'nosignal') {
+                    setScreenState('boot');
+                } else {
+                    // Go to next channel
+                    let nextCh = (currentChannelIndex + 1) % tvChannels.length;
+                    playChannel(nextCh);
+                }
+            });
+
+            // Remote Navigation Buttons binds
+            document.getElementById('dpad-up').addEventListener('click', () => handleNavigate('up'));
+            document.getElementById('dpad-down').addEventListener('click', () => handleNavigate('down'));
+            document.getElementById('dpad-left').addEventListener('click', () => handleNavigate('left'));
+            document.getElementById('dpad-right').addEventListener('click', () => handleNavigate('right'));
+            document.getElementById('dpad-ok').addEventListener('click', handleOKSelect);
+
+            // Return / Back click
+            const handleReturn = () => {
+                if (currentScreenState === 'playback') {
+                    tvVideo.pause();
+                    setScreenState('dashboard');
+                } else if (currentScreenState === 'dashboard') {
+                    setScreenState('nosignal');
+                }
+            };
+            document.getElementById('remote-back').addEventListener('click', handleReturn);
+
+            // Source Input toggle
+            document.getElementById('remote-input').addEventListener('click', () => {
+                if (!tvPowerOn) return;
+                
+                if (currentScreenState === 'nosignal') {
+                    setScreenState('boot');
+                } else {
+                    setScreenState('nosignal');
+                }
+            });
+
+            // Remote Filter switch
+            document.getElementById('remote-filter').addEventListener('click', () => {
+                if (currentFilter === 'normal') {
+                    currentFilter = 'bw';
+                    screenContent.className = "tv-screen-content filter-bw";
+                    showLEDChannelBadge("FILT: B&W");
+                } else if (currentFilter === 'bw') {
+                    currentFilter = 'sepia';
+                    screenContent.className = "tv-screen-content filter-sepia";
+                    showLEDChannelBadge("FILT: SEPIA");
+                } else {
+                    currentFilter = 'normal';
+                    screenContent.className = "tv-screen-content";
+                    showLEDChannelBadge("FILT: RAW");
+                }
+            });
+
+            // Mute button click
+            document.getElementById('remote-mute').addEventListener('click', () => {
+                isMuted = !isMuted;
+                updateAudioState();
+                showLEDChannelBadge(isMuted ? "MUTE ON" : "MUTE OFF");
+            });
+        }
+
+        // Global keyboard handlers
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                togglePower();
+                return;
+            }
+
+            if (!tvPowerOn) return;
+
+            switch(e.code) {
+                case 'ArrowUp':
+                    e.preventDefault();
+                    handleNavigate('up');
+                    break;
+                case 'ArrowDown':
+                    e.preventDefault();
+                    handleNavigate('down');
+                    break;
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    handleNavigate('left');
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    handleNavigate('right');
+                    break;
+                case 'Enter':
+                    e.preventDefault();
+                    handleOKSelect();
+                    break;
+                case 'Backspace':
+                case 'Escape':
+                    e.preventDefault();
+                    document.getElementById('remote-back').click();
+                    break;
+            }
+        });
+
+        // Initialize script logic
+        generateDashboardCards();
+        bindTVHardware();
+        
+        // Start in Off state
+        setScreenState('off');
+    </script>
+</body>
+</html>

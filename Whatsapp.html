@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Chat Story Simulator</title>
+    <style>
+        :root {
+            --phone-width: 320px;
+            --phone-height: 660px;
+            --bezel-color: #121214;
+            --screen-bg: #0b141a;
+            --accent-color: #25d366; /* WhatsApp Green */
+            --text-main: #f8fafc;
+            --text-muted: #8696a0;
+            --glass-bg: rgba(15, 23, 42, 0.45);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            
+            /* Chat colors */
+            --chat-header: #202c33;
+            --chat-bg: #0b141a;
+            --bubble-out: #005c4b;
+            --bubble-in: #202c33;
+            --bubble-out-text: #e9edef;
+            --bubble-in-text: #e9edef;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #111827 0%, #030712 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        /* Ambient glowing background blur */
+        .blur-blob {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(37, 211, 102, 0.08) 0%, rgba(37, 211, 102, 0) 70%);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Physical Phone frame */
+        .phone-wrapper {
+            position: relative;
+            width: var(--phone-width);
+            height: var(--phone-height);
+            border-radius: 48px;
+            padding: 12px;
+            background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+            box-shadow: 
+                0 25px 60px rgba(0,0,0,0.8),
+                0 0 0 4px #475569,
+                0 0 30px rgba(37, 211, 102, 0.15);
+            z-index: 10;
+        }
+
+        /* Side buttons */
+        .phone-button {
+            position: absolute;
+            background: #475569;
+            border-radius: 4px;
+        }
+
+        .power-btn {
+            top: 180px;
+            right: -4px;
+            width: 4px;
+            height: 70px;
+        }
+
+        /* Active screen area */
+        .phone-screen {
+            width: 100%;
+            height: 100%;
+            background: var(--screen-bg);
+            border-radius: 38px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            user-select: none;
+        }
+
+        /* Dynamic Island */
+        .dynamic-island-container {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            pointer-events: none;
+            width: 100%;
+        }
+
+        .dynamic-island {
+            width: 110px;
+            height: 28px;
+            background: #000000;
+            border-radius: 18px;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            color: var(--accent-color);
+            padding: 0 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+
+        .dynamic-island.expanded {
+            width: 200px;
+            height: 38px;
+            color: #ffb703;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            height: 40px;
+            width: 100%;
+            padding: 12px 24px 0 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #ffffff;
+            z-index: 999;
+            pointer-events: none;
+        }
+
+        .status-icons {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .home-indicator-bar {
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 130px;
+            height: 5px;
+            background: rgba(255,255,255,0.85);
+            border-radius: 10px;
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        /* STAGE: PHONE LOCKSCREEN */
+        .lockscreen-view {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=640&auto=format&fit=crop') no-repeat center/cover;
+            z-index: 500;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px 20px 30px 20px;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease;
+        }
+
+        .lockscreen-view.unlocked {
+            transform: translateY(-100%);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .lock-clock-section {
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .lock-clock {
+            font-size: 3.5rem;
+            font-weight: 200;
+            color: #ffffff;
+            line-height: 1;
+        }
+
+        .lock-date {
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.85);
+            margin-top: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .notification-card {
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 12px 16px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            margin-bottom: 25px;
+        }
+
+        .notif-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: var(--accent-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .notif-content {
+            flex-grow: 1;
+            text-align: left;
+        }
+
+        .notif-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .notif-body {
+            font-size: 0.72rem;
+            color: rgba(255,255,255,0.7);
+            margin-top: 2px;
+        }
+
+        .unlock-prompt {
+            text-align: center;
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.6);
+            letter-spacing: 1px;
+            animation: pulse 1.8s ease infinite;
+            cursor: pointer;
+        }
+
+        /* STAGE: APPS LAUNCHER HOME SCREEN */
+        .launcher-view {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(180deg, rgba(2, 6, 23, 0.72) 0%, rgba(15, 23, 42, 0.95) 100%), url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=640&auto=format&fit=crop') no-repeat center/cover;
+            z-index: 100;
+            padding: 45px 15px 45px 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: opacity 0.3s ease;
+        }
+
+        .launcher-view.hidden {
+            display: none;
+        }
+
+        .apps-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px 15px;
+            padding: 10px 5px;
+        }
+
+        .app-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .app-icon-box {
+            width: 54px;
+            height: 54px;
+            border-radius: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.7rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .app-item.focused .app-icon-box {
+            transform: scale(1.1);
+            box-shadow: 0 0 18px var(--accent-color);
+            border-color: var(--accent-color);
+        }
+
+        .app-label {
+            font-size: 0.65rem;
+            color: #f8fafc;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .launcher-dock {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 24px;
+            padding: 10px 14px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+
+        /* Virtual Cursor */
+        .virtual-cursor {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.25);
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            z-index: 1000;
+            pointer-events: none;
+            top: 400px;
+            left: 160px;
+            opacity: 0;
+            transition: top 1.5s cubic-bezier(0.25, 1, 0.5, 1), left 1.5s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .virtual-cursor::after {
+            content: "";
+            width: 12px;
+            height: 12px;
+            background: #ffffff;
+            border-radius: 50%;
+        }
+
+        .virtual-cursor.tapping {
+            transform: scale(0.85);
+            background: var(--accent-color);
+            border-color: var(--accent-color);
+            box-shadow: 0 0 20px var(--accent-color);
+            transition: transform 0.2s, background 0.2s;
+        }
+
+        /* STAGE: SYSTEM WHATSAPP CHAT VIEW */
+        .chat-view {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--chat-bg);
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+            transition: opacity 0.3s ease;
+        }
+
+        .chat-view.hidden {
+            display: none;
+        }
+
+        /* Chat Header */
+        .chat-header {
+            background: var(--chat-header);
+            padding: 42px 14px 10px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #fff;
+        }
+
+        .back-arrow {
+            font-size: 1.1rem;
+            cursor: pointer;
+            color: var(--accent-color);
+            padding-right: 4px;
+        }
+
+        .group-avatar-stack {
+            position: relative;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #323739;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+            color: #fff;
+        }
+
+        .group-info {
+            display: flex;
+            flex-direction: column;
+            text-align: left;
+        }
+
+        .group-name {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #e9edef;
+        }
+
+        .group-status {
+            font-size: 0.62rem;
+            color: #8696a0;
+            height: 12px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .group-status.typing {
+            color: var(--accent-color);
+            font-weight: 500;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            color: #aebac1;
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+
+        /* Chat Messages Board */
+        .chat-messages {
+            flex-grow: 1;
+            padding: 15px 12px 75px 12px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: radial-gradient(circle, rgba(11, 20, 26, 0.8) 0%, rgba(11, 20, 26, 0.98) 100%), 
+                        url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png') repeat;
+            background-size: contain;
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Message Bubbles styling */
+        .msg-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .msg-bubble {
+            max-width: 82%;
+            padding: 6px 10px 8px 10px;
+            border-radius: 8px;
+            position: relative;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+            display: inline-block;
+            word-wrap: break-word;
+        }
+
+        .msg-bubble.incoming {
+            background: var(--bubble-in);
+            color: var(--bubble-in-text);
+            align-self: flex-start;
+            border-top-left-radius: 0;
+        }
+
+        .msg-bubble.outgoing {
+            background: var(--bubble-out);
+            color: var(--bubble-out-text);
+            align-self: flex-end;
+            border-top-right-radius: 0;
+        }
+
+        .msg-sender {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: #38bdf8;
+            margin-bottom: 2px;
+            text-align: left;
+        }
+
+        .msg-sender.user2 { color: #f59e0b; }
+        .msg-sender.user3 { color: #ec4899; }
+
+        .msg-text {
+            font-size: 0.75rem;
+            line-height: 1.35;
+            text-align: left;
+        }
+
+        .msg-image {
+            width: 100%;
+            border-radius: 6px;
+            margin-top: 3px;
+            cursor: zoom-in;
+            display: block;
+            max-height: 140px;
+            object-fit: cover;
+        }
+
+        .msg-time-badge {
+            font-size: 0.55rem;
+            color: var(--text-muted);
+            float: right;
+            margin-top: 4px;
+            margin-left: 8px;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .msg-time-badge.outgoing {
+            color: #8696a0;
+        }
+
+        /* Bottom chat input bar */
+        .chat-input-bar {
+            position: absolute;
+            bottom: 0; left: 0;
+            width: 100%;
+            background: #1f2c34;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 10;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .chat-input-wrapper {
+            flex-grow: 1;
+            background: #2a3942;
+            border-radius: 20px;
+            padding: 5px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .input-icon {
+            font-size: 1.05rem;
+            color: #8696a0;
+            cursor: pointer;
+        }
+
+        .chat-text-input {
+            flex-grow: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #e9edef;
+            font-size: 0.75rem;
+            font-family: inherit;
+        }
+
+        .chat-text-input::placeholder {
+            color: #8696a0;
+        }
+
+        .chat-send-btn {
+            background: var(--accent-color);
+            color: #fff;
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.9rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            flex-shrink: 0;
+        }
+
+        /* Lightbox overlay for zoomed images */
+        .lightbox-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.92);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            transition: opacity 0.25s ease;
+        }
+
+        .lightbox-overlay.hidden {
+            display: none;
+        }
+
+        .lightbox-image {
+            max-width: 100%;
+            max-height: 80%;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 45px;
+            right: 20px;
+            background: rgba(255,255,255,0.15);
+            border: none;
+            color: #fff;
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+        }
+
+        /* Side instruction card */
+        .side-instruction-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px;
+            width: 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+        }
+
+        @media (max-width: 1024px) {
+            .side-instruction-card {
+                width: 100%;
+                max-width: 700px;
+            }
+        }
+
+        .side-instruction-card h3 {
+            color: var(--accent-color);
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .instruction-step {
+            font-size: 0.8rem;
+            color: var(--text-main);
+            line-height: 1.4;
+            display: flex;
+            gap: 10px;
+        }
+
+        .step-number {
+            background: rgba(37, 211, 102, 0.15);
+            border: 1px solid var(--accent-color);
+            width: 22px; height: 22px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+            flex-shrink: 0;
+            color: var(--accent-color);
+        }
+
+        .play-controls {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-control {
+            background: var(--accent-color);
+            border: none;
+            color: #020617;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.72rem;
+            font-weight: bold;
+            cursor: pointer;
+            flex: 1;
+            text-align: center;
+            transition: opacity 0.2s;
+        }
+
+        .btn-control:hover {
+            opacity: 0.9;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.03); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="blur-blob" style="top: 10%; left: 15%;"></div>
+    <div class="blur-blob" style="bottom: 10%; right: 15%; background: radial-gradient(circle, rgba(37, 211, 102, 0.08) 0%, rgba(37, 211, 102, 0) 70%);"></div>
+
+    <div style="display: flex; gap: 40px; align-items: center; justify-content: center; max-width: 1200px; width: 100%; position: relative; z-index: 10;">
+        
+        <!-- Physical Mobile Layout Simulator -->
+        <div class="phone-wrapper">
+            <!-- Hardware buttons -->
+            <div class="phone-button power-btn" id="hw-power-btn" title="Lock/Unlock Phone"></div>
+
+            <div class="phone-screen" id="phone-screen">
+                
+                <!-- Dynamic Island -->
+                <div class="dynamic-island-container">
+                    <div class="dynamic-island" id="dynamic-island">
+                        <span id="island-text">Secure System</span>
+                    </div>
+                </div>
+
+                <!-- Status Bar -->
+                <div class="status-bar">
+                    <span id="status-time">07:07</span>
+                    <div class="status-icons">
+                        <span class="status-icon">📶</span>
+                        <span class="status-icon">🔋 98%</span>
+                    </div>
+                </div>
+
+                <!-- Home Swipe Indicator -->
+                <div class="home-indicator-bar" id="home-indicator"></div>
+
+                <!-- Virtual Cursor for Tap Onboarding -->
+                <div class="virtual-cursor" id="cursor-pointer"></div>
+
+                <!-- SCREEN 1: Phone Lockscreen -->
+                <div class="lockscreen-view" id="lockscreen">
+                    <div class="lock-clock-section">
+                        <div class="lock-clock" id="lock-clock">07:07</div>
+                        <div class="lock-date" id="lock-date">Friday, August 21</div>
+                    </div>
+                    
+                    <div class="notification-card">
+                        <div class="notif-icon">💬</div>
+                        <div class="notif-content">
+                            <div class="notif-title">WhatsApp</div>
+                            <div class="notif-body">Group: Morph Art Crew (8 messages)</div>
+                        </div>
+                    </div>
+                    
+                    <div class="unlock-prompt" id="unlock-btn">
+                        ▲ swipe / tap screen to unlock
+                    </div>
+                </div>
+
+                <!-- SCREEN 2: App Launcher Home Dashboard -->
+                <div class="launcher-view hidden" id="launcher">
+                    
+                    <div class="apps-grid">
+                        
+                        <!-- WhatsApp app icon focused -->
+                        <div class="app-item" id="app-whatsapp">
+                            <div class="app-icon-box" style="background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);">💬</div>
+                            <div class="app-label">WhatsApp</div>
+                        </div>
+
+                        <div class="app-item">
+                            <div class="app-icon-box" style="background: linear-gradient(135deg, #38bdf8 0%, #0369a1 100%);">🎬</div>
+                            <div class="app-label">Videos</div>
+                        </div>
+
+                        <div class="app-item">
+                            <div class="app-icon-box" style="background: linear-gradient(135deg, #10b981 0%, #047857 100%);">📞</div>
+                            <div class="app-label">Phone</div>
+                        </div>
+
+                        <div class="app-item">
+                            <div class="app-icon-box" style="background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%);">✉️</div>
+                            <div class="app-label">Messages</div>
+                        </div>
+
+                        <div class="app-item">
+                            <div class="app-icon-box" style="background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);">🎵</div>
+                            <div class="app-label">Music</div>
+                        </div>
+
+                        <div class="app-item">
+                            <div class="app-icon-box" style="background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);">⚙️</div>
+                            <div class="app-label">Settings</div>
+                        </div>
+                        
+                    </div>
+
+                    <div class="launcher-dock">
+                        <div class="app-item"><div class="app-icon-box" style="background:#1e293b; width:44px; height:44px; font-size:1.2rem;">🌐</div></div>
+                        <div class="app-item"><div class="app-icon-box" style="background:#1e293b; width:44px; height:44px; font-size:1.2rem;">💬</div></div>
+                        <div class="app-item"><div class="app-icon-box" style="background:#1e293b; width:44px; height:44px; font-size:1.2rem;">🗺️</div></div>
+                        <div class="app-item"><div class="app-icon-box" style="background:#1e293b; width:44px; height:44px; font-size:1.2rem;">📸</div></div>
+                    </div>
+
+                </div>
+
+                <!-- SCREEN 3: WhatsApp Group Chat Screen -->
+                <div class="chat-view hidden" id="chat">
+                    
+                    <!-- Chat Header -->
+                    <div class="chat-header">
+                        <div class="header-left">
+                            <span class="back-arrow" id="chat-back-btn">◀</span>
+                            <div class="group-avatar-stack">🎨</div>
+                            <div class="group-info">
+                                <span class="group-name">Morph Art Crew</span>
+                                <span class="group-status" id="group-status">Alice, Bob, Charlie</span>
+                            </div>
+                        </div>
+                        <div class="header-actions">
+                            <span>📞</span>
+                            <span style="font-weight: bold; font-size: 1.15rem; margin-left: 3px;">⋮</span>
+                        </div>
+                    </div>
+
+                    <!-- Chat Message List Container -->
+                    <div class="chat-messages" id="chat-messages">
+                        <!-- Loaded and animated dynamically -->
+                    </div>
+
+                    <!-- Input Bar -->
+                    <div class="chat-input-bar">
+                        <div class="chat-input-wrapper">
+                            <span class="input-icon">😊</span>
+                            <input type="text" class="chat-text-input" id="chat-input" placeholder="Message" autocomplete="off">
+                            <span class="input-icon">📎</span>
+                        </div>
+                        <button class="chat-send-btn" id="chat-send-btn">➔</button>
+                    </div>
+
+                </div>
+
+                <!-- Lightbox Zoom Overlay -->
+                <div class="lightbox-overlay hidden" id="lightbox">
+                    <button class="lightbox-close" id="lightbox-close-btn">✕</button>
+                    <img src="" alt="Zoomed Attach" class="lightbox-image" id="lightbox-img">
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Instruction control panel -->
+        <div class="side-instruction-card">
+            <h3>💬 Chat Story Simulator</h3>
+            
+            <div class="instruction-step">
+                <span class="step-number">1</span>
+                <div>
+                    <strong>Unlock Screen:</strong> Tap the lock screen or click the power button to unlock.
+                </div>
+            </div>
+
+            <div class="instruction-step">
+                <span class="step-number">2</span>
+                <div>
+                    <strong>Auto Onboarding:</strong> Upon unlock, the virtual pointer clicks <strong>WhatsApp</strong>.
+                </div>
+            </div>
+
+            <div class="instruction-step">
+                <span class="step-number">3</span>
+                <div>
+                    <strong>Dynamic Script Playback:</strong> The app loads dialogs from `story.json` showing typing indicators (e.g. <em>Bob is typing...</em>) before messages arrive.
+                </div>
+            </div>
+
+            <div class="instruction-step">
+                <span class="step-number">4</span>
+                <div>
+                    <strong>Interactive Attachments:</strong> Click any image bubble to zoom into fullscreen lightbox mode.
+                </div>
+            </div>
+
+            <div class="instruction-step">
+                <span class="step-number">5</span>
+                <div>
+                    <strong>Type Messages:</strong> Type your own text and hit **Send** to join the conversation!
+                </div>
+            </div>
+
+            <div class="play-controls">
+                <button class="btn-control" id="btn-replay">Replay Story</button>
+                <button class="btn-control" id="btn-clear" style="background: #3a3a3a; color: #fff;">Clear Chat</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Scripting simulator logic -->
+    <script>
+        // Story list array loaded from assets/chatstory/story.json
+        let chatStory = [];
+        let currentStoryIndex = 0;
+        let isPhoneLocked = true;
+        let screenState = 'lock'; // 'lock', 'launcher', 'chat'
+        
+        let storyInterval = null;
+        let typingTimeout = null;
+
+        // Elements
+        const lockscreen = document.getElementById('lockscreen');
+        const launcher = document.getElementById('launcher');
+        const chat = document.getElementById('chat');
+        const chatMessages = document.getElementById('chat-messages');
+        const groupStatus = document.getElementById('group-status');
+        const chatInput = document.getElementById('chat-input');
+        const chatSendBtn = document.getElementById('chat-send-btn');
+        const cursorPointer = document.getElementById('cursor-pointer');
+        const appWhatsapp = document.getElementById('app-whatsapp');
+
+        // Dynamic Island helper
+        let islandTimer = null;
+        const island = document.getElementById('dynamic-island');
+        const islandText = document.getElementById('island-text');
+
+        // Synthesize notification sounds
+        let audioCtx = null;
+        function playPingSound() {
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                // Classic WhatsApp high-pitched double-pip notification sound
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(650, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                
+                osc.start();
+                
+                // Pip 1
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
+                
+                // Pip 2
+                setTimeout(() => {
+                    const osc2 = audioCtx.createOscillator();
+                    const gain2 = audioCtx.createGain();
+                    osc2.connect(gain2);
+                    gain2.connect(audioCtx.destination);
+                    osc2.type = 'sine';
+                    osc2.frequency.setValueAtTime(800, audioCtx.currentTime);
+                    gain2.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                    osc2.start();
+                    gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                    setTimeout(() => osc2.stop(), 200);
+                }, 80);
+
+                setTimeout(() => osc.stop(), 200);
+            } catch(e) {
+                console.log("Audio play blocked.");
+            }
+        }
+
+        // Initialize Simulator
+        function initSimulator() {
+            // Load Clock
+            setInterval(updateClock, 1000);
+            updateClock();
+
+            // Fetch chatstory JSON config
+            fetch('assets/chatstory/story.json')
+                .then(res => res.json())
+                .then(data => {
+                    chatStory = data;
+                    console.log("Loaded chat story script:", chatStory);
+                })
+                .catch(err => {
+                    console.warn("Could not load story.json. Using fallback static story script.");
+                    chatStory = getFallbackStory();
+                });
+
+            // Bind triggers
+            bindTriggers();
+
+            triggerDynamicIsland("Welcome. Tap to unlock.");
+        }
+
+        // Live Clock generator
+        function updateClock() {
+            const date = new Date();
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const formatted = `${hours}:${minutes}`;
+            
+            document.getElementById('status-time').innerText = formatted;
+            document.getElementById('lock-clock').innerText = formatted;
+            
+            const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+            const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+            document.getElementById('lock-date').innerText = `${days[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}`;
+        }
+
+        // Dynamic Island expansion
+        function triggerDynamicIsland(text, duration = 3000) {
+            clearTimeout(islandTimer);
+            islandText.innerText = text;
+            island.classList.add('expanded');
+            
+            islandTimer = setTimeout(() => {
+                island.classList.remove('expanded');
+                setTimeout(() => {
+                    if (!island.classList.contains('expanded')) {
+                        islandText.innerText = "System Safe";
+                    }
+                }, 300);
+            }, duration);
+        }
+
+        // Fallback chat story JSON content
+        function getFallbackStory() {
+            return [
+                {
+                    "sender": "user1",
+                    "name": "Alice",
+                    "avatar": "",
+                    "text": "Hey everyone! Look at the new style-transfer morph frames I exported this morning!",
+                    "type": "text"
+                },
+                {
+                    "sender": "user2",
+                    "name": "Bob",
+                    "avatar": "",
+                    "text": "Wow, Alice! Did the blending artifacts resolve on the textures?",
+                    "type": "text"
+                },
+                {
+                    "sender": "user2",
+                    "name": "Bob",
+                    "avatar": "",
+                    "text": "Send some screenshots here if you can, I want to take a look.",
+                    "type": "text"
+                },
+                {
+                    "sender": "user1",
+                    "name": "Alice",
+                    "avatar": "",
+                    "image": "assets/chatstory/images/image1.jpg",
+                    "type": "image"
+                },
+                {
+                    "sender": "user3",
+                    "name": "Charlie",
+                    "avatar": "",
+                    "text": "Oh, that is absolutely brilliant. The border styling looks so smooth!",
+                    "type": "text"
+                }
+            ];
+        }
+
+        // Onboarding click trigger
+        function runAutoOnboardingAnimation() {
+            setTimeout(() => {
+                const appRect = appWhatsapp.getBoundingClientRect();
+                const screenRect = document.getElementById('phone-screen').getBoundingClientRect();
+                
+                const top = appRect.top - screenRect.top + (appRect.height / 2);
+                const left = appRect.left - screenRect.left + (appRect.width / 2);
+
+                cursorPointer.style.opacity = '1';
+                cursorPointer.style.top = top + 'px';
+                cursorPointer.style.left = left + 'px';
+
+                setTimeout(() => {
+                    cursorPointer.classList.add('tapping');
+                    appWhatsapp.classList.add('focused');
+
+                    setTimeout(() => {
+                        cursorPointer.classList.remove('tapping');
+                        cursorPointer.style.opacity = '0';
+                        openChatApp();
+                    }, 400);
+                }, 1600);
+            }, 600);
+        }
+
+        // Lock / Unlock toggles
+        function unlockPhone() {
+            if (!isPhoneLocked) return;
+            isPhoneLocked = false;
+            screenState = 'launcher';
+            
+            lockscreen.classList.add('unlocked');
+            launcher.classList.remove('hidden');
+            triggerDynamicIsland("Unlocked Grid");
+
+            runAutoOnboardingAnimation();
+        }
+
+        function lockPhone() {
+            isPhoneLocked = true;
+            screenState = 'lock';
+            
+            lockscreen.classList.remove('unlocked');
+            launcher.classList.add('hidden');
+            chat.classList.add('hidden');
+            
+            // Halt any running simulation schedules
+            clearTimeout(storyInterval);
+            clearTimeout(typingTimeout);
+            groupStatus.innerText = "Alice, Bob, Charlie";
+            groupStatus.classList.remove('typing');
+
+            triggerDynamicIsland("System Locked");
+        }
+
+        function openChatApp() {
+            screenState = 'chat';
+            launcher.classList.add('hidden');
+            chat.classList.remove('hidden');
+            
+            triggerDynamicIsland("WhatsApp Active");
+            
+            // Start automatic conversation timeline
+            clearChat();
+            startChatSimulation();
+        }
+
+        function closeChatApp() {
+            screenState = 'launcher';
+            chat.classList.add('hidden');
+            launcher.classList.remove('hidden');
+            
+            clearTimeout(storyInterval);
+            clearTimeout(typingTimeout);
+            groupStatus.innerText = "Alice, Bob, Charlie";
+            groupStatus.classList.remove('typing');
+
+            triggerDynamicIsland("Launcher Home");
+        }
+
+        // Render Chat Bubbles
+        function appendMessageBubble(msg, isUserMessage = false) {
+            const container = document.createElement('div');
+            container.className = "msg-container";
+            
+            // Set message styling classes
+            const isOutgoing = isUserMessage || msg.sender === 'user1'; // Alice/User is outgoing (Right side)
+            const bubbleClass = isOutgoing ? 'outgoing' : 'incoming';
+            
+            // Timestamp
+            const date = new Date();
+            const timeStr = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+            
+            // Checkmark receipts badge
+            const receipt = isOutgoing ? ' <span style="color:#53bdeb; font-size:9px;">✓✓</span>' : '';
+            
+            let bubbleHtml = `<div class="msg-bubble ${bubbleClass}">`;
+            
+            // Add name header for incoming group messages
+            if (!isOutgoing) {
+                bubbleHtml += `<div class="msg-sender ${msg.sender}">${msg.name}</div>`;
+            }
+            
+            if (msg.type === 'text' || msg.text) {
+                bubbleHtml += `<div class="msg-text">${msg.text}</div>`;
+            } else if (msg.type === 'image' || msg.image) {
+                bubbleHtml += `<img src="${msg.image}" alt="Chat Attachment" class="msg-image" onclick="zoomImage('${msg.image}')">`;
+            }
+            
+            bubbleHtml += `<span class="msg-time-badge">${timeStr}${receipt}</span></div>`;
+            container.innerHTML = bubbleHtml;
+            
+            chatMessages.appendChild(container);
+            
+            // Auto scroll chat to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // Play notification click ping sound
+            playPingSound();
+        }
+
+        // Chat Script Automation Simulator
+        function startChatSimulation() {
+            if (currentStoryIndex >= chatStory.length) {
+                console.log("Chat story completed.");
+                return;
+            }
+
+            const msg = chatStory[currentStoryIndex];
+            
+            // Simulate typing delay
+            const isOutgoing = msg.sender === 'user1';
+            const typingText = isOutgoing ? "You are typing..." : `${msg.name} is typing...`;
+            
+            groupStatus.innerText = typingText;
+            groupStatus.classList.add('typing');
+
+            const textLength = msg.text ? msg.text.length : 30;
+            const delay = Math.max(1200, textLength * 45); // Typing speed proportional delay
+
+            typingTimeout = setTimeout(() => {
+                groupStatus.innerText = "Alice, Bob, Charlie";
+                groupStatus.classList.remove('typing');
+                
+                appendMessageBubble(msg);
+                
+                currentStoryIndex++;
+                
+                // Schedule next dialogue bubble
+                storyInterval = setTimeout(startChatSimulation, 1500);
+            }, delay);
+        }
+
+        function clearChat() {
+            chatMessages.innerHTML = '';
+            currentStoryIndex = 0;
+            clearTimeout(storyInterval);
+            clearTimeout(typingTimeout);
+            groupStatus.innerText = "Alice, Bob, Charlie";
+            groupStatus.classList.remove('typing');
+        }
+
+        // Zoom image inside lightbox overlay
+        function zoomImage(src) {
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImg = document.getElementById('lightbox-img');
+            lightboxImg.src = src;
+            lightbox.classList.remove('hidden');
+        }
+
+        // Send Custom Messages
+        function sendUserMessage() {
+            const text = chatInput.value.trim();
+            if (!text) return;
+            
+            // Clear input box
+            chatInput.value = '';
+            
+            // Append message bubble
+            appendMessageBubble({
+                sender: "user1",
+                name: "Alice",
+                text: text,
+                type: "text"
+            }, true);
+            
+            // Trigger dynamic island notification
+            triggerDynamicIsland("Message Sent", 1500);
+
+            // Simulate quick auto-reply from Bob or Charlie after 2 seconds!
+            setTimeout(() => {
+                const responders = [
+                    { name: "Bob", sender: "user2", text: "Nice point! Let's check that on the next presentation iteration." },
+                    { name: "Charlie", sender: "user3", text: "Agreed, looks solid. 👍" }
+                ];
+                const reply = responders[Math.floor(Math.random() * responders.length)];
+                
+                groupStatus.innerText = `${reply.name} is typing...`;
+                groupStatus.classList.add('typing');
+                
+                setTimeout(() => {
+                    groupStatus.innerText = "Alice, Bob, Charlie";
+                    groupStatus.classList.remove('typing');
+                    appendMessageBubble(reply);
+                }, 1500);
+
+            }, 2000);
+        }
+
+        // Bind events
+        function bindTriggers() {
+            // Hardware Power Key
+            document.getElementById('hw-power-btn').addEventListener('click', () => {
+                if (isPhoneLocked) unlockPhone();
+                else lockPhone();
+            });
+
+            // Unlock action triggers
+            document.getElementById('unlock-btn').addEventListener('click', unlockPhone);
+            lockscreen.addEventListener('dblclick', unlockPhone);
+
+            // Launcher App Icon click
+            appWhatsapp.addEventListener('click', openChatApp);
+
+            // Back from chat
+            document.getElementById('chat-back-btn').addEventListener('click', closeChatApp);
+
+            // Send message button click
+            chatSendBtn.addEventListener('click', sendUserMessage);
+
+            // Press Enter to send message
+            chatInput.addEventListener('keydown', (e) => {
+                if (e.code === 'Enter') {
+                    e.preventDefault();
+                    sendUserMessage();
+                }
+            });
+
+            // Zoom Lightbox dismiss
+            document.getElementById('lightbox-close-btn').addEventListener('click', () => {
+                document.getElementById('lightbox').classList.add('hidden');
+            });
+            document.getElementById('lightbox').addEventListener('click', () => {
+                document.getElementById('lightbox').classList.add('hidden');
+            });
+
+            // Manual Replay & Clear button triggers
+            document.getElementById('btn-replay').addEventListener('click', () => {
+                clearChat();
+                startChatSimulation();
+            });
+            document.getElementById('btn-clear').addEventListener('click', clearChat);
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (isPhoneLocked) {
+                if (e.code === 'Space' || e.code === 'Enter') {
+                    e.preventDefault();
+                    unlockPhone();
+                }
+                return;
+            }
+
+            if (screenState === 'chat') {
+                if (e.code === 'Backspace' || e.code === 'Escape') {
+                    e.preventDefault();
+                    closeChatApp();
+                }
+            } else if (screenState === 'launcher') {
+                if (e.code === 'Enter') {
+                    openChatApp();
+                } else if (e.code === 'Escape' || e.code === 'Backspace') {
+                    lockPhone();
+                }
+            }
+        });
+
+        // Start App
+        window.addEventListener('DOMContentLoaded', initSimulator);
+    </script>
+</body>
+</html>

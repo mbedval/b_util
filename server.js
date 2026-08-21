@@ -3,8 +3,23 @@ const fs = require('fs');
 const path = require('path');
 const { getFilesForFolder, generateFilesJs, FOLDERS, BASE_DIR } = require('./generate');
 
+// LiveReload Setup
+const livereload = require("livereload");
+const connectLiveReload = require("connect-livereload");
+
+const liveReloadServer = livereload.createServer({
+  exts: ['html', 'css', 'js', 'json', 'jpg', 'png', 'gif', 'svg']
+});
+liveReloadServer.watch([
+  __dirname,
+  path.join(__dirname, 'assets')
+]);
+
 const app = express();
 const PORT = 3000;
+
+// Connect LiveReload middleware (injects script tag dynamically into served pages)
+app.use(connectLiveReload());
 
 // Generate files.js on startup
 console.log('[Server] Initializing files.js...');
@@ -27,6 +42,10 @@ FOLDERS.forEach(folder => {
         try {
           console.log(`[Watcher] Change detected in assets/${folder}. Regenerating files.js...`);
           generateFilesJs();
+          // Notify clients to refresh
+          setTimeout(() => {
+            liveReloadServer.refresh("/");
+          }, 150);
         } catch (e) {
           console.error('[Watcher] Error in change handler:', e);
         }

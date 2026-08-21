@@ -50,44 +50,87 @@
         .apps-section {
             background: rgba(255, 255, 255, 0.05);
             border-radius: 15px;
-            padding: 30px;
+            padding: 20px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
 
         .apps-section h2 {
-            font-size: 1.5rem;
-            margin-bottom: 20px;
+            font-size: 1.3rem;
+            margin-bottom: 10px;
             color: #4ecdc4;
             font-weight: 400;
         }
 
+        .apps-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 12px;
+            flex-grow: 1;
+            overflow-y: auto;
+            align-content: start;
+            padding: 5px;
+        }
+        
+        .apps-grid::-webkit-scrollbar {
+            display: none;
+        }
+
         .app-card {
-            background: rgba(255, 255, 255, 0.1);
-            border: 2px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            background-size: cover;
+            background-position: center;
+            border: 2px solid rgba(255, 255, 255, 0.12);
             border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 15px;
-            transition: all 0.3s ease;
+            height: 110px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 10px 14px;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
             cursor: pointer;
         }
 
         .app-card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-3px) scale(1.02);
             border-color: #4ecdc4;
-            box-shadow: 0 15px 35px rgba(78, 205, 196, 0.3);
+            box-shadow: 0 8px 25px rgba(78, 205, 196, 0.4);
         }
 
         .app-card h3 {
-            font-size: 1.3rem;
-            margin-bottom: 10px;
+            font-size: 0.95rem;
+            margin: 0;
             color: #ffeaa7;
+            font-weight: 600;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.85);
+            z-index: 5;
+            transition: transform 0.25s ease;
+        }
+
+        .app-card:hover h3 {
+            transform: translateY(-2px);
         }
 
         .app-card p {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.7);
-            line-height: 1.5;
+            font-size: 0.68rem;
+            color: rgba(255, 255, 255, 0.95);
+            line-height: 1.35;
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, opacity 0.3s ease, margin-top 0.3s ease;
+            z-index: 5;
+            margin: 0;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+        }
+
+        .app-card:hover p {
+            max-height: 80px;
+            opacity: 1;
+            margin-top: 5px;
         }
 
         .readme-section {
@@ -116,12 +159,20 @@
         @media (max-width: 768px) {
             .container {
                 grid-template-columns: 1fr;
-                grid-template-rows: auto auto 1fr;
+                grid-template-rows: auto auto auto;
                 height: auto;
             }
 
             .header h1 {
                 font-size: 1.8rem;
+            }
+
+            .apps-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .app-card {
+                grid-column: span 12 !important;
             }
 
             .readme-frame {
@@ -139,24 +190,60 @@
         <div class="apps-section">
             <h2>Available Apps</h2>
             
-            <div class="app-card" onclick="window.open('animation.html', '_blank')">
-                <h3>🎨 Animation Collage</h3>
-                <p>Interactive collage displaying GIF and WebP animations with artistic layout, click-to-focus, magnetic repulsion effects, and scroll-to-shuffle functionality.</p>
-            </div>
+            <div class="apps-grid">
+                <!-- Row 1: CCTV & TV (span 6 each) -->
+                <div class="app-card" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/resources/cctv.jpg'); grid-column: span 6;" onclick="window.open('CCTV.html', '_blank')">
+                    <h3>📹 CCTV Control Center</h3>
+                    <p>Security control room dashboard displaying active video streams as CCTV feeds. Features adjustable grid layouts (2x2, 3x3, 4x4, 1+5 Split), retro CRT screen filters, automated stream rotation, live event logs, click-to-audio selection, and double-click client fullscreen overlay.</p>
+                </div>
 
-            <div class="app-card" onclick="window.open('video.html', '_blank')">
-                <h3>🎬 Video Collage</h3>
-                <p>Video collage with full-screen playback, play/pause controls, animated border effects, and shuffle through 66 video files with maintained playback state.</p>
-            </div>
+                <div class="app-card" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/resources/tv.jpg'); grid-column: span 6;" onclick="window.open('Television.html', '_blank')">
+                    <h3>📺 Retro CRT Television</h3>
+                    <p>Simulates a vintage wood-cabinet CRT television. Starts in a classic SMPTE "No Signal" color bars mode with synthesised audio static, switching to an Android TV smart launcher. Features fully routable d-pad arrow navigation, physical rotary dials, dynamic channel glitches, and customizable screen overlays.</p>
+                </div>
 
-            <div class="app-card" onclick="window.open('presentation.html', '_blank')">
-                <h3>🖼️ Presentation</h3>
-                <p>Full-screen slideshow presentation with auto-shuffle images, click to pause/resume, and ESC key to show animated Thank You message.</p>
-            </div>
+                <!-- Row 2: Mobile, Whatsapp, Morph (span 4 each) -->
+                <div class="app-card" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/resources/mobile.jpg'); grid-column: span 4;" onclick="window.open('mobile.html', '_blank')">
+                    <h3>📱 Mobile Media Simulator</h3>
+                    <p>A hybrid smartphone mockup (blending features of iOS and Android). Includes an interactive lock screen, home app launcher, and a virtual finger tap tutorial animation that opens the gallery. Double-clicking a grid stream launches a TikTok/Reels vertical feed equipped with heart burst visual reactions, spinning vinyl soundtracks, and gesture controls.</p>
+                </div>
 
-            <div class="app-card" onclick="window.open('diagonal.html', '_blank')">
-                <h3>📐 Diagonal View</h3>
-                <p>Split-screen diagonal layout displaying two different images from wallpapers folder, with scroll-to-shuffle functionality.</p>
+                <div class="app-card" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/resources/chat.jpg'); grid-column: span 4;" onclick="window.open('Whatsapp.html', '_blank')">
+                    <h3>💬 Chat Story Simulator</h3>
+                    <p>A smartphone mockup simulation running a WhatsApp-style chat app. Dynamically parses assets/chatstory/story.json to replay conversations with typing indicator delays, checkmark receipts, and attachment images. Includes click-to-zoom image lightboxes and interactive send inputs that trigger automated chatbot responses.</p>
+                </div>
+
+                <div class="app-card" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/resources/morph.jpg'); grid-column: span 4;" onclick="window.open('image2video.html', '_blank')">
+                    <h3>🎞️ Style Morph Animator</h3>
+                    <p>High-speed sequential image-to-video player animating style-transfer frames from assets/gif2video folder. Includes frame-by-frame controls, speed control, loop modes, frame selection, and theme customization.</p>
+                </div>
+
+                <!-- Row 3: Twitter, Animation, Video (span 4 each) -->
+                <div class="app-card" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/resources/chat.jpg'); grid-column: span 4;" onclick="window.open('twitter.html', '_blank')">
+                    <h3>🐦 Custom Post Generator</h3>
+                    <p>Interactive dashboard mocking up X/Twitter post cards. Supports real-time text parsing that applies substring highlights, strikethroughs, and click-to-reveal blacked-out spoiler masks. Features customizable Light/Dim/Dark themes and live metric counters.</p>
+                </div>
+
+                <div class="app-card" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/resources/collage.jpg'); grid-column: span 4;" onclick="window.open('animation.html', '_blank')">
+                    <h3>🎨 Animation Collage</h3>
+                    <p>Interactive collage displaying GIF and WebP animations with artistic layout, click-to-focus, magnetic repulsion effects, and scroll-to-shuffle functionality.</p>
+                </div>
+
+                <div class="app-card" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/resources/collage.jpg'); grid-column: span 4;" onclick="window.open('video.html', '_blank')">
+                    <h3>🎬 Video Collage</h3>
+                    <p>Video collage with full-screen playback, play/pause controls, animated border effects, and shuffle through 66 video files with maintained playback state.</p>
+                </div>
+
+                <!-- Row 4: Presentation & Diagonal (span 6 each) -->
+                <div class="app-card" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/resources/collage.jpg'); grid-column: span 6;" onclick="window.open('presentation.html', '_blank')">
+                    <h3>🖼️ Presentation</h3>
+                    <p>Full-screen slideshow presentation with auto-shuffle images, click to pause/resume, and ESC key to show animated Thank You message.</p>
+                </div>
+
+                <div class="app-card" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/resources/collage.jpg'); grid-column: span 6;" onclick="window.open('diagonal.html', '_blank')">
+                    <h3>📐 Diagonal View</h3>
+                    <p>Split-screen diagonal layout displaying two different images from wallpapers folder, with scroll-to-shuffle functionality.</p>
+                </div>
             </div>
         </div>
 

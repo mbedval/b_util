@@ -97,5 +97,21 @@ window.collageFiles = {
     "assets/videos/tumblr_swi3ok2gRi1xv03kl_720.mp4",
     "assets/videos/tumblr_t692uyhKPK1afhv7b.mp4",
     "assets/videos/tumblr_t69lteXX2W1auhw7a.mp4"
+  ],
+  "gif2video": [
+    "assets/gif2video/tumblr_138ecd9d0c24c17bad23e5c6326a728e_f7c077be_2048_anime.png",
+    "assets/gif2video/tumblr_138ecd9d0c24c17bad23e5c6326a728e_f7c077be_2048_anime_illust.png",
+    "assets/gif2video/tumblr_138ecd9d0c24c17bad23e5c6326a728e_f7c077be_2048_cartoon.png",
+    "assets/gif2video/tumblr_138ecd9d0c24c17bad23e5c6326a728e_f7c077be_2048_expressive_graphite.png",
+    "assets/gif2video/tumblr_138ecd9d0c24c17bad23e5c6326a728e_f7c077be_2048_newspaper.png",
+    "assets/gif2video/tumblr_138ecd9d0c24c17bad23e5c6326a728e_f7c077be_2048_noir.png",
+    "assets/gif2video/tumblr_138ecd9d0c24c17bad23e5c6326a728e_f7c077be_2048_pencil_comic.png",
+    "assets/gif2video/tumblr_138ecd9d0c24c17bad23e5c6326a728e_f7c077be_2048_sin_city.png",
+    "assets/gif2video/tumblr_138ecd9d0c24c17bad23e5c6326a728e_f7c077be_2048_vintage_print.png",
+    "assets/gif2video/tumblr_138ecd9d0c24c17bad23e5c6326a728e_f7c077be_2048_woodcut.png"
+  ],
+  "television": [
+    "assets/television/tumblr_45c759f539442fcdf9fb76482cc2ed1b_01e5cf0c_720.mp4",
+    "assets/television/tumblr_6c165d154cdd54f6df406b0a56eed100_eb8f1637_720.mp4"
   ]
 };

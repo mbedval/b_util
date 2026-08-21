@@ -1,0 +1,1573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hybrid Mobile Simulator</title>
+    <!-- Include auto-generated files list -->
+    <script src="files.js" onerror="console.warn('files.js not found. Using fallback files.')"></script>
+    <style>
+        :root {
+            --phone-width: 320px;
+            --phone-height: 660px;
+            --bezel-color: #121214;
+            --screen-bg: #000000;
+            --accent-color: #38bdf8;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --glass-bg: rgba(15, 23, 42, 0.45);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #020617 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        /* Ambient glowing background blur */
+        .blur-blob {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(56, 189, 248, 0.12) 0%, rgba(56, 189, 248, 0) 70%);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Physical Phone frame */
+        .phone-wrapper {
+            position: relative;
+            width: var(--phone-width);
+            height: var(--phone-height);
+            border-radius: 48px;
+            padding: 12px;
+            background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+            box-shadow: 
+                0 25px 60px rgba(0,0,0,0.8),
+                0 0 0 4px #475569,
+                0 0 30px rgba(56, 189, 248, 0.15);
+            z-index: 10;
+        }
+
+        /* Side buttons */
+        .phone-button {
+            position: absolute;
+            background: #475569;
+            border-radius: 4px;
+        }
+
+        .power-btn {
+            top: 180px;
+            right: -4px;
+            width: 4px;
+            height: 70px;
+        }
+
+        .vol-up-btn {
+            top: 150px;
+            left: -4px;
+            width: 4px;
+            height: 45px;
+        }
+
+        .vol-down-btn {
+            top: 205px;
+            left: -4px;
+            width: 4px;
+            height: 45px;
+        }
+
+        /* The active screen area */
+        .phone-screen {
+            width: 100%;
+            height: 100%;
+            background: var(--screen-bg);
+            border-radius: 38px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            user-select: none;
+        }
+
+        /* Hybrid Dynamic Island top bar */
+        .dynamic-island-container {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            pointer-events: none;
+            width: 100%;
+        }
+
+        .dynamic-island {
+            width: 110px;
+            height: 28px;
+            background: #000000;
+            border-radius: 18px;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            color: var(--accent-color);
+            padding: 0 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+
+        .dynamic-island.expanded {
+            width: 220px;
+            height: 38px;
+            color: #4ade80;
+        }
+
+        /* Top Status Bar details */
+        .status-bar {
+            height: 40px;
+            width: 100%;
+            padding: 12px 24px 0 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #ffffff;
+            z-index: 999;
+            pointer-events: none;
+        }
+
+        .status-icons {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .status-icon {
+            font-size: 0.75rem;
+        }
+
+        /* Bottom Home Swipe Indicator */
+        .home-indicator-bar {
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 130px;
+            height: 5px;
+            background: rgba(255,255,255,0.85);
+            border-radius: 10px;
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        /* STAGE: PHONE LOCKSCREEN */
+        .lockscreen-view {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: url('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?q=80&w=640&auto=format&fit=crop') no-repeat center/cover;
+            z-index: 500;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px 20px 30px 20px;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease;
+        }
+
+        .lockscreen-view.unlocked {
+            transform: translateY(-100%);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .lock-clock-section {
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .lock-clock {
+            font-size: 4rem;
+            font-weight: 200;
+            color: #ffffff;
+            line-height: 1;
+        }
+
+        .lock-date {
+            font-size: 0.95rem;
+            color: rgba(255,255,255,0.8);
+            margin-top: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .notification-card {
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 12px 16px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            margin-bottom: 25px;
+        }
+
+        .notif-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: var(--accent-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .notif-content {
+            flex-grow: 1;
+        }
+
+        .notif-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .notif-body {
+            font-size: 0.72rem;
+            color: rgba(255,255,255,0.7);
+            margin-top: 2px;
+        }
+
+        .unlock-prompt {
+            text-align: center;
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.6);
+            letter-spacing: 1px;
+            animation: pulse 1.8s ease infinite;
+            cursor: pointer;
+        }
+
+        /* STAGE: APPS LAUNCHER HOME SCREEN */
+        .launcher-view {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(180deg, rgba(2, 6, 23, 0.7) 0%, rgba(15, 23, 42, 0.95) 100%), url('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?q=80&w=640&auto=format&fit=crop') no-repeat center/cover;
+            z-index: 100;
+            padding: 45px 15px 45px 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: opacity 0.3s ease;
+        }
+
+        .launcher-view.hidden {
+            display: none;
+        }
+
+        .apps-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px 15px;
+            padding: 10px 5px;
+        }
+
+        .app-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .app-icon-box {
+            width: 58px;
+            height: 58px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .app-item.focused .app-icon-box {
+            transform: scale(1.1);
+            box-shadow: 0 0 18px var(--accent-color);
+            border-color: var(--accent-color);
+        }
+
+        .app-label {
+            font-size: 0.65rem;
+            color: #f8fafc;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        /* Launcher bottom dock */
+        .launcher-dock {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 24px;
+            padding: 10px 14px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+
+        /* Onboarding virtual cursor */
+        .virtual-cursor {
+            position: absolute;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.25);
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            z-index: 1000;
+            pointer-events: none;
+            top: 400px;
+            left: 160px;
+            opacity: 0;
+            transition: top 1.5s cubic-bezier(0.25, 1, 0.5, 1), left 1.5s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .virtual-cursor::after {
+            content: "";
+            width: 14px;
+            height: 14px;
+            background: #ffffff;
+            border-radius: 50%;
+        }
+
+        .virtual-cursor.tapping {
+            transform: scale(0.85);
+            background: var(--accent-color);
+            border-color: var(--accent-color);
+            box-shadow: 0 0 20px var(--accent-color);
+            transition: transform 0.2s, background 0.2s;
+        }
+
+        /* STAGE: SYSTEM GALLERY VIEW */
+        .gallery-view {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #0f172a;
+            z-index: 50;
+            padding: 50px 16px 20px 16px;
+            display: flex;
+            flex-direction: column;
+            transition: opacity 0.3s ease;
+        }
+
+        .gallery-view.hidden {
+            display: none;
+        }
+
+        .gallery-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .gallery-header h2 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .gallery-back {
+            background: rgba(255,255,255,0.06);
+            border: none;
+            color: var(--text-main);
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+        }
+
+        .gallery-back:hover {
+            background: rgba(255,255,255,0.15);
+        }
+
+        .gallery-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .gallery-tab {
+            background: rgba(255,255,255,0.05);
+            border: none;
+            color: var(--text-muted);
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 0.68rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .gallery-tab.active {
+            background: var(--accent-color);
+            color: #020617;
+        }
+
+        /* Scrollable Gallery grid */
+        .gallery-grid {
+            flex-grow: 1;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            align-content: start;
+            gap: 6px;
+            overflow-y: auto;
+            padding-bottom: 20px;
+        }
+
+        .gallery-grid::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Grid Video item */
+        .gallery-item {
+            position: relative;
+            aspect-ratio: 1;
+            background: #1e293b;
+            border: 2px solid transparent;
+            border-radius: 6px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: border-color 0.2s, transform 0.2s;
+        }
+
+        .gallery-item.focused {
+            border: 3px solid var(--accent-color) !important;
+            box-shadow: 0 0 15px var(--accent-color);
+            transform: scale(0.96);
+        }
+
+        .gallery-item video, .gallery-item img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            opacity: 0.85;
+        }
+
+        .gallery-item:hover video {
+            opacity: 1;
+        }
+
+        .gallery-item-duration {
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            background: rgba(0,0,0,0.65);
+            color: #fff;
+            font-size: 0.55rem;
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-family: monospace;
+            z-index: 5;
+        }
+
+        .gallery-item-icon {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            color: #fff;
+            font-size: 0.65rem;
+            z-index: 5;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        /* STAGE: TIKTOK / REELS VERTICAL FEED */
+        .reels-view {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #000000;
+            z-index: 40;
+            display: flex;
+            flex-direction: column;
+            transition: opacity 0.3s ease;
+        }
+
+        .reels-view.hidden {
+            display: none;
+        }
+
+        /* Reels swipeable container */
+        .reels-container {
+            flex-grow: 1;
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .reel-player-box {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.4s cubic-bezier(0.1, 0.76, 0.55, 0.94);
+        }
+
+        .reel-player-box video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Reels UI controls overlays */
+        .reel-ui-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            padding: 50px 16px 30px 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .reel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            pointer-events: auto;
+        }
+
+        .reel-exit {
+            background: rgba(0,0,0,0.45);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: #fff;
+            width: 34px; height: 34px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .reel-exit:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .reel-feed-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: #fff;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+
+        .reel-bottom-layout {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            width: 100%;
+        }
+
+        .reel-meta-details {
+            max-width: 75%;
+            color: #fff;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .reel-author {
+            font-size: 0.85rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .reel-author::after {
+            content: "Follow";
+            background: #fff;
+            color: #000;
+            font-size: 0.55rem;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .reel-desc {
+            font-size: 0.72rem;
+            line-height: 1.3;
+            color: rgba(255,255,255,0.85);
+        }
+
+        .reel-music {
+            font-size: 0.65rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #bbf7d0;
+        }
+
+        /* Sidebar action button column */
+        .reel-sidebar-actions {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 18px;
+            pointer-events: auto;
+        }
+
+        .action-button-unit {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            color: #fff;
+        }
+
+        .action-icon-circle {
+            width: 42px; height: 42px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: transform 0.15s;
+        }
+
+        .action-button-unit:hover .action-icon-circle {
+            transform: scale(1.1);
+        }
+
+        .action-button-unit.liked .action-icon-circle {
+            color: #ff3b30;
+            text-shadow: 0 0 10px rgba(255,59,48,0.5);
+            border-color: #ff3b30;
+        }
+
+        .action-label {
+            font-size: 0.6rem;
+            font-weight: 600;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+        }
+
+        /* Vinyl music record spinning visual */
+        .spinning-music-disc {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #334155 20%, #000 20%, #000 35%, #222 35%, #000 65%, #222 65%, #000 100%);
+            border: 2px solid #fff;
+            animation: spin 3.5s linear infinite;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Heart popup double tap pop animation */
+        .doubletap-heart {
+            position: absolute;
+            color: #ff3b30;
+            font-size: 5.5rem;
+            opacity: 0;
+            transform: scale(0) rotate(-15deg);
+            z-index: 100;
+            pointer-events: none;
+            text-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        .doubletap-heart.pop {
+            animation: heartPop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.4) forwards;
+        }
+
+        @keyframes heartPop {
+            0% { opacity: 0; transform: scale(0) rotate(-15deg); }
+            30% { opacity: 0.95; transform: scale(1.2) rotate(5deg); }
+            45% { transform: scale(1.0) rotate(0deg); }
+            80% { opacity: 0.9; transform: scale(1.0) translateY(-30px); }
+            100% { opacity: 0; transform: scale(0.2) translateY(-80px); }
+        }
+
+        /* Dynamic floating bubble hearts */
+        .floating-heart {
+            position: absolute;
+            color: #ff4757;
+            font-size: 1.5rem;
+            z-index: 99;
+            pointer-events: none;
+            animation: floatUp 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(1) rotate(0deg); }
+            100% { opacity: 0; transform: translateY(-150px) scale(0.4) rotate(30deg); left: calc(var(--x) + 40px); }
+        }
+
+        /* Bottom timeline duration seekbar for Reels */
+        .reel-timeline-bar {
+            position: absolute;
+            bottom: 0; left: 0; width: 100%; height: 3px;
+            background: rgba(255,255,255,0.15);
+            z-index: 105;
+        }
+
+        .reel-timeline-fill {
+            height: 100%; width: 0%;
+            background: var(--accent-color);
+            transition: width 0.1s linear;
+        }
+
+        /* Onboarding overlays info panel */
+        .side-instruction-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px;
+            width: 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+        }
+
+        @media (max-width: 1024px) {
+            .side-instruction-card {
+                width: 100%;
+                max-width: 700px;
+            }
+        }
+
+        .side-instruction-card h3 {
+            color: var(--accent-color);
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .instruction-step {
+            font-size: 0.8rem;
+            color: var(--text-main);
+            line-height: 1.4;
+            display: flex;
+            gap: 10px;
+        }
+
+        .step-number {
+            background: rgba(56, 189, 248, 0.15);
+            border: 1px solid var(--accent-color);
+            width: 22px; height: 22px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+            flex-shrink: 0;
+            color: var(--accent-color);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.03); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="blur-blob" style="top: 10%; left: 15%;"></div>
+    <div class="blur-blob" style="bottom: 10%; right: 15%; background: radial-gradient(circle, rgba(236, 72, 153, 0.08) 0%, rgba(236, 72, 153, 0) 70%);"></div>
+
+    <div class="tv-wrapper" style="display: flex; gap: 40px; align-items: center; justify-content: center; max-width: 1200px; width: 100%; position: relative; z-index: 10;">
+        
+        <!-- Physical Mobile Layout Simulator -->
+        <div class="phone-wrapper">
+            <!-- Hardware buttons -->
+            <div class="phone-button power-btn" id="hw-power-btn" title="Lock/Unlock Phone"></div>
+            <div class="phone-button vol-up-btn" id="hw-vol-up" title="Volume Up"></div>
+            <div class="phone-button vol-down-btn" id="hw-vol-down" title="Volume Down"></div>
+
+            <div class="phone-screen" id="phone-screen">
+                
+                <!-- Dynamic Island camera notch -->
+                <div class="dynamic-island-container">
+                    <div class="dynamic-island" id="dynamic-island">
+                        <span id="island-text">Secure System</span>
+                    </div>
+                </div>
+
+                <!-- Phone top bar status -->
+                <div class="status-bar">
+                    <span id="status-time">07:07</span>
+                    <div class="status-icons">
+                        <span class="status-icon">📶</span>
+                        <span class="status-icon">🔋 98%</span>
+                    </div>
+                </div>
+
+                <!-- Bottom Home Bar -->
+                <div class="home-indicator-bar" id="home-indicator"></div>
+
+                <!-- Virtual Cursor for Tap Onboarding -->
+                <div class="virtual-cursor" id="cursor-pointer"></div>
+
+                <!-- SCREEN 1: Phone Lockscreen -->
+                <div class="lockscreen-view" id="lockscreen">
+                    <div class="lock-clock-section">
+                        <div class="lock-clock" id="lock-clock">07:07</div>
+                        <div class="lock-date" id="lock-date">Friday, August 21</div>
+                    </div>
+                    
+                    <div class="notification-card">
+                        <div class="notif-icon">📸</div>
+                        <div class="notif-content">
+                            <div class="notif-title">Media Gallery</div>
+                            <div class="notif-body">64 loops ready for playback. Swipe up.</div>
+                        </div>
+                    </div>
+                    
+                    <div class="unlock-prompt" id="unlock-btn">
+                        ▲ swipe / tap screen to unlock
+                    </div>
+                </div>
+
+                <!-- SCREEN 2: App Launcher Dashboard -->
+                <div class="launcher-view hidden" id="launcher">
+                    
+                    <div class="apps-grid">
+                        
+                        <!-- Video gallery app to auto open -->
+                        <div class="app-item" id="app-videos">
+                            <div class="app-icon-box" style="background: linear-gradient(135deg, #38bdf8 0%, #0369a1 100%);">🎬</div>
+                            <div class="app-label">Videos</div>
+                        </div>
+
+                        <div class="app-item">
+                            <div class="app-icon-box" style="background: linear-gradient(135deg, #10b981 0%, #047857 100%);">📞</div>
+                            <div class="app-label">Phone</div>
+                        </div>
+
+                        <div class="app-item">
+                            <div class="app-icon-box" style="background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%);">✉️</div>
+                            <div class="app-label">Messages</div>
+                        </div>
+
+                        <div class="app-item">
+                            <div class="app-icon-box" style="background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);">🎵</div>
+                            <div class="app-label">Music</div>
+                        </div>
+
+                        <div class="app-item">
+                            <div class="app-icon-box" style="background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);">⚙️</div>
+                            <div class="app-label">Settings</div>
+                        </div>
+
+                        <div class="app-item">
+                            <div class="app-icon-box" style="background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);">✍️</div>
+                            <div class="app-label">Notes</div>
+                        </div>
+                        
+                    </div>
+
+                    <!-- Bottom Dock -->
+                    <div class="launcher-dock">
+                        <div class="app-item"><div class="app-icon-box" style="background:#1e293b; width:44px; height:44px; font-size:1.2rem;">🌐</div></div>
+                        <div class="app-item"><div class="app-icon-box" style="background:#1e293b; width:44px; height:44px; font-size:1.2rem;">💬</div></div>
+                        <div class="app-item"><div class="app-icon-box" style="background:#1e293b; width:44px; height:44px; font-size:1.2rem;">🗺️</div></div>
+                        <div class="app-item"><div class="app-icon-box" style="background:#1e293b; width:44px; height:44px; font-size:1.2rem;">📸</div></div>
+                    </div>
+
+                </div>
+
+                <!-- SCREEN 3: Media Gallery Grid -->
+                <div class="gallery-view hidden" id="gallery">
+                    <div class="gallery-header">
+                        <h2>Gallery</h2>
+                        <button class="gallery-back" id="gallery-home-btn" title="Back to Launcher">🏠</button>
+                    </div>
+
+                    <div class="gallery-tabs">
+                        <button class="gallery-tab active">All</button>
+                        <button class="gallery-tab">Videos</button>
+                        <button class="gallery-tab">Albums</button>
+                    </div>
+
+                    <!-- Grid of videos -->
+                    <div class="gallery-grid" id="gallery-grid">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+
+                <!-- SCREEN 4: TikTok / Reels Player View -->
+                <div class="reels-view hidden" id="reels">
+                    
+                    <!-- Reels timeline duration -->
+                    <div class="reel-timeline-bar">
+                        <div class="reel-timeline-fill" id="reel-timeline-fill"></div>
+                    </div>
+
+                    <!-- Big Pop Heart -->
+                    <div class="doubletap-heart" id="pop-heart">❤️</div>
+
+                    <!-- Scrollable feeds wrapper -->
+                    <div class="reels-container" id="reels-container">
+                        
+                        <!-- Reels Active Block player -->
+                        <div class="reel-player-box" id="reel-player">
+                            <video id="reel-video" loop playsinline></video>
+                        </div>
+
+                        <!-- Interface HUD overlay -->
+                        <div class="reel-ui-overlay">
+                            
+                            <div class="reel-header">
+                                <button class="reel-exit" id="reel-exit-btn" title="Back to Gallery">◀</button>
+                                <span class="reel-feed-title">Clips Feed</span>
+                                <span style="font-size: 1.1rem; text-shadow: 0 2px 4px #000;">🎵</span>
+                            </div>
+
+                            <div class="reel-bottom-layout">
+                                <!-- Telemetry details bottom left -->
+                                <div class="reel-meta-details">
+                                    <div class="reel-author" id="reel-author">@creators_loop</div>
+                                    <div class="reel-desc" id="reel-desc">Amazing style transfer collage animation loop! #art #visuals #gemini</div>
+                                    <div class="reel-music">
+                                        <span>🎵</span> <marquee scrollamount="2" style="width: 100px;" id="reel-music-title">Original Sound - @creators_loop</marquee>
+                                    </div>
+                                </div>
+
+                                <!-- Action column sidebar right -->
+                                <div class="reel-sidebar-actions">
+                                    
+                                    <!-- Like button -->
+                                    <div class="action-button-unit" id="action-like" title="Double click to Like">
+                                        <div class="action-icon-circle">❤️</div>
+                                        <span class="action-label" id="likes-count">1.2K</span>
+                                    </div>
+
+                                    <!-- Comments -->
+                                    <div class="action-button-unit">
+                                        <div class="action-icon-circle">💬</div>
+                                        <span class="action-label">84</span>
+                                    </div>
+
+                                    <!-- Share -->
+                                    <div class="action-button-unit">
+                                        <div class="action-icon-circle">🔄</div>
+                                        <span class="action-label">Share</span>
+                                    </div>
+
+                                    <!-- Spinning vinyl disc -->
+                                    <div class="spinning-music-disc"></div>
+
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Instructions Sidebar control panel -->
+        <div class="side-instruction-card">
+            <h3>📱 Simulator Controls</h3>
+            
+            <div class="instruction-step">
+                <span class="step-number">1</span>
+                <div>
+                    <strong>Unlock Screen:</strong> Tap the lock screen prompt or click the physical power button on the top-right side.
+                </div>
+            </div>
+
+            <div class="instruction-step">
+                <span class="step-number">2</span>
+                <div>
+                    <strong>Auto Onboarding:</strong> Upon unlock, a virtual pointer automatically selects and opens the <strong>Videos</strong> app.
+                </div>
+            </div>
+
+            <div class="instruction-step">
+                <span class="step-number">3</span>
+                <div>
+                    <strong>Interactive Gallery:</strong> Scroll the photos list. Hover plays preview. Single-click selects, and <strong>Double-Click</strong> opens TikTok full view.
+                </div>
+            </div>
+
+            <div class="instruction-step">
+                <span class="step-number">4</span>
+                <div>
+                    <strong>TikTok/Reels Mode:</strong> 
+                    • Use [Arrow Up / Down] keys to slide between videos.<br>
+                    • [Double-Click] on video to like and pop red hearts!<br>
+                    • Controls on the remote D-pad can also navigate feeds.
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Scripting simulator logic -->
+    <script>
+        // Fallback videos in case files.js is unavailable
+        const fallbackVideos = [
+            "assets/videos/tumblr_0a3f03f882b557143357653b5d740a64_55f2d1d4_720.mp4",
+            "assets/videos/tumblr_0b0daa639b633fef45db55b1eb4d7fb7_f50cbe4f_720.mp4",
+            "assets/videos/tumblr_0fc25f96d95cf617d6342efb088ad52c_5fb4ea2f_720.mp4",
+            "assets/videos/tumblr_127a4362c8398f00f27e9dc97e95526f_49155ba4_720.mp4",
+            "assets/videos/tumblr_1d5e203f16b07ac38ba76f45c6249570_d4c77875_720.mp4",
+            "assets/videos/tumblr_1efdffc08f67914e20bd0a1a22b6e9e2_b3a07469_720.mp4"
+        ];
+
+        // Retrieve video pool
+        let videoPool = [];
+        if (window.collageFiles && Array.isArray(window.collageFiles.videos) && window.collageFiles.videos.length > 0) {
+            videoPool = window.collageFiles.videos;
+        } else {
+            console.log("No videos found in files.js, using fallback list.");
+            videoPool = fallbackVideos;
+        }
+
+        // Simulator state variables
+        let isPhoneLocked = true;
+        let isGalleryActive = false;
+        let isReelActive = false;
+        let focusedCardIdx = 0;
+        let currentReelIndex = 0;
+        let screenState = 'lock'; // 'lock', 'launcher', 'gallery', 'reel'
+
+        // Dynamic Island state helper
+        let islandTimer = null;
+
+        // Elements
+        const lockscreen = document.getElementById('lockscreen');
+        const launcher = document.getElementById('launcher');
+        const gallery = document.getElementById('gallery');
+        const reels = document.getElementById('reels');
+        const galleryGrid = document.getElementById('gallery-grid');
+        
+        // Dynamic Island elements
+        const island = document.getElementById('dynamic-island');
+        const islandText = document.getElementById('island-text');
+        
+        // Reels player elements
+        const reelVideo = document.getElementById('reel-video');
+        const reelTimelineFill = document.getElementById('reel-timeline-fill');
+        const popHeart = document.getElementById('pop-heart');
+        const likesCount = document.getElementById('likes-count');
+        const actionLike = document.getElementById('action-like');
+        const reelAuthor = document.getElementById('reel-author');
+        const reelDesc = document.getElementById('reel-desc');
+        const reelMusicTitle = document.getElementById('reel-music-title');
+
+        // Virtual onboarding cursor elements
+        const cursorPointer = document.getElementById('cursor-pointer');
+        const appVideos = document.getElementById('app-videos');
+
+        // Initialize Simulator
+        function initSimulator() {
+            // Populate photo gallery items
+            renderGalleryGrid();
+
+            // Run system clock
+            setInterval(updateClock, 1000);
+            updateClock();
+
+            // Bind triggers
+            bindTriggers();
+
+            // Trigger Lock screen Dynamic Island greeting
+            triggerDynamicIsland("Welcome. Tap to unlock.");
+        }
+
+        // Live Clock generator
+        function updateClock() {
+            const date = new Date();
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const formatted = `${hours}:${minutes}`;
+            
+            document.getElementById('status-time').innerText = formatted;
+            document.getElementById('lock-clock').innerText = formatted;
+            
+            // Format date e.g. Friday, August 21
+            const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+            const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+            document.getElementById('lock-date').innerText = `${days[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}`;
+        }
+
+        // Dynamic Island expansion telemetry animation
+        function triggerDynamicIsland(text, duration = 3000) {
+            clearTimeout(islandTimer);
+            islandText.innerText = text;
+            island.classList.add('expanded');
+            
+            islandTimer = setTimeout(() => {
+                island.classList.remove('expanded');
+                setTimeout(() => {
+                    if (!island.classList.contains('expanded')) {
+                        islandText.innerText = "System Safe";
+                    }
+                }, 300);
+            }, duration);
+        }
+
+        let renderedVideosCount = 0;
+        const BATCH_SIZE = 12;
+
+        // Build google-photos style grid
+        function renderGalleryGrid() {
+            galleryGrid.innerHTML = '';
+            renderedVideosCount = 0;
+            loadNextBatch();
+            
+            // Infinite scroll scroll wheel & drag trigger
+            galleryGrid.addEventListener('scroll', () => {
+                if (galleryGrid.scrollTop + galleryGrid.clientHeight >= galleryGrid.scrollHeight - 35) {
+                    loadNextBatch();
+                }
+            });
+        }
+
+        function loadNextBatch() {
+            const itemsCount = videoPool.length;
+            if (renderedVideosCount >= itemsCount) return;
+
+            const start = renderedVideosCount;
+            const end = Math.min(start + BATCH_SIZE, itemsCount);
+
+            for (let idx = start; idx < end; idx++) {
+                const src = videoPool[idx];
+                const card = document.createElement('div');
+                card.className = `gallery-item ${idx === 0 ? 'focused' : ''}`;
+                card.setAttribute('data-index', idx);
+                
+                card.innerHTML = `
+                    <div class="gallery-item-icon">🎥</div>
+                    <video src="${src}" muted preload="metadata" playsinline></video>
+                    <span class="gallery-item-duration">0:15</span>
+                `;
+
+                // Single Click: focus item and play preview
+                card.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    focusGalleryCard(idx);
+                });
+
+                // Double Click: Open TikTok view
+                card.addEventListener('dblclick', (e) => {
+                    e.stopPropagation();
+                    openReelsFeed(idx);
+                });
+
+                galleryGrid.appendChild(card);
+            }
+
+            renderedVideosCount = end;
+        }
+
+        // Focus gallery card helper
+        function focusGalleryCard(index) {
+            // Remove previous focus states
+            const activeCard = galleryGrid.querySelector('.gallery-item.focused');
+            if (activeCard) {
+                activeCard.classList.remove('focused');
+                const v = activeCard.querySelector('video');
+                if (v) v.pause();
+            }
+
+            focusedCardIdx = index;
+            const cards = galleryGrid.querySelectorAll('.gallery-item');
+            const targetCard = cards[index];
+            
+            if (targetCard) {
+                targetCard.classList.add('focused');
+                const v = targetCard.querySelector('video');
+                if (v) {
+                    v.currentTime = 0;
+                    v.play().catch(e => {});
+                }
+                // Scroll card into view inside phone wrapper container
+                targetCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        // Onboarding Tap Gesture Auto-Animation
+        function runAutoOnboardingAnimation() {
+            setTimeout(() => {
+                // Determine screen coordinates of app-videos icon
+                const appRect = appVideos.getBoundingClientRect();
+                const screenRect = document.getElementById('phone-screen').getBoundingClientRect();
+                
+                // Calculate position relative to phone screen viewport
+                const top = appRect.top - screenRect.top + (appRect.height / 2);
+                const left = appRect.left - screenRect.left + (appRect.width / 2);
+
+                // Make pointer visible and animate movement
+                cursorPointer.style.opacity = '1';
+                cursorPointer.style.top = top + 'px';
+                cursorPointer.style.left = left + 'px';
+
+                // Trigger tap click visual ripple
+                setTimeout(() => {
+                    cursorPointer.classList.add('tapping');
+                    appVideos.classList.add('focused');
+
+                    setTimeout(() => {
+                        // Open Gallery app
+                        cursorPointer.classList.remove('tapping');
+                        cursorPointer.style.opacity = '0';
+                        openGalleryApp();
+                    }, 400);
+
+                }, 1600);
+
+            }, 600);
+        }
+
+        // Toggle state triggers
+        function unlockPhone() {
+            if (!isPhoneLocked) return;
+            isPhoneLocked = false;
+            screenState = 'launcher';
+            
+            lockscreen.classList.add('unlocked');
+            launcher.classList.remove('hidden');
+            triggerDynamicIsland("Unlocked Grid");
+
+            // Run automated onboarding to Photos gallery app
+            runAutoOnboardingAnimation();
+        }
+
+        function lockPhone() {
+            isPhoneLocked = true;
+            screenState = 'lock';
+            
+            lockscreen.classList.remove('unlocked');
+            launcher.classList.add('hidden');
+            gallery.classList.add('hidden');
+            reels.classList.add('hidden');
+            
+            reelVideo.pause();
+            
+            // Pause any playing previews in gallery
+            document.querySelectorAll('.gallery-item video').forEach(v => v.pause());
+
+            triggerDynamicIsland("System Locked");
+        }
+
+        function openGalleryApp() {
+            screenState = 'gallery';
+            launcher.classList.add('hidden');
+            gallery.classList.remove('hidden');
+            
+            triggerDynamicIsland("Videos Opened");
+            focusGalleryCard(0);
+        }
+
+        function closeGalleryApp() {
+            screenState = 'launcher';
+            gallery.classList.add('hidden');
+            launcher.classList.remove('hidden');
+            
+            // Pause active previews
+            document.querySelectorAll('.gallery-item video').forEach(v => v.pause());
+            triggerDynamicIsland("Launcher Home");
+        }
+
+        // TikTok Reels Feed controller
+        function openReelsFeed(index) {
+            screenState = 'reel';
+            gallery.classList.add('hidden');
+            reels.classList.remove('hidden');
+            
+            // Pause gallery active previews
+            document.querySelectorAll('.gallery-item video').forEach(v => v.pause());
+
+            currentReelIndex = index;
+            loadReelVideo(index);
+        }
+
+        function closeReelsFeed() {
+            screenState = 'gallery';
+            reels.classList.add('hidden');
+            gallery.classList.remove('hidden');
+            
+            reelVideo.pause();
+            
+            triggerDynamicIsland("Photos Grid");
+            focusGalleryCard(currentReelIndex);
+        }
+
+        // Load active stream in Tik Tok feed
+        function loadReelVideo(index) {
+            const src = videoPool[index];
+            reelVideo.src = src;
+            reelVideo.play().catch(e => {});
+
+            // Reset liked UI state
+            actionLike.classList.remove('liked');
+            likesCount.innerText = `${(Math.random() * 8 + 1).toFixed(1)}K`;
+
+            // Extract filename to display as title/music description
+            const baseName = src.substring(src.lastIndexOf('/') + 1);
+            reelDesc.innerText = `Awesome loops stream check: #${baseName.split('_').slice(-2, -1)[0] || 'loops'} #reels #art`;
+            reelMusicTitle.innerText = `Original Sound - @creators_loop - ${baseName}`;
+
+            triggerDynamicIsland(`Streaming Feed ${index + 1}`);
+
+            // Bind video duration scrubber tick
+            reelVideo.ontimeupdate = () => {
+                const percent = (reelVideo.currentTime / reelVideo.duration) * 100;
+                reelTimelineFill.style.width = percent + '%';
+            };
+        }
+
+        function navigateReel(direction) {
+            let nextIdx = currentReelIndex + direction;
+            if (nextIdx < 0) nextIdx = videoPool.length - 1;
+            else if (nextIdx >= videoPool.length) nextIdx = 0;
+            
+            // Animate transition slide
+            const playerBox = document.getElementById('reel-player');
+            playerBox.style.transform = `translateY(${direction * -100}%)`;
+            
+            setTimeout(() => {
+                playerBox.style.transition = 'none';
+                playerBox.style.transform = `translateY(${direction * 100}%)`;
+                
+                loadReelVideo(nextIdx);
+                currentReelIndex = nextIdx;
+
+                setTimeout(() => {
+                    playerBox.style.transition = 'transform 0.4s cubic-bezier(0.1, 0.76, 0.55, 0.94)';
+                    playerBox.style.transform = 'translateY(0)';
+                }, 50);
+            }, 350);
+        }
+
+        // Double Click Heart Likes trigger
+        function likeActiveReel(e) {
+            // Apply liked style
+            actionLike.classList.add('liked');
+
+            // Trigger big center popping heart
+            popHeart.classList.remove('pop');
+            void popHeart.offsetWidth; // force reflow
+            
+            // Center the heart where double clicked, or center of video
+            if (e && e.clientX && e.clientY) {
+                const screenRect = document.getElementById('phone-screen').getBoundingClientRect();
+                popHeart.style.top = (e.clientY - screenRect.top - 40) + 'px';
+                popHeart.style.left = (e.clientX - screenRect.left - 40) + 'px';
+            } else {
+                popHeart.style.top = '300px';
+                popHeart.style.left = '140px';
+            }
+            
+            popHeart.classList.add('pop');
+
+            // Spawn floating bubble bubbles
+            spawnFloatingHearts();
+        }
+
+        function spawnFloatingHearts() {
+            const container = document.getElementById('reels-container');
+            for (let i = 0; i < 4; i++) {
+                const heart = document.createElement('span');
+                heart.innerText = "❤️";
+                heart.className = "floating-heart";
+                
+                // Spawn randomly around the right sidebar action buttons
+                heart.style.right = '40px';
+                const y = Math.floor(Math.random() * 80) + 480;
+                heart.style.top = y + 'px';
+                heart.style.setProperty('--x', (Math.random() * 30 - 15) + 'px');
+                
+                container.appendChild(heart);
+                setTimeout(() => heart.remove(), 1200);
+            }
+        }
+
+        // Bind interactive events
+        function bindTriggers() {
+            // Hardware Power click
+            document.getElementById('hw-power-btn').addEventListener('click', () => {
+                if (isPhoneLocked) unlockPhone();
+                else lockPhone();
+            });
+
+            // Unlock prompt click
+            document.getElementById('unlock-btn').addEventListener('click', unlockPhone);
+
+            // Double Click phone screen when locked to unlock
+            lockscreen.addEventListener('dblclick', unlockPhone);
+
+            // Click launcher app icon manually
+            appVideos.addEventListener('click', openGalleryApp);
+
+            // Gallery back button click
+            document.getElementById('gallery-home-btn').addEventListener('click', closeGalleryApp);
+
+            // Reels Exit button
+            document.getElementById('reel-exit-btn').addEventListener('click', closeReelsFeed);
+
+            // Like sidebar button click
+            actionLike.addEventListener('click', () => {
+                if (actionLike.classList.contains('liked')) {
+                    actionLike.classList.remove('liked');
+                } else {
+                    likeActiveReel();
+                }
+            });
+
+            // Double click active reel video viewport to like
+            document.getElementById('reel-player').addEventListener('dblclick', (e) => {
+                likeActiveReel(e);
+            });
+        }
+
+        // D-Pad D-pad matrix grid navigation
+        function navigateGalleryGrid(dir) {
+            const cols = 3;
+            const itemsCount = videoPool.length;
+
+            let nextIdx = focusedCardIdx;
+            if (dir === 'left') {
+                if (focusedCardIdx - 1 >= 0) nextIdx = focusedCardIdx - 1;
+            } else if (dir === 'right') {
+                if (focusedCardIdx + 1 < itemsCount) nextIdx = focusedCardIdx + 1;
+            } else if (dir === 'down') {
+                if (focusedCardIdx + cols < itemsCount) nextIdx = focusedCardIdx + cols;
+            } else if (dir === 'up') {
+                if (focusedCardIdx - cols >= 0) nextIdx = focusedCardIdx - cols;
+            }
+            
+            if (nextIdx !== focusedCardIdx) {
+                // Ensure the items are loaded in the DOM before we focus
+                while (nextIdx >= renderedVideosCount && renderedVideosCount < itemsCount) {
+                    loadNextBatch();
+                }
+                focusGalleryCard(nextIdx);
+            }
+        }
+
+        // Keyboard listeners
+        document.addEventListener('keydown', (e) => {
+            if (isPhoneLocked) {
+                if (e.code === 'Space' || e.code === 'Enter') {
+                    e.preventDefault();
+                    unlockPhone();
+                }
+                return;
+            }
+
+            if (screenState === 'gallery') {
+                switch(e.code) {
+                    case 'ArrowLeft':
+                        e.preventDefault();
+                        navigateGalleryGrid('left');
+                        break;
+                    case 'ArrowRight':
+                        e.preventDefault();
+                        navigateGalleryGrid('right');
+                        break;
+                    case 'ArrowUp':
+                        e.preventDefault();
+                        navigateGalleryGrid('up');
+                        break;
+                    case 'ArrowDown':
+                        e.preventDefault();
+                        navigateGalleryGrid('down');
+                        break;
+                    case 'Enter':
+                        e.preventDefault();
+                        openReelsFeed(focusedCardIdx);
+                        break;
+                    case 'Backspace':
+                    case 'Escape':
+                        e.preventDefault();
+                        closeGalleryApp();
+                        break;
+                }
+            } else if (screenState === 'reel') {
+                switch(e.code) {
+                    case 'ArrowUp':
+                        e.preventDefault();
+                        navigateReel(-1); // previous loop
+                        break;
+                    case 'ArrowDown':
+                        e.preventDefault();
+                        navigateReel(1); // next loop
+                        break;
+                    case 'Space':
+                        e.preventDefault();
+                        if (reelVideo.paused) {
+                            reelVideo.play();
+                            triggerDynamicIsland("Video Playing");
+                        } else {
+                            reelVideo.pause();
+                            triggerDynamicIsland("Video Paused");
+                        }
+                        break;
+                    case 'KeyL':
+                        likeActiveReel();
+                        break;
+                    case 'Backspace':
+                    case 'Escape':
+                        e.preventDefault();
+                        closeReelsFeed();
+                        break;
+                }
+            } else if (screenState === 'launcher') {
+                if (e.code === 'Enter') {
+                    openGalleryApp();
+                } else if (e.code === 'Escape' || e.code === 'Backspace') {
+                    lockPhone();
+                }
+            }
+        });
+
+        // Launch Simulator
+        window.addEventListener('DOMContentLoaded', initSimulator);
+    </script>
+</body>
+</html>

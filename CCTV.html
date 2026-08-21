@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCTV Security Control Dashboard</title>
+    <!-- Include auto-generated files list -->
+    <script src="files.js" onerror="console.warn('files.js not found. Using fallback files.')"></script>
+    <style>
+        :root {
+            --bg-color: #050508;
+            --panel-bg: rgba(10, 10, 16, 0.85);
+            --panel-border: rgba(0, 255, 128, 0.15);
+            --accent-color: #00ff80;
+            --accent-glow: rgba(0, 255, 128, 0.4);
+            --text-color: #e0f8eb;
+            --text-muted: rgba(224, 248, 235, 0.5);
+            --btn-bg: rgba(0, 255, 128, 0.05);
+            --btn-hover: rgba(0, 255, 128, 0.2);
+            --alert-color: #ff3b3b;
+        }
+
+        /* Color presets matching filters */
+        body.filter-monochrome {
+            --accent-color: #ffffff;
+            --accent-glow: rgba(255, 255, 255, 0.3);
+            --text-color: #ffffff;
+            --text-muted: rgba(255, 255, 255, 0.5);
+            --btn-bg: rgba(255, 255, 255, 0.08);
+            --btn-hover: rgba(255, 255, 255, 0.2);
+        }
+
+        body.filter-nightvision {
+            --accent-color: #39ff14;
+            --accent-glow: rgba(57, 255, 20, 0.5);
+            --text-color: #bfffbf;
+            --text-muted: rgba(57, 255, 20, 0.4);
+            --btn-bg: rgba(57, 255, 20, 0.06);
+            --btn-hover: rgba(57, 255, 20, 0.25);
+        }
+
+        body.filter-amber {
+            --accent-color: #ffb000;
+            --accent-glow: rgba(255, 176, 0, 0.5);
+            --text-color: #ffe6b3;
+            --text-muted: rgba(255, 176, 0, 0.4);
+            --btn-bg: rgba(255, 176, 0, 0.06);
+            --btn-hover: rgba(255, 176, 0, 0.25);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at center, #10101b 0%, #050508 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Courier New', Courier, monospace, sans-serif;
+            color: var(--text-color);
+            overflow: hidden;
+            padding: 15px;
+        }
+
+        /* Scanline global CRT effect */
+        body.crt-active::after {
+            content: " ";
+            display: block;
+            position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.3) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 9999;
+            background-size: 100% 4px, 6px 100%;
+            pointer-events: none;
+        }
+
+        /* Layout Grid Wrapper */
+        header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 6px;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+            z-index: 10;
+        }
+
+        .header-title-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        header h1 {
+            font-size: 1.25rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            color: var(--accent-color);
+            text-shadow: 0 0 10px var(--accent-glow);
+            text-transform: uppercase;
+        }
+
+        .sys-status {
+            font-size: 0.8rem;
+            background: rgba(0, 255, 128, 0.1);
+            border: 1px solid var(--accent-color);
+            padding: 3px 8px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .sys-status.alert-mode {
+            background: rgba(255, 59, 59, 0.1);
+            border-color: var(--alert-color);
+            color: var(--alert-color);
+            animation: blink 1s step-end infinite;
+        }
+
+        .sys-time {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: var(--text-color);
+        }
+
+        /* Container Main Layout */
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 15px;
+            flex-grow: 1;
+            height: calc(100vh - 95px);
+            min-height: 480px;
+        }
+
+        @media (max-width: 992px) {
+            .dashboard-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr auto;
+                height: auto;
+                overflow-y: auto;
+            }
+        }
+
+        /* Grid Viewport */
+        .grid-viewport-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.9);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* CCTV CSS Grid */
+        .cctv-grid {
+            display: grid;
+            gap: 10px;
+            width: 100%;
+            height: 100%;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Grid Types */
+        .cctv-grid.layout-2x2 {
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+        }
+
+        .cctv-grid.layout-3x3 {
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+        }
+
+        .cctv-grid.layout-4x4 {
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+        }
+
+        .cctv-grid.layout-split {
+            grid-template-columns: 2.2fr 1fr;
+            grid-template-rows: repeat(5, 1fr);
+        }
+
+        .cctv-grid.layout-split .cctv-monitor:first-child {
+            grid-column: 1;
+            grid-row: 1 / 6;
+        }
+
+        /* CCTV Monitor Box */
+        .cctv-monitor {
+            position: relative;
+            background: #000;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+        }
+
+        .cctv-monitor video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.85;
+            transition: opacity 0.3s;
+        }
+
+        .cctv-monitor:hover video {
+            opacity: 1;
+        }
+
+        .cctv-monitor.selected {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        .cctv-monitor.selected video {
+            opacity: 1;
+        }
+
+        /* CCTV Text Overlay inside each Feed */
+        .cctv-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 8px 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            pointer-events: none;
+            z-index: 5;
+            font-size: 0.7rem;
+            color: var(--text-color);
+            text-shadow: 1px 1px 2px #000, -1px -1px 2px #000;
+        }
+
+        .cctv-header-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .cctv-cam-name {
+            font-weight: bold;
+            letter-spacing: 0.5px;
+        }
+
+        .cctv-rec-status {
+            color: var(--alert-color);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-weight: bold;
+        }
+
+        .blinking-dot {
+            animation: blink 1s step-end infinite;
+        }
+
+        .cctv-footer-info {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Filter applications */
+        .filter-monochrome .cctv-monitor video {
+            filter: grayscale(1) contrast(1.3) brightness(0.9);
+        }
+
+        .filter-nightvision .cctv-monitor video {
+            filter: grayscale(1) sepia(1) hue-rotate(80deg) saturate(3.5) contrast(1.4) brightness(1.2);
+        }
+
+        .filter-amber .cctv-monitor video {
+            filter: grayscale(1) sepia(1) hue-rotate(5deg) saturate(4) contrast(1.3) brightness(0.95);
+        }
+
+        /* Glitch Noise layer */
+        .cctv-noise {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('data:image/svg+xml,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)"/%3E%3C/svg%3E');
+            opacity: 0;
+            z-index: 4;
+            pointer-events: none;
+        }
+
+        .cctv-monitor.glitching .cctv-noise {
+            animation: static-glitch 0.3s steps(3) infinite;
+            opacity: 0.35;
+        }
+
+        @keyframes static-glitch {
+            0% { background-position: 0 0; }
+            100% { background-position: 100% 100%; }
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+
+        /* CLIENT FULLSCREEN LIGHTBOX */
+        body.crt-active:has(.cctv-monitor.focused)::after {
+            display: none;
+        }
+
+        .cctv-monitor.focused {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 2000 !important;
+            border: none;
+            border-radius: 0;
+            margin: 0;
+            transform: none !important;
+            cursor: default;
+        }
+
+        .cctv-monitor.focused video {
+            object-fit: contain;
+            width: 100%;
+            height: 100%;
+            opacity: 1;
+            filter: none !important;
+        }
+
+        .cctv-monitor.focused .cctv-overlay,
+        .cctv-monitor.focused .cctv-noise {
+            display: none !important;
+        }
+
+        /* Sidebar Control Center */
+        .control-sidebar {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding: 15px;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+        }
+
+        .control-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            border-bottom: 1px solid rgba(0, 255, 128, 0.1);
+            padding-bottom: 12px;
+        }
+
+        .control-section:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .control-section h2 {
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: var(--accent-color);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        /* Control Buttons styling */
+        .btn-group {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .btn-group.full-width {
+            grid-template-columns: 1fr;
+        }
+
+        .control-btn {
+            background: var(--btn-bg);
+            border: 1px solid var(--panel-border);
+            color: var(--text-color);
+            font-family: inherit;
+            font-size: 0.75rem;
+            padding: 8px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+            text-transform: uppercase;
+        }
+
+        .control-btn:hover {
+            background: var(--btn-hover);
+            box-shadow: 0 0 8px var(--accent-glow);
+        }
+
+        .control-btn.active {
+            background: var(--accent-color);
+            color: #000;
+            font-weight: bold;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        /* Custom Switch */
+        .switch-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+        }
+
+        .switch-label {
+            color: var(--text-color);
+        }
+
+        /* Live Terminal Log */
+        .log-terminal {
+            flex-grow: 1;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(0, 255, 128, 0.2);
+            border-radius: 4px;
+            padding: 10px;
+            overflow-y: auto;
+            font-size: 0.7rem;
+            line-height: 1.4;
+            color: var(--accent-color);
+            min-height: 140px;
+            max-height: 300px;
+            display: flex;
+            flex-direction: column-reverse;
+        }
+
+        .log-line {
+            margin-bottom: 4px;
+            word-break: break-all;
+        }
+
+        .log-line.system {
+            color: var(--accent-color);
+        }
+
+        .log-line.alert {
+            color: var(--alert-color);
+        }
+
+        .log-line.selected-cam {
+            color: #5bc0de;
+        }
+
+        /* Scrollbars */
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.2);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--panel-border);
+            border-radius: 2px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-color);
+        }
+
+        /* Close Button Overlay */
+        .close-button {
+            position: fixed;
+            top: 25px;
+            right: 35px;
+            width: 45px;
+            height: 45px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid var(--accent-color);
+            border-radius: 50%;
+            color: var(--accent-color);
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 2500;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .close-button:hover {
+            background: var(--accent-color);
+            color: #000;
+        }
+
+        .close-button.visible {
+            display: flex;
+        }
+
+        /* Overlay helper labels */
+        .help-panel {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            padding: 5px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 4px;
+        }
+
+        /* Preloader overlay style */
+        #preloader {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #050508;
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: inherit;
+        }
+        .progress-box {
+            width: 250px;
+            text-align: center;
+        }
+        .progress-bar-container {
+            width: 100%; height: 5px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 2px;
+            margin-top: 15px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .progress-bar-fill {
+            width: 0%; height: 100%;
+            background: var(--accent-color);
+            box-shadow: 0 0 10px var(--accent-glow);
+            transition: width 0.1s ease;
+        }
+    </style>
+</head>
+<body class="crt-active">
+
+    <!-- Preloader -->
+    <div id="preloader">
+        <div class="progress-box">
+            <h3 style="color: var(--accent-color); text-transform: uppercase; letter-spacing: 2px; font-size: 0.95rem;">Establishing CCTV Feeds</h3>
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill" id="preloader-bar"></div>
+            </div>
+            <div style="font-size: 0.7rem; margin-top: 8px; color: var(--text-muted);" id="preloader-text">Configuring receiver...</div>
+        </div>
+    </div>
+
+    <!-- Screen Close Button -->
+    <button class="close-button" id="closeButton" title="Exit Full Screen (ESC)">×</button>
+
+    <!-- Main Header -->
+    <header>
+        <div class="header-title-section">
+            <h1>CCTV SECURE MONITORING NETWORK</h1>
+            <div class="sys-status" id="sys-status">
+                <span class="blinking-dot">●</span> SYSTEM ON-LINE
+            </div>
+        </div>
+        <div class="sys-time" id="sys-time">DATE: 2026-08-21 | TIME: 06:38:07</div>
+    </header>
+
+    <!-- Layout Grid and Sidebar -->
+    <div class="dashboard-container">
+        
+        <!-- Grid Viewport -->
+        <div class="grid-viewport-card">
+            <div class="cctv-grid layout-3x3" id="cctv-grid">
+                <!-- CCTV Monitor blocks will be populated dynamically -->
+            </div>
+        </div>
+
+        <!-- Sidebar Control center -->
+        <div class="control-sidebar">
+            
+            <!-- Grid Layout section -->
+            <div class="control-section">
+                <h2>Layout Selection</h2>
+                <div class="btn-group">
+                    <button class="control-btn" data-layout="2x2">GRID 2X2</button>
+                    <button class="control-btn active" data-layout="3x3">GRID 3X3</button>
+                    <button class="control-btn" data-layout="4x4">GRID 4X4</button>
+                    <button class="control-btn" data-layout="split">SPLIT 1+5</button>
+                </div>
+            </div>
+
+            <!-- CCTV Camera Filter Styles -->
+            <div class="control-section">
+                <h2>CCTV Filter Style</h2>
+                <div class="btn-group">
+                    <button class="control-btn active" data-filter="normal">RAW COLOR</button>
+                    <button class="control-btn" data-filter="monochrome">B&W MONO</button>
+                    <button class="control-btn" data-filter="nightvision">NIGHT VISION</button>
+                    <button class="control-btn" data-filter="amber">AMBER CRT</button>
+                </div>
+            </div>
+
+            <!-- Interactivity switches -->
+            <div class="control-section">
+                <h2>Dashboard Settings</h2>
+                <div class="switch-row">
+                    <span class="switch-label">CRT Scanlines & Noise</span>
+                    <button class="control-btn active" id="crt-toggle" style="padding: 4px 8px; font-size: 0.65rem;">ON</button>
+                </div>
+                <div class="switch-row" style="margin-top: 8px;">
+                    <span class="switch-label">Auto Feed Rotation</span>
+                    <button class="control-btn" id="rotate-toggle" style="padding: 4px 8px; font-size: 0.65rem;">OFF</button>
+                </div>
+            </div>
+
+            <!-- Manual Shuffle / Refresh feeds -->
+            <div class="control-section">
+                <h2>Feed Management</h2>
+                <div class="btn-group full-width">
+                    <button class="control-btn" id="shuffle-btn">Manual Shuffle Feeds</button>
+                    <button class="control-btn" id="trigger-alarm-btn">Simulate Alarm System</button>
+                </div>
+            </div>
+
+            <!-- Keybind Instructions -->
+            <div class="control-section">
+                <h2>Shortcuts Reference</h2>
+                <div class="help-panel">
+                    [Double Click] Fullscreen client view<br>
+                    [Single Click] Select camera (Unmute)<br>
+                    [Scroll Wheel] Shuffle active feeds<br>
+                    [Spacebar] Play / Pause all feeds<br>
+                    [ESC] Exit Fullscreen mode<br>
+                    [Left / Right Arrow] Cycle focus camera<br>
+                    [1 - 9] Select Camera 1 to 9
+                </div>
+            </div>
+
+            <!-- System logs -->
+            <div class="control-section" style="flex-grow: 1; display: flex; flex-direction: column; border-bottom: none;">
+                <h2>SEC_LOG Feed</h2>
+                <div class="log-terminal" id="log-terminal">
+                    <!-- Logs generated in script -->
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Scripting Dashboard Interactions -->
+    <script>
+        // Fallback videos in case files.js is unavailable
+        const fallbackVideos = [
+            "assets/videos/tumblr_0a3f03f882b557143357653b5d740a64_55f2d1d4_720.mp4",
+            "assets/videos/tumblr_0b0daa639b633fef45db55b1eb4d7fb7_f50cbe4f_720.mp4",
+            "assets/videos/tumblr_0fc25f96d95cf617d6342efb088ad52c_5fb4ea2f_720.mp4",
+            "assets/videos/tumblr_127a4362c8398f00f27e9dc97e95526f_49155ba4_720.mp4",
+            "assets/videos/tumblr_1d5e203f16b07ac38ba76f45c6249570_d4c77875_720.mp4",
+            "assets/videos/tumblr_1efdffc08f67914e20bd0a1a22b6e9e2_b3a07469_720.mp4",
+            "assets/videos/tumblr_1fe1a544a60a0790c1aef184ce7b69a9_029c29ec_720.mp4",
+            "assets/videos/tumblr_2221b2703ed1d97c75677f5a2442328d_e6f00567_720.mp4",
+            "assets/videos/tumblr_2632aa12d0052ecce280713b5fe1738b_f59b7695_720.mp4",
+            "assets/videos/tumblr_27045c0f917a19eb96c3f592b7cc0044_67f7f816_0.mp4"
+        ];
+
+        // Retrieve video pool
+        let videoPool = [];
+        if (window.collageFiles && Array.isArray(window.collageFiles.videos) && window.collageFiles.videos.length > 0) {
+            videoPool = window.collageFiles.videos;
+        } else {
+            console.log("No videos found in files.js, applying fallback list.");
+            videoPool = fallbackVideos;
+        }
+
+        // Dashboard State variables
+        let activeLayout = '3x3'; // '2x2', '3x3', '4x4', 'split'
+        let currentVideos = [];
+        let selectedMonitor = null;
+        let focusedMonitor = null;
+        let rotationTimer = null;
+        let isRotationActive = false;
+        let isPlaying = true;
+        let isCRTActive = true;
+        let activeFilter = 'normal';
+
+        // Camera locations list for realistic overlays
+        const cameraLocations = [
+            "FRONT ENTRY GATE", "PARKING DECK A", "RECEPTION AREA", "LOBBY NORTH",
+            "SERVER ROOM 01", "BACK EXIT HALL", "LOADING DOCK 02", "PERIMETER WEST",
+            "ELEVATOR SHAFT", "ROOF ACCESS DECK", "CONFERENCE HALL", "CORRIDOR SOUTH",
+            "STAIRWELL EAST", "VAULT INTERIOR", "MAIN WAREHOUSE", "REST AREA COFFEE"
+        ];
+
+        // Elements
+        const cctvGrid = document.getElementById('cctv-grid');
+        const sysTimeDisplay = document.getElementById('sys-time');
+        const closeButton = document.getElementById('closeButton');
+        const logTerminal = document.getElementById('log-terminal');
+        const sysStatus = document.getElementById('sys-status');
+
+        // Initial setup preloader
+        async function fetchVideosAPI() {
+            try {
+                const response = await fetch('/api/files?folder=videos');
+                if (response.ok) {
+                    const files = await response.json();
+                    const newFiles = files.filter(filePath => !videoPool.includes(filePath));
+                    if (newFiles.length > 0) {
+                        videoPool = [...videoPool, ...newFiles];
+                        addLogLine("system", `System scanned: ${newFiles.length} additional camera streams connected.`);
+                    }
+                }
+            } catch (e) {
+                console.log('No backend server detected. Sticking to static metadata.');
+            }
+        }
+
+        function runPreloader() {
+            let loadedCount = 0;
+            const targetCount = 100;
+            const fill = document.getElementById('preloader-bar');
+            const text = document.getElementById('preloader-text');
+
+            addLogLine("system", "CCTV control network initialization sequence started.");
+            
+            const interval = setInterval(() => {
+                loadedCount += Math.floor(Math.random() * 20) + 5;
+                if (loadedCount >= targetCount) {
+                    loadedCount = targetCount;
+                    fill.style.width = '100%';
+                    text.innerText = "System online. Feeds stable.";
+                    clearInterval(interval);
+                    
+                    setTimeout(() => {
+                        document.getElementById('preloader').style.opacity = 0;
+                        setTimeout(() => {
+                            document.getElementById('preloader').style.display = 'none';
+                        }, 450);
+                        initDashboard();
+                    }, 500);
+                } else {
+                    fill.style.width = loadedCount + '%';
+                    text.innerText = `Synchronizing feeds... ${loadedCount}%`;
+                }
+            }, 60);
+        }
+
+        // Fisher-Yates shuffle
+        function getShuffledVideos(count) {
+            const temp = [...videoPool];
+            for (let i = temp.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [temp[i], temp[j]] = [temp[j], temp[i]];
+            }
+            return temp.slice(0, count);
+        }
+
+        // Initialize dashboard components
+        async function initDashboard() {
+            // Try fetching dynamically
+            await fetchVideosAPI();
+            
+            // Build the layout grid
+            buildGrid();
+
+            // Run system clock
+            setInterval(updateClock, 1000);
+            updateClock();
+
+            // Setup button control listeners
+            bindButtons();
+
+            // Setup simulated security events generator
+            setInterval(generateSimulatedSecurityLogs, 8000);
+            addLogLine("system", "Network control center connected. 32 security checkpoints online.");
+        }
+
+        // Build the active grid monitors
+        function buildGrid() {
+            cctvGrid.innerHTML = '';
+            selectedMonitor = null;
+
+            // Determine monitor count based on layout selection
+            let monitorCount = 9;
+            if (activeLayout === '2x2') monitorCount = 4;
+            else if (activeLayout === '4x4') monitorCount = 16;
+            else if (activeLayout === 'split') monitorCount = 6; // 1 large + 5 small
+
+            // Update container style class
+            cctvGrid.className = `cctv-grid layout-${activeLayout}`;
+            
+            // Draw a new video set
+            currentVideos = getShuffledVideos(monitorCount);
+
+            currentVideos.forEach((src, idx) => {
+                const cameraIndex = idx + 1;
+                const camLabel = `CAM ${String(cameraIndex).padStart(2, '0')}`;
+                const locationLabel = cameraLocations[idx % cameraLocations.length];
+
+                // Create Monitor Block
+                const monitor = document.createElement('div');
+                monitor.className = 'cctv-monitor';
+                monitor.setAttribute('data-id', idx);
+                monitor.setAttribute('data-cam', camLabel);
+
+                const video = document.createElement('video');
+                video.src = src;
+                video.autoplay = isPlaying;
+                video.muted = true;
+                video.loop = true;
+                video.playsInline = true;
+
+                // Handle video loaded metadata for extra telemetry realism
+                let resolution = "1080p";
+                let size = "5.4 Mbps";
+                video.onloadedmetadata = () => {
+                    const w = video.videoWidth;
+                    const h = video.videoHeight;
+                    if (w && h) {
+                        resolution = `${w}x${h}`;
+                        size = `${(Math.random() * 4 + 2).toFixed(1)} Mbps`;
+                        const resSpan = monitor.querySelector('.cctv-res');
+                        const speedSpan = monitor.querySelector('.cctv-bitrate');
+                        if (resSpan) resSpan.innerText = resolution;
+                        if (speedSpan) speedSpan.innerText = size;
+                    }
+                };
+
+                // Create Info Overlay
+                const overlay = document.createElement('div');
+                overlay.className = 'cctv-overlay';
+                overlay.innerHTML = `
+                    <div class="cctv-header-info">
+                        <span class="cctv-cam-name">${camLabel} - ${locationLabel}</span>
+                        <span class="cctv-rec-status"><span class="blinking-dot">●</span> REC</span>
+                    </div>
+                    <div class="cctv-footer-info">
+                        <span class="cctv-mon-time">${getFormattedTimestamp()}</span>
+                        <div>
+                            <span class="cctv-res" style="margin-right: 8px;">${resolution}</span>
+                            <span class="cctv-bitrate">${size}</span>
+                        </div>
+                    </div>
+                `;
+
+                // Add Glitch overlays
+                const noise = document.createElement('div');
+                noise.className = 'cctv-noise';
+
+                monitor.appendChild(video);
+                monitor.appendChild(overlay);
+                monitor.appendChild(noise);
+                cctvGrid.appendChild(monitor);
+
+                // Grid Monitor Event Listeners
+                // Single Click: Select camera
+                monitor.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (focusedMonitor) return; // ignore when fullscreen
+                    selectCamera(monitor);
+                });
+
+                // Double Click: Fullscreen focus
+                monitor.addEventListener('dblclick', (e) => {
+                    e.stopPropagation();
+                    focusCamera(monitor);
+                });
+            });
+
+            // Automatically select the first camera feed
+            const firstMonitor = cctvGrid.querySelector('.cctv-monitor');
+            if (firstMonitor) selectCamera(firstMonitor);
+
+            addLogLine("system", `Rendered ${monitorCount} active feeds in ${activeLayout} layout.`);
+        }
+
+        // Selection monitor logic
+        function selectCamera(monitor) {
+            // Remove previous selection highlights
+            const currentSelected = cctvGrid.querySelector('.cctv-monitor.selected');
+            if (currentSelected) {
+                currentSelected.classList.remove('selected');
+                const prevVideo = currentSelected.querySelector('video');
+                if (prevVideo) prevVideo.muted = true;
+            }
+
+            // Apply selected styling
+            monitor.classList.add('selected');
+            selectedMonitor = monitor;
+
+            // Unmute selected camera
+            const video = monitor.querySelector('video');
+            if (video) {
+                video.muted = false;
+            }
+
+            const camName = monitor.getAttribute('data-cam');
+            addLogLine("selected-cam", `Monitoring unmuted: Selected feed pointer on ${camName}.`);
+        }
+
+        // Fullscreen viewport focus logic
+        function focusCamera(monitor) {
+            focusedMonitor = monitor;
+            
+            // Add focused class which stretches it over entire window
+            monitor.classList.add('focused');
+            closeButton.classList.add('visible');
+
+            // Force unmute
+            const video = monitor.querySelector('video');
+            if (video) video.muted = false;
+
+            addLogLine("system", `Fullscreen view lock acquired on ${monitor.getAttribute('data-cam')}.`);
+        }
+
+        function exitFullscreenFocus() {
+            if (!focusedMonitor) return;
+
+            focusedMonitor.classList.remove('focused');
+            closeButton.classList.remove('visible');
+
+            // Restore selection defaults (mute/unmute checks)
+            if (selectedMonitor !== focusedMonitor) {
+                const video = focusedMonitor.querySelector('video');
+                if (video) video.muted = true;
+            }
+
+            addLogLine("system", `Fullscreen view lock released.`);
+            focusedMonitor = null;
+        }
+
+        // Manual Shuffle video feed contents
+        function shuffleFeeds() {
+            const monitors = cctvGrid.querySelectorAll('.cctv-monitor');
+            const newVideos = getShuffledVideos(monitors.length);
+
+            addLogLine("system", "Manual synchronization: Re-indexing camera feeds.");
+
+            monitors.forEach((monitor, idx) => {
+                if (newVideos[idx]) {
+                    monitor.classList.add('glitching');
+                    const video = monitor.querySelector('video');
+                    
+                    setTimeout(() => {
+                        if (video) {
+                            video.src = newVideos[idx];
+                            video.autoplay = isPlaying;
+                            if (monitor.classList.contains('selected')) {
+                                video.muted = false;
+                            } else {
+                                video.muted = true;
+                            }
+                            video.load();
+                        }
+                        
+                        setTimeout(() => {
+                            monitor.classList.remove('glitching');
+                        }, 250);
+                    }, Math.random() * 300 + 100);
+                }
+            });
+        }
+
+        // Auto Rotation feeds logic
+        function toggleRotation(forceState = null) {
+            isRotationActive = (forceState !== null) ? forceState : !isRotationActive;
+            const toggleBtn = document.getElementById('rotate-toggle');
+
+            if (isRotationActive) {
+                toggleBtn.innerText = "ON";
+                toggleBtn.classList.add('active');
+                addLogLine("system", "Automatic feed rotation cycles initialized (10s intervals).");
+                
+                rotationTimer = setInterval(() => {
+                    if (!focusedMonitor) {
+                        shuffleFeeds();
+                    }
+                }, 10000);
+            } else {
+                toggleBtn.innerText = "OFF";
+                toggleBtn.classList.remove('active');
+                addLogLine("system", "Automatic feed rotation cycles suspended.");
+                clearInterval(rotationTimer);
+            }
+        }
+
+        // Bind control board buttons
+        function bindButtons() {
+            // Layout buttons
+            document.querySelectorAll('[data-layout]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('[data-layout]').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    activeLayout = btn.getAttribute('data-layout');
+                    buildGrid();
+                });
+            });
+
+            // Filter style buttons
+            document.querySelectorAll('[data-filter]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    // Remove old filters
+                    document.body.className = document.body.className.replace(/\bfilter-\S+/g, '');
+                    
+                    activeFilter = btn.getAttribute('data-filter');
+                    if (activeFilter !== 'normal') {
+                        document.body.classList.add(`filter-${activeFilter}`);
+                    }
+                    addLogLine("system", `Camera display filter mode adjusted to: ${activeFilter.toUpperCase()}.`);
+                });
+            });
+
+            // CRT switch
+            document.getElementById('crt-toggle').addEventListener('click', (e) => {
+                isCRTActive = !isCRTActive;
+                if (isCRTActive) {
+                    document.body.classList.add('crt-active');
+                    e.target.classList.add('active');
+                    e.target.innerText = "ON";
+                } else {
+                    document.body.classList.remove('crt-active');
+                    e.target.classList.remove('active');
+                    e.target.innerText = "OFF";
+                }
+            });
+
+            // Rotation toggle
+            document.getElementById('rotate-toggle').addEventListener('click', () => toggleRotation());
+
+            // Shuffle click
+            document.getElementById('shuffle-btn').addEventListener('click', shuffleFeeds);
+
+            // Simulation alarm system
+            document.getElementById('trigger-alarm-btn').addEventListener('click', triggerSimulatedAlarm);
+
+            // Close fullscreen button click
+            closeButton.addEventListener('click', exitFullscreenFocus);
+        }
+
+        // Cycle focus selection manually
+        function cycleSelectedCamera(direction) {
+            const monitors = Array.from(cctvGrid.querySelectorAll('.cctv-monitor'));
+            if (monitors.length === 0) return;
+
+            let currentIndex = monitors.indexOf(selectedMonitor);
+            if (currentIndex === -1) currentIndex = 0;
+
+            let nextIndex = (currentIndex + direction + monitors.length) % monitors.length;
+            selectCamera(monitors[nextIndex]);
+            
+            // If in fullscreen, update the focused monitor
+            if (focusedMonitor) {
+                exitFullscreenFocus();
+                focusCamera(monitors[nextIndex]);
+            }
+        }
+
+        // Play/Pause toggles
+        function toggleAllVideos() {
+            isPlaying = !isPlaying;
+            const videos = cctvGrid.querySelectorAll('video');
+            videos.forEach(v => {
+                if (isPlaying) v.play();
+                else v.pause();
+            });
+            addLogLine("system", `System playback command: ${isPlaying ? "RESUMED" : "PAUSED"}.`);
+        }
+
+        // Alarm system simulator
+        function triggerSimulatedAlarm() {
+            sysStatus.innerText = "🚨 ALARM SYSTEM TRIPPED";
+            sysStatus.classList.add('alert-mode');
+            document.body.style.setProperty('--accent-color', '#ff3b3b');
+            document.body.style.setProperty('--accent-glow', 'rgba(255, 59, 59, 0.45)');
+            
+            const randomCamIndex = Math.floor(Math.random() * 9) + 1;
+            const location = cameraLocations[randomCamIndex % cameraLocations.length];
+            addLogLine("alert", `🚨 SECURITY BREAKPOINT BREACH ON CAM 0${randomCamIndex} - ${location}!`);
+            
+            // Glitch the cameras during alarm trigger
+            const monitors = cctvGrid.querySelectorAll('.cctv-monitor');
+            monitors.forEach(m => {
+                m.classList.add('glitching');
+                setTimeout(() => m.classList.remove('glitching'), 1500);
+            });
+
+            // Revert alert state in 6 seconds
+            setTimeout(() => {
+                sysStatus.innerText = "● SYSTEM ON-LINE";
+                sysStatus.classList.remove('alert-mode');
+                
+                // Revert variables
+                let colorClass = 'normal';
+                const activeFilterBtn = document.querySelector('[data-filter].active');
+                if (activeFilterBtn) colorClass = activeFilterBtn.getAttribute('data-filter');
+                
+                if (colorClass === 'normal') {
+                    document.body.style.setProperty('--accent-color', '#00ff80');
+                    document.body.style.setProperty('--accent-glow', 'rgba(0, 255, 128, 0.4)');
+                } else if (colorClass === 'monochrome') {
+                    document.body.style.setProperty('--accent-color', '#ffffff');
+                    document.body.style.setProperty('--accent-glow', 'rgba(255, 255, 255, 0.3)');
+                } else if (colorClass === 'nightvision') {
+                    document.body.style.setProperty('--accent-color', '#39ff14');
+                    document.body.style.setProperty('--accent-glow', 'rgba(57, 255, 20, 0.5)');
+                } else if (colorClass === 'amber') {
+                    document.body.style.setProperty('--accent-color', '#ffb000');
+                    document.body.style.setProperty('--accent-glow', 'rgba(255, 176, 0, 0.5)');
+                }
+                
+                addLogLine("system", "Alert resolved. Perimeter security sweep complete.");
+            }, 6000);
+        }
+
+        // Live clock generator
+        function updateClock() {
+            const date = new Date();
+            const formatted = `DATE: ${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} | TIME: ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
+            sysTimeDisplay.innerText = formatted;
+
+            // Also update overlays time
+            const overlaysTime = cctvGrid.querySelectorAll('.cctv-mon-time');
+            overlaysTime.forEach(ot => {
+                ot.innerText = getFormattedTimestamp(date);
+            });
+        }
+
+        function getFormattedTimestamp(d = new Date()) {
+            return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+        }
+
+        // Terminal logging utility
+        function addLogLine(type, text) {
+            const d = new Date();
+            const timeStr = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
+            const line = document.createElement('div');
+            line.className = `log-line ${type}`;
+            line.innerText = `[${timeStr}] ${text}`;
+            
+            logTerminal.appendChild(line);
+            
+            // Limit log entries inside terminal to avoid bloating
+            if (logTerminal.children.length > 50) {
+                logTerminal.removeChild(logTerminal.firstChild);
+            }
+        }
+
+        // Random log events to look authentic
+        function generateSimulatedSecurityLogs() {
+            const alerts = [
+                { type: "system", text: "Integrity check: All storage arrays operating within margins." },
+                { type: "system", text: "Archiving stream indices to remote vault database." },
+                { type: "selected-cam", text: "Motion threshold exceeded at Loading Bay." },
+                { type: "selected-cam", text: "Thermal sensors triggered in Server Area." },
+                { type: "alert", text: "⚠️ Network anomaly detected: Sub-channel 4 jitter value high." },
+                { type: "selected-cam", text: "Access request approved: Door Badge ID #4492." }
+            ];
+
+            const picked = alerts[Math.floor(Math.random() * alerts.length)];
+            addLogLine(picked.type, picked.text);
+        }
+
+        // Mouse wheel scroll triggers shuffle
+        let wheelDeltaAcc = 0;
+        document.addEventListener('wheel', (e) => {
+            if (focusedMonitor) return; // block wheel shuffle when zoomed
+            wheelDeltaAcc += Math.abs(e.deltaY);
+            if (wheelDeltaAcc >= 120) {
+                shuffleFeeds();
+                wheelDeltaAcc = 0;
+            }
+        });
+
+        // Keyboard Event handler
+        document.addEventListener('keydown', (e) => {
+            // Don't intercept when focused in input blocks (if any)
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+
+            switch(e.code) {
+                case 'Space':
+                    e.preventDefault();
+                    toggleAllVideos();
+                    break;
+                case 'Escape':
+                    e.preventDefault();
+                    exitFullscreenFocus();
+                    break;
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    cycleSelectedCamera(-1);
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    cycleSelectedCamera(1);
+                    break;
+                case 'KeyF':
+                    e.preventDefault();
+                    if (focusedMonitor) {
+                        exitFullscreenFocus();
+                    } else if (selectedMonitor) {
+                        focusCamera(selectedMonitor);
+                    }
+                    break;
+                case 'KeyM':
+                    e.preventDefault();
+                    if (selectedMonitor) {
+                        const video = selectedMonitor.querySelector('video');
+                        if (video) {
+                            video.muted = !video.muted;
+                            addLogLine("selected-cam", `Audio state toggled: CAM unmuted flag = ${!video.muted}.`);
+                        }
+                    }
+                    break;
+                case 'KeyS':
+                    e.preventDefault();
+                    shuffleFeeds();
+                    break;
+                default:
+                    // Digital selection (1-9 keys)
+                    if (e.key >= '1' && e.key <= '9') {
+                        const targetIdx = parseInt(e.key) - 1;
+                        const monitors = cctvGrid.querySelectorAll('.cctv-monitor');
+                        if (targetIdx < monitors.length) {
+                            selectCamera(monitors[targetIdx]);
+                        }
+                    }
+                    break;
+            }
+        });
+
+        // Run preloading indicator
+        runPreloader();
+    </script>
+</body>
+</html>
