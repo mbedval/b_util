@@ -2,14 +2,15 @@ const fs = require('fs');
 const path = require('path');
 
 const BASE_DIR = path.join(__dirname, 'assets');
-const FOLDERS = ['animation', 'wallpapers', 'videos', 'gif2video', 'television'];
+const FOLDERS = ['animation', 'wallpapers', 'videos', 'gif2video', 'television', 'resources/stockcall'];
 
 const EXTENSIONS = {
   animation: ['.gif', '.webp', '.jpg', '.jpeg', '.png', '.bmp', '.svg'],
   wallpapers: ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'],
   videos: ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv'],
   gif2video: ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'],
-  television: ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv']
+  television: ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv'],
+  'resources/stockcall': ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg']
 };
 
 function getFilesForFolder(folder) {
@@ -61,7 +62,7 @@ function generateFilesJs() {
   
   const content = `// This file is auto-generated. Do not edit manually.\nwindow.collageFiles = ${JSON.stringify(collageFiles, null, 2)};\n`;
   fs.writeFileSync(path.join(__dirname, 'files.js'), content, 'utf-8');
-  console.log(`Generated files.js with:\n - ${collageFiles.animation.length} animations\n - ${collageFiles.wallpapers.length} wallpapers\n - ${collageFiles.videos.length} videos\n - ${collageFiles.gif2video.length} gif2video\n - ${collageFiles.television.length} television`);
+  console.log(`Generated files.js with:\n - ${collageFiles.animation.length} animations\n - ${collageFiles.wallpapers.length} wallpapers\n - ${collageFiles.videos.length} videos\n - ${collageFiles.gif2video.length} gif2video\n - ${collageFiles.television.length} television\n - ${collageFiles['resources/stockcall'].length} stockcalls`);
 }
 
 if (require.main === module) {

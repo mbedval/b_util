@@ -54,15 +54,40 @@ FOLDERS.forEach(folder => {
   }
 });
 
-// API endpoint to get files dynamically
+// API endpoint to get files dynamically from any assets/ subfolder
 app.get('/api/files', (req, res) => {
   const folder = req.query.folder;
-  if (!FOLDERS.includes(folder)) {
-    return res.status(400).json({ error: `Invalid folder. Must be one of: ${FOLDERS.join(', ')}` });
+  if (!folder) {
+    return res.status(400).json({ error: 'folder query parameter is required' });
   }
-  
+
+  // Resolve the requested folder inside assets/ and guard against path traversal
+  const assetsDir = path.join(__dirname, 'assets');
+  const resolvedDir = path.resolve(assetsDir, folder);
+  if (!resolvedDir.startsWith(assetsDir)) {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+
+  if (!fs.existsSync(resolvedDir)) {
+    return res.status(404).json({ error: `Folder not found: assets/${folder}` });
+  }
+
+  const IMAGE_EXTS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'];
+  const VIDEO_EXTS = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv'];
+  const ALL_EXTS = [...IMAGE_EXTS, ...VIDEO_EXTS];
+
   try {
-    const files = getFilesForFolder(folder);
+    const files = fs.readdirSync(resolvedDir)
+      .filter(file => {
+        if (file.toLowerCase().includes('backup')) return false;
+        try {
+          const stat = fs.statSync(path.join(resolvedDir, file));
+          if (!stat.isFile()) return false;
+          return ALL_EXTS.includes(path.extname(file).toLowerCase());
+        } catch (e) { return false; }
+      })
+      .map(file => `assets/${folder}/${file}`);
+
     res.json(files);
   } catch (e) {
     res.status(500).json({ error: e.message });

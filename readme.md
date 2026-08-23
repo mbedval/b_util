@@ -211,6 +211,24 @@ An interactive dashboard mockup mimicking X/Twitter post cards, supporting real-
 5. Click on the blacked-out spoiler blocks inside the card preview to reveal the words.
 6. Toggle theme buttons at the top right of the card to preview styling differences.
 
+### 📈 Stock Call Generator (StockCall.html)
+
+An interactive tool to generate Gen Z and Pop Art styled stock calls, overlaying custom alert boxes (CMP, SL, Target, catalysts, risks) on top of the bullish background (`assets/resources/callbg.png`).
+
+**Features:**
+- **Custom Alert details**: Edit Stock Symbol, Current Market Price, Target Price, Stop Loss, and custom sticker badges.
+- **Why Buy & Risk Check Bullets**: Add custom catalyst reasons and risk checks as multiline inputs (dynamically parsed to bullet items).
+- **Layout & Location Sliders**: Precise slider controls to move the alert card horizontally/vertically (X and Y offsets) and adjust its width and font scale dynamically to fit in the free green area of the background.
+- **Neo-Brutalist & Pop Art Themes**: Instantly toggle between visual styling presets (Yellow Pop, Neon Pink, Cyber Punk, Minimal).
+- **High-DPI Image Downloader**: Exports the final image at double resolution (`pixelRatio: 2`) using `html-to-image`, producing sharp PNG files of the poster content.
+
+**How to Use:**
+1. Open `StockCall.html` in a browser.
+2. Enter the stock details, catalysts, and risks, or choose a quick pre-fill preset (e.g. $NVDA Breakout).
+3. Select a style theme.
+4. Adjust X/Y location and width sliders to place the stock alert card neatly in the left free area of the image.
+5. Click **Export Stock Call Image** to download the high-quality PNG.
+
 ### 🎞️ Style Morph Animator (image2video.html)
 
 A high-speed sequential image-to-video animator that plays a series of images (e.g. style-transfer frames) from the `assets/gif2video` folder in sequence, creating a smooth morphing animation.
@@ -278,6 +296,7 @@ collage/
 ├── mobile.html         # Mobile layout simulator application
 ├── Whatsapp.html       # Chat story simulator application
 ├── twitter.html        # Custom post generator application
+├── StockCall.html      # Pop Art & Gen Z styled stock call generator
 ├── image2video.html    # Style morph animator application
 ├── presentation.html   # Presentation slideshow application
 ├── diagonal.html       # Diagonal split-screen application

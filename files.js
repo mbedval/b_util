@@ -113,5 +113,23 @@ window.collageFiles = {
   "television": [
     "assets/television/tumblr_45c759f539442fcdf9fb76482cc2ed1b_01e5cf0c_720.mp4",
     "assets/television/tumblr_6c165d154cdd54f6df406b0a56eed100_eb8f1637_720.mp4"
+  ],
+  "resources/stockcall": [
+    "assets/resources/stockcall/portait_01.png",
+    "assets/resources/stockcall/portait_02.png",
+    "assets/resources/stockcall/portait_03.png",
+    "assets/resources/stockcall/portait_04.png",
+    "assets/resources/stockcall/portait_05.png",
+    "assets/resources/stockcall/portait_06.png",
+    "assets/resources/stockcall/portait_07.png",
+    "assets/resources/stockcall/portait_09.png",
+    "assets/resources/stockcall/square_01.png",
+    "assets/resources/stockcall/square_02.png",
+    "assets/resources/stockcall/square_03.png",
+    "assets/resources/stockcall/square_04.png",
+    "assets/resources/stockcall/square_05.png",
+    "assets/resources/stockcall/square_06.png",
+    "assets/resources/stockcall/square_07.png",
+    "assets/resources/stockcall/square_08.png"
   ]
 };
