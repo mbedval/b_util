@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta name="google" content="notranslate">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mobile Chat Story Simulator</title>
@@ -717,6 +718,7 @@
             50% { transform: scale(1.03); opacity: 1; }
         }
     </style>
+    <script src="config.js"></script>
 </head>
 <body>
 
@@ -989,7 +991,7 @@
             updateClock();
 
             // Fetch chatstory JSON config
-            fetch('assets/chatstory/story.json')
+            fetch('input/' + window.BindsolConfig.apps.chatStory.folder + '/story.json')
                 .then(res => res.json())
                 .then(data => {
                     chatStory = data;
@@ -1065,7 +1067,7 @@
                     "sender": "user1",
                     "name": "Alice",
                     "avatar": "",
-                    "image": "assets/chatstory/images/image1.jpg",
+                    "image": 'input/' + window.BindsolConfig.apps.chatStory.folder + '/images/image1.jpg',
                     "type": "image"
                 },
                 {

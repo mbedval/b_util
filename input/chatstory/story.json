@@ -1,0 +1,58 @@
+[
+  {
+    "sender": "user1",
+    "name": "Alice",
+    "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
+    "text": "Hey everyone! Look at the new style-transfer morph frames I exported this morning!",
+    "type": "text"
+  },
+  {
+    "sender": "user2",
+    "name": "Bob",
+    "avatar": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop",
+    "text": "Wow, Alice! Did the blending artifacts resolve on the textures?",
+    "type": "text"
+  },
+  {
+    "sender": "user2",
+    "name": "Bob",
+    "avatar": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop",
+    "text": "Send some screenshots here if you can, I want to take a look.",
+    "type": "text"
+  },
+  {
+    "sender": "user1",
+    "name": "Alice",
+    "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
+    "image": "assets/chatstory/images/image1.jpg",
+    "type": "image"
+  },
+  {
+    "sender": "user3",
+    "name": "Charlie",
+    "avatar": "https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=100&h=100&fit=crop",
+    "text": "Oh, that is absolutely brilliant. The border styling looks so smooth!",
+    "type": "text"
+  },
+  {
+    "sender": "user1",
+    "name": "Alice",
+    "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
+    "text": "Thanks Charlie! Here is the second frame showing the transition point.",
+    "type": "text"
+  },
+  {
+    "sender": "user1",
+    "name": "Alice",
+    "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
+    "image": "assets/chatstory/images/image2.jpg",
+    "type": "image"
+  },
+  {
+    "sender": "user2",
+    "name": "Bob",
+    "avatar": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop",
+    "text": "Terrific job. I'll load these into the CCTV monitor board for the demo! 🚀",
+    "type": "text"
+  }
+]

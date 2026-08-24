@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta name="google" content="notranslate">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hybrid Mobile Simulator</title>
     <!-- Include auto-generated files list -->
+    <script src="config.js"></script>
     <script src="files.js" onerror="console.warn('files.js not found. Using fallback files.')"></script>
     <style>
         :root {
@@ -950,7 +952,7 @@
                         
                         <!-- Reels Active Block player -->
                         <div class="reel-player-box" id="reel-player">
-                            <video id="reel-video" loop playsinline></video>
+                            <video disablePictureInPicture disableRemotePlayback id="reel-video" loop playsinline></video>
                         </div>
 
                         <!-- Interface HUD overlay -->
@@ -1059,8 +1061,8 @@
 
         // Retrieve video pool
         let videoPool = [];
-        if (window.collageFiles && Array.isArray(window.collageFiles.videos) && window.collageFiles.videos.length > 0) {
-            videoPool = window.collageFiles.videos;
+        if (window.collageFiles && Array.isArray(window.collageFiles[window.BindsolConfig.apps.mobileSimulator.folder]) && window.collageFiles[window.BindsolConfig.apps.mobileSimulator.folder].length > 0) {
+            videoPool = window.collageFiles[window.BindsolConfig.apps.mobileSimulator.folder];
         } else {
             console.log("No videos found in files.js, using fallback list.");
             videoPool = fallbackVideos;
@@ -1182,7 +1184,7 @@
                 
                 card.innerHTML = `
                     <div class="gallery-item-icon">🎥</div>
-                    <video src="${src}" muted preload="metadata" playsinline></video>
+                    <video disablePictureInPicture disableRemotePlayback src="${src}" muted preload="metadata" playsinline></video>
                     <span class="gallery-item-duration">0:15</span>
                 `;
 

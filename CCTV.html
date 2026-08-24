@@ -1,10 +1,12 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta name="google" content="notranslate">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CCTV Security Control Dashboard</title>
     <!-- Include auto-generated files list -->
+    <script src="config.js"></script>
     <script src="files.js" onerror="console.warn('files.js not found. Using fallback files.')"></script>
     <style>
         :root {
@@ -572,7 +574,7 @@
     </div>
 
     <!-- Screen Close Button -->
-    <button class="close-button" id="closeButton" title="Exit Full Screen (ESC)">×</button>
+    <button class="close-button" id="closeButton" title="Exit Full Screen (ESC)">Ã—</button>
 
     <!-- Main Header -->
     <header>
@@ -685,8 +687,8 @@
 
         // Retrieve video pool
         let videoPool = [];
-        if (window.collageFiles && Array.isArray(window.collageFiles.videos) && window.collageFiles.videos.length > 0) {
-            videoPool = window.collageFiles.videos;
+        if (window.collageFiles && Array.isArray(window.collageFiles[window.BindsolConfig.apps.cctv.folder]) && window.collageFiles[window.BindsolConfig.apps.cctv.folder].length > 0) {
+            videoPool = window.collageFiles[window.BindsolConfig.apps.cctv.folder];
         } else {
             console.log("No videos found in files.js, applying fallback list.");
             videoPool = fallbackVideos;
@@ -721,7 +723,7 @@
         // Initial setup preloader
         async function fetchVideosAPI() {
             try {
-                const response = await fetch('/api/files?folder=videos');
+                const response = await fetch('/api/files?folder=${window.BindsolConfig.apps.cctv.folder}');
                 if (response.ok) {
                     const files = await response.json();
                     const newFiles = files.filter(filePath => !videoPool.includes(filePath));
@@ -824,6 +826,8 @@
                 monitor.setAttribute('data-cam', camLabel);
 
                 const video = document.createElement('video');
+                video.disablePictureInPicture = true;
+                video.disableRemotePlayback = true;
                 video.src = src;
                 video.autoplay = isPlaying;
                 video.muted = true;
@@ -908,14 +912,14 @@
             monitor.classList.add('selected');
             selectedMonitor = monitor;
 
-            // Unmute selected camera
+            // Note: Grid view remains completely muted. Only fullscreen unmutes.
             const video = monitor.querySelector('video');
             if (video) {
-                video.muted = false;
+                video.muted = true;
             }
 
             const camName = monitor.getAttribute('data-cam');
-            addLogLine("selected-cam", `Monitoring unmuted: Selected feed pointer on ${camName}.`);
+            addLogLine("selected-cam", `Monitoring selected: Feed pointer on ${camName}.`);
         }
 
         // Fullscreen viewport focus logic
@@ -939,11 +943,9 @@
             focusedMonitor.classList.remove('focused');
             closeButton.classList.remove('visible');
 
-            // Restore selection defaults (mute/unmute checks)
-            if (selectedMonitor !== focusedMonitor) {
-                const video = focusedMonitor.querySelector('video');
-                if (video) video.muted = true;
-            }
+            // Always mute when exiting fullscreen back to grid view
+            const video = focusedMonitor.querySelector('video');
+            if (video) video.muted = true;
 
             addLogLine("system", `Fullscreen view lock released.`);
             focusedMonitor = null;
@@ -965,11 +967,7 @@
                         if (video) {
                             video.src = newVideos[idx];
                             video.autoplay = isPlaying;
-                            if (monitor.classList.contains('selected')) {
-                                video.muted = false;
-                            } else {
-                                video.muted = true;
-                            }
+                            video.muted = true;
                             video.load();
                         }
                         
@@ -1091,14 +1089,14 @@
 
         // Alarm system simulator
         function triggerSimulatedAlarm() {
-            sysStatus.innerText = "🚨 ALARM SYSTEM TRIPPED";
+            sysStatus.innerText = "ðŸš¨ ALARM SYSTEM TRIPPED";
             sysStatus.classList.add('alert-mode');
             document.body.style.setProperty('--accent-color', '#ff3b3b');
             document.body.style.setProperty('--accent-glow', 'rgba(255, 59, 59, 0.45)');
             
             const randomCamIndex = Math.floor(Math.random() * 9) + 1;
             const location = cameraLocations[randomCamIndex % cameraLocations.length];
-            addLogLine("alert", `🚨 SECURITY BREAKPOINT BREACH ON CAM 0${randomCamIndex} - ${location}!`);
+            addLogLine("alert", `ðŸš¨ SECURITY BREAKPOINT BREACH ON CAM 0${randomCamIndex} - ${location}!`);
             
             // Glitch the cameras during alarm trigger
             const monitors = cctvGrid.querySelectorAll('.cctv-monitor');
@@ -1175,7 +1173,7 @@
                 { type: "system", text: "Archiving stream indices to remote vault database." },
                 { type: "selected-cam", text: "Motion threshold exceeded at Loading Bay." },
                 { type: "selected-cam", text: "Thermal sensors triggered in Server Area." },
-                { type: "alert", text: "⚠️ Network anomaly detected: Sub-channel 4 jitter value high." },
+                { type: "alert", text: "⚠ ï¸ Network anomaly detected: Sub-channel 4 jitter value high." },
                 { type: "selected-cam", text: "Access request approved: Door Badge ID #4492." }
             ];
 
@@ -1256,3 +1254,9 @@
     </script>
 </body>
 </html>
+
+
+
+
+
+

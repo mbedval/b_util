@@ -1,7 +1,7 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const { getFilesForFolder, generateFilesJs, FOLDERS, BASE_DIR } = require('./generate');
+const { getFilesForFolder, generateFilesJs, FOLDERS, FOLDER_MAP } = require('./generate');
 
 // LiveReload Setup
 const livereload = require("livereload");
@@ -12,7 +12,8 @@ const liveReloadServer = livereload.createServer({
 });
 liveReloadServer.watch([
   __dirname,
-  path.join(__dirname, 'assets')
+  path.join(__dirname, 'assets'),
+  path.join(__dirname, 'input')
 ]);
 
 const app = express();
@@ -28,9 +29,10 @@ generateFilesJs();
 // Setup folder watching (only watching our designated active asset folders)
 let watchTimeout;
 FOLDERS.forEach(folder => {
-  const dirPath = path.join(BASE_DIR, folder);
+  const parentDir = FOLDER_MAP[folder];
+  const dirPath = path.join(__dirname, parentDir, folder);
   if (fs.existsSync(dirPath)) {
-    console.log(`[Server] Watching folder: assets/${folder}`);
+    console.log(`[Server] Watching folder: ${parentDir}/${folder}`);
     fs.watch(dirPath, (eventType, filename) => {
       // Ignore backup files/folders changed in the watcher
       if (filename && filename.toLowerCase().includes('backup')) {
@@ -40,7 +42,7 @@ FOLDERS.forEach(folder => {
       clearTimeout(watchTimeout);
       watchTimeout = setTimeout(() => {
         try {
-          console.log(`[Watcher] Change detected in assets/${folder}. Regenerating files.js...`);
+          console.log(`[Watcher] Change detected in ${parentDir}/${folder}. Regenerating files.js...`);
           generateFilesJs();
           // Notify clients to refresh
           setTimeout(() => {
@@ -54,22 +56,18 @@ FOLDERS.forEach(folder => {
   }
 });
 
-// API endpoint to get files dynamically from any assets/ subfolder
+// API endpoint to get files dynamically from any subfolder
 app.get('/api/files', (req, res) => {
   const folder = req.query.folder;
-  if (!folder) {
-    return res.status(400).json({ error: 'folder query parameter is required' });
+  if (!folder || !FOLDER_MAP[folder]) {
+    return res.status(400).json({ error: 'invalid or missing folder query parameter' });
   }
 
-  // Resolve the requested folder inside assets/ and guard against path traversal
-  const assetsDir = path.join(__dirname, 'assets');
-  const resolvedDir = path.resolve(assetsDir, folder);
-  if (!resolvedDir.startsWith(assetsDir)) {
-    return res.status(403).json({ error: 'Access denied' });
-  }
+  const parentDir = FOLDER_MAP[folder];
+  const resolvedDir = path.join(__dirname, parentDir, folder);
 
   if (!fs.existsSync(resolvedDir)) {
-    return res.status(404).json({ error: `Folder not found: assets/${folder}` });
+    return res.status(404).json({ error: `Folder not found: ${parentDir}/${folder}` });
   }
 
   const IMAGE_EXTS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'];
@@ -86,7 +84,7 @@ app.get('/api/files', (req, res) => {
           return ALL_EXTS.includes(path.extname(file).toLowerCase());
         } catch (e) { return false; }
       })
-      .map(file => `assets/${folder}/${file}`);
+      .map(file => `${parentDir}/${folder}/${file}`);
 
     res.json(files);
   } catch (e) {
@@ -100,7 +98,7 @@ app.use(express.static(__dirname));
 // Start server
 app.listen(PORT, () => {
   console.log(`\n==================================================`);
-  console.log(`🚀 Collage Server running at http://localhost:${PORT}`);
+  console.log(`🚀 Bindsol.util Server running at http://localhost:${PORT}`);
   console.log(`Watching folders: assets/${FOLDERS.join(', assets/')}`);
   console.log(`Ignoring any backup* folders`);
   console.log(`==================================================\n`);

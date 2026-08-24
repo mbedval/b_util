@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta name="google" content="notranslate">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="config.js"></script>
     <script src="files.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
@@ -455,6 +457,16 @@
             font-weight: bold;
         }
 
+        
+        .terminal-watermark {
+            text-align: center;
+            font-size: 0.55em;
+            color: rgba(255, 255, 255, 0.3);
+            margin-top: 10px;
+            font-family: 'Consolas', monospace;
+            letter-spacing: 1px;
+        }
+
         .terminal-metrics {
             display: flex;
             flex-direction: column;
@@ -512,7 +524,7 @@
         }
 
         .terminal-bullets li::before {
-            content: '>';
+            content: '\2713';
             position: absolute;
             left: 2px;
             color: var(--card-text);
@@ -522,7 +534,7 @@
         }
 
         .terminal-bullets.risks-list li::before {
-            content: '!';
+            content: '\2717';
             color: var(--badge-sl);
         }
 
@@ -552,7 +564,7 @@
         }
 
         .bullets-list li::before {
-            content: '•';
+            content: '\2713';
             position: absolute;
             left: 2px;
             color: var(--card-text);
@@ -623,7 +635,7 @@
             <!-- Sticker Badge Text -->
             <div class="form-group">
                 <label>Sticker Accent Badge</label>
-                <input type="text" class="custom-input" id="in-sticker" value="BIG BRAIN PLAY 🧠" placeholder="e.g. BUY THE DIP 🤑">
+                <input type="text" class="custom-input" id="in-sticker" value="" placeholder="e.g. BUY THE DIP 🤑">
             </div>
 
             <!-- Benefits / Catalyst (Why buy) -->
@@ -742,15 +754,8 @@
 
                         <!-- Terminal Body Content -->
                         <div class="terminal-body">
-                            
-                            <!-- Prompt line -->
-                            <div class="terminal-prompt-line">
-                                <span class="terminal-prompt-user">BSA@Bindsol:~$</span> <span class="terminal-prompt-cmd">Analyse <span id="lbl-prompt-symbol">$NVDA</span></span>
-                            </div>
-
-                            <div class="terminal-divider">======================</div>
                             <div class="terminal-banner">
-                                [STX] SYMBOL: <span class="highlight-green" id="lbl-stock-symbol">$NVDA</span>
+                                SYMBOL: <span class="highlight-green" id="lbl-stock-symbol">$NVDA</span>
                             </div>
                             <div class="terminal-divider">======================</div>
 
@@ -771,11 +776,11 @@
                             </div>
 
                             <!-- Sticker note -->
-                            <div class="terminal-sticker" id="lbl-sticker">[ALERT] >> BIG BRAIN PLAY 🧠</div>
+                            <div class="terminal-sticker" id="lbl-sticker"></div>
 
                             <!-- Bullets section -->
                             <div class="terminal-bullet-section" id="sec-benefits">
-                                <div class="terminal-bullet-header">[+] CATALYSTS / Ws:</div>
+                                <div class="terminal-bullet-header highlight-green">[+] Positive Points:</div>
                                 <ul class="terminal-bullets benefits-list" id="lbl-benefits">
                                     <li>AI demand is growing exponentially</li>
                                     <li>Gross margins exceed 75%</li>
@@ -784,12 +789,13 @@
                             </div>
 
                             <div class="terminal-bullet-section" id="sec-risks">
-                                <div class="terminal-bullet-header">[!] RISK FACTORS:</div>
+                                <div class="terminal-bullet-header highlight-red">[!] RISK FACTORS:</div>
                                 <ul class="terminal-bullets risks-list" id="lbl-risks">
                                     <li>Supply chain bottleneck limits</li>
                                     <li>General tech sector rotation pullback</li>
                                 </ul>
                             </div>
+                            <div class="terminal-watermark" id="lbl-watermark"></div>
                         </div>
 
                     </div>
@@ -909,7 +915,7 @@
             lblCmp.innerText = inCmp.value || "$0.00";
             lblTarget.innerText = inTarget.value || "$0.00";
             lblSl.innerText = inSl.value || "$0.00";
-            lblSticker.innerText = inSticker.value ? `[ALERT] >> ${inSticker.value}` : "";
+            lblSticker.innerText = inSticker.value ? `${inSticker.value}` : "";
             lblSticker.style.display = inSticker.value ? 'inline-block' : 'none';
 
             // Sync prompt command: "Analyse $NVDA"
@@ -1191,26 +1197,37 @@
         // Set up event listeners
         function initApp() {
             checkProtocol();
+            // Set watermark
+            const now = new Date();
+            const yy = String(now.getFullYear()).slice(-2);
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const dd = String(now.getDate()).padStart(2, '0');
+            const hh = String(now.getHours()).padStart(2, '0');
+            const min = String(now.getMinutes()).padStart(2, '0');
+            const watermark = document.getElementById('lbl-watermark');
+            if (watermark) watermark.innerText = `${yy}.${mm}.${dd}.${hh}.${min}`;
+
 
             const inputs = [inStockSymbol, inCmp, inTarget, inSl, inSticker, inBenefits, inRisks];
             inputs.forEach(el => el.addEventListener('input', updateLivePreview));
 
             // Dynamic background list: try live API first, fallback to files.js snapshot
-            fetch('/api/files?folder=resources/stockcall')
+                        const folder = window.BindsolConfig.apps.stockCall.folder;
+            fetch('/api/files?folder=' + folder)
                 .then(res => {
                     if (!res.ok) throw new Error('API not available');
                     return res.json();
                 })
                 .then(files => {
-                    // API returns bare filenames — prefix the full relative path
+                    // API returns bare filenames - prefix the full relative path
                     const prefixed = files.map(f =>
-                        f.startsWith('assets/') ? f : `assets/resources/stockcall/${f}`
+                        f.startsWith('assets/') ? f : 'assets/stockcall/' + f
                     );
                     populateBgSelector(prefixed);
                 })
                 .catch(() => {
                     // Fallback: use pre-built files.js snapshot (works on file:// and localhost)
-                    const snapshot = (window.collageFiles && window.collageFiles['resources/stockcall']) || [];
+                    const snapshot = (window.collageFiles && window.collageFiles['stockcall']) || [];
                     populateBgSelector(snapshot);
                 });
 

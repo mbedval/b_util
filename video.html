@@ -1,719 +1,516 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta name="google" content="notranslate">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Collage</title>
-    <script src="files.js"></script>
+    <title>Dynamic Video Gallery</title>
+    <script src="config.js"></script>
+    <script src="files.js" onerror="console.warn('files.js not found. Using fallback files.')"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --bg-color: #050505;
+            --panel-bg: rgba(15, 15, 15, 0.85);
+            --panel-border: rgba(255, 215, 0, 0.2);
+            --accent-color: #ffd700;
+            --accent-glow: rgba(255, 215, 0, 0.5);
+            --text-color: #f0f0f0;
+            --text-muted: rgba(240, 240, 240, 0.5);
+            --btn-bg: rgba(255, 215, 0, 0.05);
+            --btn-hover: rgba(255, 215, 0, 0.2);
         }
+
+        body.theme-matrix {
+            --accent-color: #00ff00;
+            --accent-glow: rgba(0, 255, 0, 0.6);
+            --btn-bg: rgba(0, 255, 0, 0.08);
+            --btn-hover: rgba(0, 255, 0, 0.25);
+            --panel-border: rgba(0, 255, 0, 0.3);
+        }
+
+        body.theme-cyber {
+            --accent-color: #00e5ff;
+            --accent-glow: rgba(0, 229, 255, 0.5);
+            --btn-bg: rgba(0, 229, 255, 0.08);
+            --btn-hover: rgba(0, 229, 255, 0.25);
+            --panel-border: rgba(0, 229, 255, 0.3);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            background: linear-gradient(135deg, #3a3a3a 0%, #2a2a2a 50%, #1a1a1a 100%);
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at center, #111 0%, #000 100%);
             min-height: 100vh;
             display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
+            flex-direction: column;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        .collage-container {
-            position: relative;
-            width: 90vw;
-            max-width: 1400px;
-            height: 85vh;
-            max-height: 900px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 20px;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            color: var(--text-color);
             overflow: hidden;
+            padding: 15px;
         }
 
-        .collage-container::before {
-            content: '';
-            position: absolute;
-            top: -3px;
-            left: -3px;
-            right: -3px;
-            bottom: -3px;
-            background: linear-gradient(90deg, #5a5a5a, #4a4a4a, #3a3a3a, #2a2a2a, #1a1a1a, #2a2a2a, #5a5a5a);
-            background-size: 400% 400%;
-            border-radius: 22px;
-            z-index: -1;
-            animation: borderProgress 8s linear infinite;
-        }
-
-        @keyframes borderProgress {
-            0% {
-                background-position: 0% 50%;
-            }
-            100% {
-                background-position: 400% 50%;
-            }
-        }
-
-        .collage-item {
-            position: absolute;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-            transition: transform 0.4s ease, box-shadow 0.4s ease, opacity 0.4s ease, border-radius 0.4s ease, top 0.6s ease, left 0.6s ease, right 0.6s ease, bottom 0.6s ease;
-            cursor: pointer;
-            overflow: hidden;
-            border: 3px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .collage-item video {
+        header {
             width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .collage-item.shuffling {
-            opacity: 0;
-            transform: scale(0.8) rotate(0deg) !important;
-        }
-
-        .collage-item.dimmed {
-            opacity: 0.15;
-            filter: blur(2px);
-        }
-
-        .collage-item.focused {
-            z-index: 1000;
-            transform: rotate(0deg) !important;
-            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8);
-            border-color: rgba(255, 255, 255, 0.6);
-            border-radius: 12px !important;
-            position: fixed;
-            top: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            bottom: 0 !important;
-            width: 100vw !important;
-            height: 100vh !important;
-            transform: none !important;
-            margin: 0;
-            padding: 0;
-        }
-
-        .collage-item.exiting {
-            opacity: 0 !important;
-            transform: scale(0.5) !important;
-            transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.6s ease !important;
-        }
-
-        .collage-item.focused video {
-            object-fit: contain;
-            width: 100%;
-            height: 100%;
-        }
-
-        .collage-item:hover:not(.focused) {
-            transform: scale(1.08) !important;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
-            z-index: 50;
-        }
-
-        /* Item 1 - Large square, top left */
-        .item-1 {
-            width: 35%;
-            height: 35%;
-            top: 5%;
-            left: 5%;
-            border-radius: 15px;
-            transform: rotate(-4deg);
-        }
-
-        /* Item 2 - Circle, top right */
-        .item-2 {
-            width: 28%;
-            height: 28%;
-            top: 3%;
-            right: 8%;
-            border-radius: 50%;
-            transform: rotate(3deg);
-        }
-
-        /* Item 3 - Tall rectangle, middle left */
-        .item-3 {
-            width: 20%;
-            height: 45%;
-            top: 30%;
-            left: 3%;
-            border-radius: 10px;
-            transform: rotate(2deg);
-        }
-
-        /* Item 4 - Wide rectangle, center */
-        .item-4 {
-            width: 40%;
-            height: 25%;
-            top: 40%;
-            left: 30%;
-            border-radius: 12px;
-            transform: rotate(-3deg);
-        }
-
-        /* Item 5 - Small square, center right */
-        .item-5 {
-            width: 22%;
-            height: 22%;
-            top: 35%;
-            right: 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
             border-radius: 8px;
-            transform: rotate(5deg);
-        }
-
-        /* Item 6 - Circle, bottom left */
-        .item-6 {
-            width: 25%;
-            height: 25%;
-            bottom: 8%;
-            left: 8%;
-            border-radius: 50%;
-            transform: rotate(-2deg);
-        }
-
-        /* Item 7 - Medium rectangle, bottom center */
-        .item-7 {
-            width: 30%;
-            height: 20%;
-            bottom: 5%;
-            left: 35%;
-            border-radius: 10px;
-            transform: rotate(4deg);
-        }
-
-        /* Item 8 - Small circle, bottom right */
-        .item-8 {
-            width: 18%;
-            height: 18%;
-            bottom: 10%;
-            right: 10%;
-            border-radius: 50%;
-            transform: rotate(-5deg);
-        }
-
-
-        .no-videos {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 1.5rem;
-            text-align: center;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
             z-index: 10;
         }
 
-        @media (max-width: 768px) {
-            .collage-container {
-                width: 95vw;
-                height: 90vh;
-            }
+        header h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            color: var(--accent-color);
+            text-shadow: 0 0 10px var(--accent-glow);
+            text-transform: uppercase;
+        }
 
-            .collage-item {
-                transform: none !important;
-            }
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 15px;
+            flex-grow: 1;
+            height: calc(100vh - 95px);
+        }
 
-            .item-1 {
-                width: 45%;
-                height: 30%;
-                top: 5%;
-                left: 3%;
-                border-radius: 12px;
+        @media (max-width: 992px) {
+            .dashboard-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr auto;
+                height: auto;
+                overflow-y: auto;
             }
-            .item-2 {
-                width: 45%;
-                height: 30%;
-                top: 5%;
-                right: 3%;
-                border-radius: 50%;
-            }
-            .item-3 {
-                width: 45%;
-                height: 25%;
-                top: 38%;
-                left: 3%;
-                border-radius: 10px;
-            }
-            .item-4 {
-                width: 45%;
-                height: 25%;
-                top: 38%;
-                right: 3%;
-                border-radius: 12px;
-            }
-            .item-5 {
-                width: 45%;
-                height: 25%;
-                top: 66%;
-                left: 3%;
-                border-radius: 8px;
-            }
-            .item-6 {
-                width: 45%;
-                height: 25%;
-                top: 66%;
-                right: 3%;
-                border-radius: 50%;
-            }
-            .item-7 { display: none; }
-            .item-8 { display: none; }
+        }
 
+        .grid-viewport-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 10px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .vid-grid {
+            display: grid;
+            gap: 15px;
+            width: 100%;
+            height: 100%;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .vid-grid.layout-2x2 { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); }
+        .vid-grid.layout-3x3 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); }
+        .vid-grid.layout-4x4 { grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); }
+        .vid-grid.layout-hero {
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+        }
+        .vid-grid.layout-hero .vid-monitor:nth-child(1) { grid-column: span 2; grid-row: span 2; }
+
+        .vid-monitor {
+            position: relative;
+            background: #000;
+            border: 2px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .vid-monitor video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: filter 0.3s ease;
+        }
+
+        .vid-monitor:hover {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 20px var(--accent-glow);
+            z-index: 5;
+        }
+
+        .vid-monitor.focused {
+            position: fixed !important;
+            top: 0 !important; left: 0 !important;
+            width: 100vw !important; height: 100vh !important;
+            z-index: 2000 !important;
+            border: none; border-radius: 0; margin: 0;
+            cursor: default;
+            background: rgba(0,0,0,0.95);
+        }
+        .vid-monitor.focused video {
+            object-fit: contain;
+        }
+
+        .control-sidebar {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+
+        .control-section {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 15px;
+        }
+        .control-section:last-child { border-bottom: none; }
+
+        .control-section h2 {
+            font-size: 0.85rem;
+            color: var(--accent-color);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-group { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .btn-group.full { grid-template-columns: 1fr; }
+
+        .control-btn {
+            background: var(--btn-bg);
+            border: 1px solid var(--panel-border);
+            color: var(--text-color);
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+        }
+
+        .control-btn:hover {
+            background: var(--btn-hover);
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .control-btn.active {
+            background: var(--accent-color);
+            color: #000;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 15px var(--accent-glow);
         }
 
         .close-button {
             position: fixed;
-            top: 20px;
-            right: 20px;
-            width: 50px;
-            height: 50px;
-            background: rgba(0, 0, 0, 0.7);
-            border: 2px solid rgba(255, 255, 255, 0.8);
+            top: 25px; right: 35px;
+            width: 45px; height: 45px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid var(--accent-color);
             border-radius: 50%;
-            color: white;
+            color: var(--accent-color);
             font-size: 24px;
-            font-weight: bold;
             cursor: pointer;
-            z-index: 2000;
+            z-index: 2500;
             display: none;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.3s ease, border-color 0.3s ease;
+            align-items: center; justify-content: center;
+            transition: all 0.3s ease;
+        }
+        .close-button:hover { background: var(--accent-color); color: #000; }
+        .close-button.visible { display: flex; }
+
+        /* Custom Styles for Frames */
+        .style-cinema .vid-monitor {
+            border: 1px solid #111;
+            padding-top: 10px;
+            padding-bottom: 10px;
+            background: #000;
+        }
+        
+        .style-crt .vid-monitor video {
+            filter: contrast(1.2) sepia(0.2) hue-rotate(-10deg);
+        }
+        .style-crt .vid-monitor::after {
+            content: " ";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
         }
 
-        .close-button:hover {
-            background: rgba(255, 0, 0, 0.7);
-            border-color: rgba(255, 255, 255, 1);
-        }
-
-        .close-button.visible {
+        .vid-overlay {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            padding: 15px 10px 10px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.9));
+            color: white;
+            font-size: 0.75rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
             display: flex;
+            justify-content: space-between;
         }
+        .vid-monitor:hover .vid-overlay { opacity: 1; }
+        .vid-monitor.focused .vid-overlay { display: none; }
+
     </style>
 </head>
 <body>
-    <div class="collage-container">
-        <div class="no-videos" id="noVideos">No videos found in videos folder</div>
+
+    <button class="close-button" id="closeButton" title="Exit Full Screen (ESC)">&times;</button>
+
+    <header>
+        <h1>Dynamic Video Gallery</h1>
+        <div style="font-size: 0.9rem; color: var(--text-muted);" id="counter">0 Videos Loaded</div>
+    </header>
+
+    <div class="dashboard-container">
+        
+        <div class="grid-viewport-card">
+            <div class="vid-grid layout-3x3" id="vid-grid">
+                <!-- populated dynamically -->
+            </div>
+        </div>
+
+        <div class="control-sidebar">
+            
+            <div class="control-section">
+                <h2>Grid Layout</h2>
+                <div class="btn-group">
+                    <button class="control-btn" data-layout="2x2">2x2 Grid</button>
+                    <button class="control-btn active" data-layout="3x3">3x3 Grid</button>
+                    <button class="control-btn" data-layout="4x4">4x4 Grid</button>
+                    <button class="control-btn" data-layout="hero">Hero Split</button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h2>Theme Colors</h2>
+                <div class="btn-group">
+                    <button class="control-btn active" data-theme="gold">Gold</button>
+                    <button class="control-btn" data-theme="matrix">Matrix</button>
+                    <button class="control-btn" data-theme="cyber">Cyber</button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h2>Display Style</h2>
+                <div class="btn-group">
+                    <button class="control-btn active" data-style="modern">Modern</button>
+                    <button class="control-btn" data-style="cinema">Cinematic</button>
+                    <button class="control-btn" data-style="crt">CRT Filter</button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h2>Playback Controls</h2>
+                <div class="btn-group full">
+                    <button class="control-btn active" id="play-btn">PLAY / PAUSE (ALL)</button>
+                    <button class="control-btn" id="shuffle-btn">Shuffle Videos</button>
+                </div>
+            </div>
+
+            <div class="control-section" style="flex-grow: 1;">
+                <h2>Shortcuts Reference</h2>
+                <div style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.8; margin-top: 10px;">
+                    [Click] View video fullscreen<br>
+                    [ESC] Exit Fullscreen mode<br>
+                    [Space] Play/Pause all<br>
+                    [Scroll] Shuffle active feeds
+                </div>
+            </div>
+
+        </div>
     </div>
-    <button class="close-button" id="closeButton">×</button>
 
     <script>
-        // Pool of all available videos
         let videoPool = [];
-        let currentVideos = [];
-        let isShuffling = false;
-        let scrollTimeout = null;
+        if (window.collageFiles && Array.isArray(window.collageFiles[window.BindsolConfig.apps.videoViewer.folder]) && window.collageFiles[window.BindsolConfig.apps.videoViewer.folder].length > 0) {
+            videoPool = window.collageFiles[window.BindsolConfig.apps.videoViewer.folder];
+        } else {
+            videoPool = [
+                'input/videos/sample1.mp4',
+                'input/videos/sample2.mp4'
+            ];
+        }
+
+        let activeLayout = '3x3';
         let focusedItem = null;
-        let originalPositions = new Map();
-        let isPlaying = false;
+        let isPlaying = true;
+        const grid = document.getElementById('vid-grid');
+        const closeBtn = document.getElementById('closeButton');
+        let currentVideos = [];
 
-        // Supported video formats
-        const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv'];
-
-        // Try to detect additional video files via API
-        async function detectAdditionalFiles() {
-            try {
-                const response = await fetch('/api/files?folder=videos');
-                if (response.ok) {
-                    const files = await response.json();
-                    const newFiles = files.filter(filePath => !videoPool.includes(filePath));
-                    if (newFiles.length > 0) {
-                        videoPool = [...videoPool, ...newFiles];
-                        console.log(`[API] Detected ${newFiles.length} additional video files`);
-                    }
-                }
-            } catch (e) {
-                console.log('Could not fetch via API, relying on files.js fallback');
-            }
+        function getLayoutCount(layout) {
+            if(layout === '2x2') return 4;
+            if(layout === '3x3') return 9;
+            if(layout === '4x4') return 16;
+            if(layout === 'hero') return 6;
+            return 9;
         }
 
-        // Shuffle array using Fisher-Yates algorithm
         function shuffleArray(array) {
-            const shuffled = [...array];
-            for (let i = shuffled.length - 1; i > 0; i--) {
+            const temp = [...array];
+            for (let i = temp.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
-                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                [temp[i], temp[j]] = [temp[j], temp[i]];
             }
-            return shuffled;
+            return temp;
         }
 
-        // Get new set of videos for the collage
-        function getNewVideoSet() {
-            if (videoPool.length === 0) {
-                return [];
-            }
-            if (videoPool.length >= 8) {
-                const shuffled = shuffleArray(videoPool);
-                return shuffled.slice(0, 8);
-            } else {
-                return shuffleArray(videoPool);
-            }
-        }
+        function buildGrid() {
+            grid.innerHTML = '';
+            const count = getLayoutCount(activeLayout);
+            currentVideos = shuffleArray(videoPool).slice(0, count);
 
-        // Update visible frames based on available content
-        function updateVisibleFrames() {
-            const items = document.querySelectorAll('.collage-item');
-            const availableCount = videoPool.length;
-            
-            if (availableCount === 0) {
-                items.forEach(item => {
-                    item.style.display = 'none';
-                });
-                const noVideos = document.getElementById('noVideos');
-                if (noVideos) {
-                    noVideos.textContent = 'Add content to videos folder';
-                    noVideos.style.display = 'block';
-                }
-                return;
-            }
-            
-            const noVideos = document.getElementById('noVideos');
-            if (noVideos) {
-                noVideos.style.display = 'none';
-            }
-            
-            items.forEach((item, index) => {
-                if (index < availableCount) {
-                    item.style.display = 'block';
-                } else {
-                    item.style.display = 'none';
-                }
-            });
-        }
+            currentVideos.forEach((src, i) => {
+                const box = document.createElement('div');
+                box.className = 'vid-monitor';
+                
+                const vid = document.createElement('video');
+                vid.src = src;
+                vid.autoplay = isPlaying;
+                vid.loop = true;
+                vid.muted = true;
+                vid.playsInline = true;
+                vid.disablePictureInPicture = true;
+                vid.disableRemotePlayback = true;
+                
+                const overlay = document.createElement('div');
+                overlay.className = 'vid-overlay';
+                overlay.innerHTML = `<span>Feed ${String(i+1).padStart(2, '0')}</span><span class="res">LIVE</span>`;
 
-        // Render video items
-        function renderVideos() {
-            const container = document.querySelector('.collage-container');
-            const noVideos = document.getElementById('noVideos');
-            
-            if (videoPool.length === 0) {
-                noVideos.style.display = 'block';
-                return;
-            }
-            
-            noVideos.style.display = 'none';
-            
-            // Clear existing video items
-            const existingItems = container.querySelectorAll('.collage-item');
-            existingItems.forEach(item => item.remove());
-            
-            currentVideos = getNewVideoSet();
-            
-            const itemClasses = ['item-1', 'item-2', 'item-3', 'item-4', 'item-5', 'item-6', 'item-7', 'item-8'];
-            
-            currentVideos.forEach((videoSrc, index) => {
-                if (index < itemClasses.length) {
-                    const item = document.createElement('div');
-                    item.className = `collage-item ${itemClasses[index]}`;
-                    
-                    const video = document.createElement('video');
-                    video.src = videoSrc;
-                    video.preload = 'metadata';
-                    video.muted = true;
-                    video.loop = false;
-                    video.playsInline = true;
-                    
-                    video.addEventListener('ended', () => {
-                        exitFocused();
-                    });
-                    
-                    item.appendChild(video);
-                    container.appendChild(item);
-                }
-            });
-            
-            // Store original positions
-            originalPositions.clear();
-            document.querySelectorAll('.collage-item').forEach(item => {
-                const computedStyle = window.getComputedStyle(item);
-                originalPositions.set(item, {
-                    top: item.style.top || computedStyle.top,
-                    left: item.style.left || computedStyle.left,
-                    right: item.style.right || computedStyle.right,
-                    bottom: item.style.bottom || computedStyle.bottom
-                });
-            });
-            
-            // Add click handlers
-            addClickHandlers();
-        }
+                vid.onloadedmetadata = () => {
+                    const resSpan = overlay.querySelector('.res');
+                    if(resSpan) resSpan.innerText = `${vid.videoWidth}x${vid.videoHeight}`;
+                };
 
-        // Add click handlers for play/pause and focus
-        function addClickHandlers() {
-            document.querySelectorAll('.collage-item').forEach(item => {
-                item.addEventListener('click', (e) => {
+                box.appendChild(vid);
+                box.appendChild(overlay);
+
+                box.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    const video = item.querySelector('video');
-                    
-                    if (focusedItem === item) {
-                        if (video.paused) {
-                            video.play();
-                            video.muted = false;
-                            isPlaying = true;
-                        } else {
-                            video.pause();
-                            isPlaying = false;
-                        }
+                    if(focusedItem === box) {
+                        closeFullscreen();
                     } else {
-                        if (focusedItem) {
-                            const prevVideo = focusedItem.querySelector('video');
-                            if (prevVideo) {
-                                prevVideo.pause();
-                                prevVideo.currentTime = 0;
-                                prevVideo.muted = true;
-                            }
-                            focusedItem.classList.remove('focused');
-                        }
-                        
-                        focusItem(item);
-                        
-                        video.muted = false;
-                        video.play();
-                        isPlaying = true;
-                    }
-                });
-            });
-
-            document.querySelector('.collage-container').addEventListener('click', () => {
-                exitFocused();
-            });
-            
-            document.getElementById('closeButton').addEventListener('click', (e) => {
-                e.stopPropagation();
-                exitFocused();
-            });
-        }
-
-        function exitFocused() {
-            if (!focusedItem) return;
-            const item = focusedItem;
-            item.classList.add('exiting');
-            document.getElementById('closeButton').classList.remove('visible');
-            setTimeout(() => {
-                resetFocus();
-                item.classList.remove('exiting');
-            }, 600);
-        }
-
-        function focusItem(item) {
-            document.querySelectorAll('.collage-item').forEach(i => {
-                if (i !== item) {
-                    i.classList.add('dimmed');
-                    applyMagneticRepulsion(i);
-                    const video = i.querySelector('video');
-                    if (video) {
-                        video.pause();
-                        video.muted = true;
-                    }
-                }
-            });
-            
-            item.classList.remove('dimmed');
-            item.classList.add('focused');
-            focusedItem = item;
-            
-            document.getElementById('closeButton').classList.add('visible');
-        }
-
-        function resetFocus() {
-            document.querySelectorAll('.collage-item').forEach(i => {
-                i.classList.remove('dimmed');
-                i.classList.remove('focused');
-                restoreOriginalPosition(i);
-                const video = i.querySelector('video');
-                if (video) {
-                    video.pause();
-                    video.currentTime = 0;
-                    video.muted = true;
-                }
-            });
-            focusedItem = null;
-            isPlaying = false;
-            
-            document.getElementById('closeButton').classList.remove('visible');
-        }
-
-        function applyMagneticRepulsion(item) {
-            const container = document.querySelector('.collage-container');
-            const containerRect = container.getBoundingClientRect();
-            const itemRect = item.getBoundingClientRect();
-            
-            const centerX = containerRect.width / 2;
-            const centerY = containerRect.height / 2;
-            
-            const itemCenterX = itemRect.left - containerRect.left + itemRect.width / 2;
-            const itemCenterY = itemRect.top - containerRect.top + itemRect.height / 2;
-            
-            const deltaX = itemCenterX - centerX;
-            const deltaY = itemCenterY - centerY;
-            
-            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-            const repulsionStrength = 80;
-            
-            if (distance > 0) {
-                const pushX = (deltaX / distance) * repulsionStrength;
-                const pushY = (deltaY / distance) * repulsionStrength;
-                
-                const originalPos = originalPositions.get(item);
-                
-                if (originalPos.right && originalPos.right !== 'auto') {
-                    item.style.right = `calc(${originalPos.right} + ${pushX}px)`;
-                } else if (originalPos.left) {
-                    item.style.left = `calc(${originalPos.left} + ${pushX}px)`;
-                }
-                
-                if (originalPos.bottom && originalPos.bottom !== 'auto') {
-                    item.style.bottom = `calc(${originalPos.bottom} + ${pushY}px)`;
-                } else if (originalPos.top) {
-                    item.style.top = `calc(${originalPos.top} + ${pushY}px)`;
-                }
-            }
-        }
-
-        function restoreOriginalPosition(item) {
-            const originalPos = originalPositions.get(item);
-            if (originalPos) {
-                item.style.top = originalPos.top;
-                item.style.left = originalPos.left;
-                item.style.right = originalPos.right;
-                item.style.bottom = originalPos.bottom;
-            }
-        }
-
-        // Update videos with animation
-        function shuffleVideos() {
-            if (isShuffling) return;
-            isShuffling = true;
-
-            const items = document.querySelectorAll('.collage-item');
-            const newVideos = getNewVideoSet();
-            
-            const visibleItems = Array.from(items).filter(item => item.style.display !== 'none');
-            
-            const wasPlaying = isPlaying;
-
-            visibleItems.forEach(item => {
-                const video = item.querySelector('video');
-                if (video) {
-                    video.pause();
-                    video.muted = true;
-                }
-                item.classList.add('shuffling');
-            });
-
-            setTimeout(() => {
-                visibleItems.forEach((item, index) => {
-                    const video = item.querySelector('video');
-                    if (video && newVideos[index]) {
-                        video.src = newVideos[index];
-                        video.load();
+                        if(focusedItem) closeFullscreen();
+                        box.classList.add('focused');
+                        focusedItem = box;
+                        vid.muted = false; // Unmute on focus
+                        vid.play(); // ensure playing when focused
+                        closeBtn.classList.add('visible');
                     }
                 });
 
-                visibleItems.forEach((item, index) => {
-                    setTimeout(() => {
-                        item.classList.remove('shuffling');
-                    }, index * 50);
-                });
+                grid.appendChild(box);
+            });
 
-                currentVideos = newVideos;
-                isShuffling = false;
-                
-                if (wasPlaying && focusedItem) {
-                    const video = focusedItem.querySelector('video');
-                    if (video) {
-                        video.muted = false;
-                        video.play();
-                    }
-                }
-            }, 400);
+            document.getElementById('counter').innerText = `${videoPool.length} Videos Available`;
         }
 
-        // Handle mouse wheel scroll
-        let scrollDelta = 0;
-        const scrollThreshold = 100;
-
-        document.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            scrollDelta += Math.abs(e.deltaY);
-
-            if (scrollDelta >= scrollThreshold && !isShuffling && videoPool.length > 0) {
-                shuffleVideos();
-                scrollDelta = 0;
+        function closeFullscreen() {
+            if(focusedItem) {
+                const vid = focusedItem.querySelector('video');
+                if(vid) vid.muted = true;
+                focusedItem.classList.remove('focused');
+                focusedItem = null;
+                closeBtn.classList.remove('visible');
             }
-        }, { passive: false });
-
-        // Async Initialization
-        async function init() {
-            // 1. Try static list from files.js
-            if (window.collageFiles && window.collageFiles.videos) {
-                videoPool = [...window.collageFiles.videos];
-            }
-
-            // 2. Try API detection
-            await detectAdditionalFiles();
-
-            // 3. Fallback to repository defaults if empty
-            if (videoPool.length === 0) {
-                videoPool = [
-                    'videos/tumblr_0a3f03f882b557143357653b5d740a64_55f2d1d4_720.mp4'
-                ];
-            }
-
-            // Setup frames layout and render videos
-            updateVisibleFrames();
-            renderVideos();
         }
 
-        // Run initialization
-        window.addEventListener('DOMContentLoaded', init);
+        closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeFullscreen();
+        });
 
-        // Handle Left/Right arrow key navigation
+        document.getElementById('play-btn').addEventListener('click', togglePlay);
+
+        function togglePlay() {
+            isPlaying = !isPlaying;
+            const btn = document.getElementById('play-btn');
+            if (isPlaying) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+            document.querySelectorAll('video').forEach(v => {
+                if(isPlaying) v.play();
+                else v.pause();
+            });
+        }
+
         document.addEventListener('keydown', (e) => {
-            if (videoPool.length === 0) return;
-            
-            if (e.key === 'ArrowLeft') {
-                if (focusedItem) {
-                    navigateFocused(-1);
-                } else {
-                    shuffleVideos();
-                }
-            } else if (e.key === 'ArrowRight') {
-                if (focusedItem) {
-                    navigateFocused(1);
-                } else {
-                    shuffleVideos();
-                }
+            if(e.key === 'Escape') closeFullscreen();
+            if(e.key === ' ' && !focusedItem) { e.preventDefault(); togglePlay(); }
+        });
+
+        let scrollDelta = 0;
+        document.addEventListener('wheel', (e) => {
+            if(focusedItem) return;
+            scrollDelta += Math.abs(e.deltaY);
+            if(scrollDelta > 150) {
+                buildGrid();
+                scrollDelta = 0;
             }
         });
 
-        function navigateFocused(direction) {
-            const items = Array.from(document.querySelectorAll('.collage-item'));
-            const visibleItems = items.filter(item => item.style.display !== 'none');
-            if (visibleItems.length <= 1) return;
-            
-            let currentIndex = visibleItems.indexOf(focusedItem);
-            if (currentIndex === -1) return;
-            
-            let nextIndex = (currentIndex + direction + visibleItems.length) % visibleItems.length;
-            const nextItem = visibleItems[nextIndex];
-            
-            resetFocus();
-            focusItem(nextItem);
-            
-            const video = nextItem.querySelector('video');
-            if (video) {
-                video.muted = false;
-                video.play();
-                isPlaying = true;
-            }
-        }
+        // Layout Buttons
+        document.querySelectorAll('[data-layout]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('[data-layout]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                activeLayout = btn.dataset.layout;
+                grid.className = `vid-grid layout-${activeLayout}`;
+                buildGrid();
+            });
+        });
+
+        // Theme Buttons
+        document.querySelectorAll('[data-theme]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('[data-theme]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                document.body.className = '';
+                if(btn.dataset.theme !== 'gold') {
+                    document.body.classList.add(`theme-${btn.dataset.theme}`);
+                }
+            });
+        });
+
+        // Style Buttons
+        document.querySelectorAll('[data-style]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('[data-style]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                grid.parentElement.className = 'grid-viewport-card';
+                if(btn.dataset.style !== 'modern') {
+                    grid.parentElement.classList.add(`style-${btn.dataset.style}`);
+                }
+            });
+        });
+
+        document.getElementById('shuffle-btn').addEventListener('click', buildGrid);
+
+        // Init
+        buildGrid();
     </script>
 </body>
 </html>
+
+
+

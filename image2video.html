@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta name="google" content="notranslate">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Style Morph Animator</title>
     <!-- Include auto-generated files list -->
+    <script src="config.js"></script>
     <script src="files.js" onerror="console.warn('files.js not found. Using fallback files.')"></script>
     <style>
         :root {
@@ -1011,8 +1013,8 @@
 
         // Retrieve filenames
         let filePaths = [];
-        if (window.collageFiles && Array.isArray(window.collageFiles.gif2video) && window.collageFiles.gif2video.length > 0) {
-            filePaths = window.collageFiles.gif2video;
+        if (window.collageFiles && Array.isArray(window.collageFiles[window.BindsolConfig.apps.styleMorph.folder]) && window.collageFiles[window.BindsolConfig.apps.styleMorph.folder].length > 0) {
+            filePaths = window.collageFiles[window.BindsolConfig.apps.styleMorph.folder];
         } else {
             console.log("No files loaded from collageFiles.gif2video. Using fallback list.");
             filePaths = fallbackFiles;

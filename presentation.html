@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta name="google" content="notranslate">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Presentation</title>
+    <script src="config.js"></script>
     <script src="files.js"></script>
     <style>
         * {
@@ -297,7 +299,7 @@
         // Try to detect additional image files via API
         async function detectAdditionalFiles() {
             try {
-                const response = await fetch('/api/files?folder=wallpapers');
+                const response = await fetch('/api/files?folder=' + window.BindsolConfig.apps.presentation.folder);
                 if (response.ok) {
                     const files = await response.json();
                     const newFiles = files.filter(filePath => !imagePool.includes(filePath));
@@ -383,6 +385,7 @@
                 setTimeout(() => {
                     image.classList.remove(randomTransition);
                 }, animationDuration);
+            }, 500);
         }
 
         // Show previous image
@@ -481,8 +484,8 @@
         // Async Initialization
         async function init() {
             // 1. Try static list from files.js
-            if (window.collageFiles && window.collageFiles.wallpapers) {
-                imagePool = [...window.collageFiles.wallpapers];
+            if (window.collageFiles && window.collageFiles[window.BindsolConfig.apps.presentation.folder]) {
+                imagePool = [...window.collageFiles[window.BindsolConfig.apps.presentation.folder]];
             }
 
             // 2. Try API detection
@@ -491,8 +494,8 @@
             // 3. Fallback to repository defaults if empty
             if (imagePool.length === 0) {
                 imagePool = [
-                    'wallpapers/tumblr_097efc04a36d9730c3f604e131df2904_0fe9eb8a_2048.jpg',
-                    'wallpapers/tumblr_1d8f3a0b0afaedf54068fc57472fc90d_d9b5b757_1280.jpg'
+                    'input/wallpapers/tumblr_097efc04a36d9730c3f604e131df2904_0fe9eb8a_2048.jpg',
+                    'input/wallpapers/tumblr_1d8f3a0b0afaedf54068fc57472fc90d_d9b5b757_1280.jpg'
                 ];
             }
 
