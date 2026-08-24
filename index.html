@@ -191,15 +191,25 @@
             <h2>Available Apps</h2>
             
             <div class="apps-grid">
-                <!-- Row 1: CCTV & TV (span 6 each) -->
-                <div class="app-card" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/resources/cctv.jpg'); grid-column: span 6;" onclick="window.open('CCTV.html', '_blank')">
+                <!-- Row 1: CCTV, TV, & IPTV (span 4 each) -->
+                <div class="app-card" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/resources/cctv.jpg'); grid-column: span 4;" onclick="window.open('CCTV.html', '_blank')">
                     <h3>📹 CCTV Control Center</h3>
                     <p>Security control room dashboard displaying active video streams as CCTV feeds. Features adjustable grid layouts (2x2, 3x3, 4x4, 1+5 Split), retro CRT screen filters, automated stream rotation, live event logs, click-to-audio selection, and double-click client fullscreen overlay.</p>
                 </div>
 
-                <div class="app-card" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/resources/tv.jpg'); grid-column: span 6;" onclick="window.open('Television.html', '_blank')">
+                <div class="app-card" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/resources/tv.jpg'); grid-column: span 4;" onclick="window.open('Television.html', '_blank')">
                     <h3>📺 Retro CRT Television</h3>
                     <p>Simulates a vintage wood-cabinet CRT television. Starts in a classic SMPTE "No Signal" color bars mode with synthesised audio static, switching to an Android TV smart launcher. Features fully routable d-pad arrow navigation, physical rotary dials, dynamic channel glitches, and customizable screen overlays.</p>
+                </div>
+
+                <div class="app-card" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/resources/cctv.jpg'); grid-column: span 4;" onclick="window.open('iptv.html', '_blank')">
+                    <h3>📡 IPTV Receiver Deck</h3>
+                    <p>Interactive 3-view live IPTV dashboard receiver. Configurable slots allow loading and switching between custom HLS streams. Click a stream to expand to full browser viewport and routing/unmuting live audio, and click again to collapse back to grid view.</p>
+                </div>
+
+                <div class="app-card" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/resources/tv.jpg'); grid-column: span 4;" onclick="window.open('youtube.html', '_blank')">
+                    <h3>🔴 YouTube Multi-Stream Deck</h3>
+                    <p>Interactive 2-view YouTube live streams receiver. Auto-extracts YouTube video IDs, dynamically scales stream resolution (480p when small to save data, up to 720p HD when focused), with click-to-audio routing controls.</p>
                 </div>
 
                 <!-- Row 2: Mobile, Whatsapp, Morph (span 4 each) -->

@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Multi-Viewer Deck</title>
+    <!-- Include auto-generated fallback config -->
+    <script src="config/youtube_config.js" onerror="console.warn('config/youtube_config.js not found. Using inline fallback.')"></script>
+    <style>
+        :root {
+            --bg-color: #030305;
+            --deck-bg: rgba(13, 14, 22, 0.85);
+            --panel-bg: rgba(20, 22, 37, 0.6);
+            --panel-border: rgba(255, 71, 87, 0.15);
+            --accent-red: #ff4757;
+            --accent-red-glow: rgba(255, 71, 87, 0.35);
+            --accent-orange: #ff6b81;
+            --accent-orange-glow: rgba(255, 107, 129, 0.3);
+            --text-color: #f1f5f9;
+            --text-muted: rgba(241, 245, 249, 0.5);
+            --button-bg: rgba(255, 71, 87, 0.06);
+            --button-hover: rgba(255, 71, 87, 0.2);
+            --accent-cyan: #00f2fe;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at center, #200f12 0%, #030305 100%),
+                linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+            background-size: 100% 100%, 100% 4px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+            color: var(--text-color);
+            overflow: hidden;
+            padding: 15px;
+        }
+
+        /* Scanline Overlay option */
+        .scanlines {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.18) 50%);
+            background-size: 100% 4px;
+            z-index: 999;
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+        header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 24px;
+            background: var(--deck-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            z-index: 10;
+            flex-shrink: 0;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: var(--accent-red);
+            box-shadow: 0 0 10px var(--accent-red);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 15px var(--accent-red); }
+            100% { transform: scale(0.95); opacity: 0.5; }
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            background: linear-gradient(90deg, var(--accent-red), var(--accent-orange));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn {
+            background: var(--button-bg);
+            border: 1px solid var(--panel-border);
+            color: var(--text-color);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .btn:hover {
+            background: var(--button-hover);
+            border-color: var(--accent-red);
+            box-shadow: 0 0 12px var(--accent-red-glow);
+            transform: translateY(-1px);
+        }
+
+        .btn-active {
+            background: var(--accent-red);
+            color: #fff;
+            border-color: var(--accent-red);
+            font-weight: 600;
+        }
+        
+        .btn-active:hover {
+            background: #ff5e6c;
+            box-shadow: 0 0 15px rgba(255, 71, 87, 0.6);
+        }
+
+        /* Main Viewport Container - Single Row 2 Columns */
+        .viewer-container {
+            flex-grow: 1;
+            position: relative;
+            background: var(--deck-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr;
+            gap: 12px;
+            padding: 12px;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Video Feed Player Wrapper */
+        .player-wrapper {
+            position: relative;
+            background: #000;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            overflow: hidden;
+            cursor: pointer;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .player-wrapper:hover {
+            border-color: rgba(255, 71, 87, 0.4);
+            box-shadow: 0 4px 20px rgba(255, 71, 87, 0.1);
+        }
+
+        /* Embed Iframe styles */
+        .player-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background-color: #000;
+            flex-grow: 1;
+        }
+
+        /* Prevent iframe clicks from absorbing triggers while in grid mode */
+        .iframe-shield {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 3;
+            background: transparent;
+        }
+
+        /* Hide shield when focused so user can interact with player controls */
+        .player-wrapper.focused .iframe-shield {
+            display: none;
+        }
+
+        /* Player Overlays */
+        .player-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 12px;
+            z-index: 2;
+        }
+
+        .player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .channel-tag {
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(4px);
+            border: 1px solid var(--panel-border);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .channel-num {
+            color: var(--accent-red);
+            font-family: monospace;
+        }
+
+        .status-badge {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            background: rgba(255, 71, 87, 0.2);
+            color: var(--accent-red);
+            border: 1px solid rgba(255, 71, 87, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .quality-badge {
+            font-size: 0.65rem;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: var(--text-color);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .player-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            width: 100%;
+            background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
+            padding: 15px 12px 8px 12px;
+            margin: -12px;
+            border-radius: 0 0 12px 12px;
+            opacity: 0.85;
+            transition: opacity 0.3s ease;
+            z-index: 4;
+        }
+
+        .player-wrapper:hover .player-footer {
+            opacity: 1;
+        }
+
+        .channel-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .channel-logo {
+            width: 28px;
+            height: 28px;
+            border-radius: 4px;
+            background: #111;
+            object-fit: contain;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .channel-name {
+            font-size: 0.85rem;
+            font-weight: 500;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            max-width: 180px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* FOCUS (FULL SCREEN) MODE */
+        .viewer-container.has-focused .player-wrapper {
+            opacity: 0.15;
+            transform: scale(0.95);
+            pointer-events: none;
+        }
+
+        .viewer-container.has-focused .player-wrapper.focused {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            right: 12px;
+            bottom: 12px;
+            width: calc(100% - 24px);
+            height: calc(100% - 24px);
+            z-index: 50;
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: auto;
+            border-color: var(--accent-red);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 71, 87, 0.2);
+        }
+
+        /* Close/Exit focus button overlay */
+        .close-focus-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--accent-red);
+            color: #fff;
+            border: 2px solid var(--accent-red);
+            border-radius: 30px;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            z-index: 1001; /* Must sit above everything including scanlines if necessary */
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4), 0 0 20px rgba(255, 71, 87, 0.2);
+            backdrop-filter: blur(5px);
+        }
+
+        .close-focus-btn:hover {
+            background: #ff5e6c;
+            border-color: #ff5e6c;
+            box-shadow: 0 6px 20px rgba(255, 71, 87, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .viewer-container.has-focused ~ .close-focus-btn {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* CONFIGURATION MODAL / PANEL */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(3, 3, 5, 0.85);
+            backdrop-filter: blur(15px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-container {
+            width: 90%;
+            max-width: 600px;
+            height: 75vh;
+            background: #140a0b;
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 25px rgba(255, 71, 87, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transform: scale(0.95);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .modal-overlay.open .modal-container {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--accent-red);
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .modal-close:hover {
+            color: #fff;
+        }
+
+        .modal-body {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .slot-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .slot-card:hover {
+            background: rgba(255, 71, 87, 0.03);
+            border-color: rgba(255, 71, 87, 0.2);
+        }
+
+        .slot-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 6px;
+        }
+
+        .slot-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 700;
+            color: var(--accent-red);
+        }
+
+        .slot-name-preview {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .form-group label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .form-input {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            width: 100%;
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-red);
+            box-shadow: 0 0 6px rgba(255, 71, 87, 0.25);
+        }
+
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        /* Noise background indicator */
+        .noise-container {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #0a0a0f;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+            overflow: hidden;
+        }
+
+        .noise-bg {
+            position: absolute;
+            top: -50%; left: -50%; right: -50%; bottom: -50%;
+            width: 200%; height: 200%;
+            background: transparent url('data:image/svg+xml,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)"/%3E%3C/svg%3E') repeat;
+            opacity: 0.08;
+            animation: noise-move 0.2s infinite;
+        }
+
+        @keyframes noise-move {
+            0% { transform: translate(0, 0); }
+            10% { transform: translate(-1%, -1%); }
+            20% { transform: translate(-2%, 1%); }
+            30% { transform: translate(1%, -2%); }
+            40% { transform: translate(-1%, 3%); }
+            55% { transform: translate(-1%, 1%); }
+            100% { transform: translate(0, 0); }
+        }
+
+        .noise-text {
+            font-size: 0.8rem;
+            color: var(--accent-red);
+            font-family: monospace;
+            z-index: 2;
+            letter-spacing: 2px;
+            text-shadow: 0 0 8px var(--accent-red-glow);
+            animation: blink-text 1.5s infinite;
+        }
+
+        @keyframes blink-text {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="scanlines"></div>
+
+    <!-- Header bar -->
+    <header>
+        <div class="logo-section">
+            <div class="logo-indicator"></div>
+            <h1>YOUTUBE MULTI-STREAM DECK</h1>
+        </div>
+        <div class="controls">
+            <button id="toggle-scanlines" class="btn btn-active">CRT SCANLINES</button>
+            <button id="open-config" class="btn">
+                <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle;">
+                    <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.86z"/>
+                </svg>
+                SETTINGS
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Grid Viewer -->
+    <div class="viewer-container" id="viewer-deck">
+        <!-- Channel 1 -->
+        <div class="player-wrapper" data-index="0" onclick="toggleFocus(this)">
+            <div class="iframe-shield"></div>
+            <div class="noise-container" id="noise-0">
+                <div class="noise-bg"></div>
+                <div class="noise-text">LOADING TUBE FEED...</div>
+            </div>
+            <iframe class="player-frame" id="video-0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+            <div class="player-overlay">
+                <div class="player-header">
+                    <span class="channel-tag"><span class="channel-num">LIVE 01</span> <span class="tag-name">Aaj Tak</span></span>
+                    <span class="status-badge" id="status-0">CONNECTING</span>
+                </div>
+                <div class="player-footer">
+                    <div class="channel-info">
+                        <img class="channel-logo" id="logo-0" src="" alt="logo" onerror="this.style.display='none'">
+                        <span class="channel-name" id="name-0">Aaj Tak Live</span>
+                    </div>
+                    <span class="quality-badge" id="quality-0">480p SD</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Channel 2 -->
+        <div class="player-wrapper" data-index="1" onclick="toggleFocus(this)">
+            <div class="iframe-shield"></div>
+            <div class="noise-container" id="noise-1">
+                <div class="noise-bg"></div>
+                <div class="noise-text">LOADING TUBE FEED...</div>
+            </div>
+            <iframe class="player-frame" id="video-1" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+            <div class="player-overlay">
+                <div class="player-header">
+                    <span class="channel-tag"><span class="channel-num">LIVE 02</span> <span class="tag-name">NDTV India</span></span>
+                    <span class="status-badge" id="status-1">CONNECTING</span>
+                </div>
+                <div class="player-footer">
+                    <div class="channel-info">
+                        <img class="channel-logo" id="logo-1" src="" alt="logo" onerror="this.style.display='none'">
+                        <span class="channel-name" id="name-1">NDTV India Live</span>
+                    </div>
+                    <span class="quality-badge" id="quality-1">480p SD</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating close button for focused mode -->
+    <div class="close-focus-btn" id="exit-focus-btn" onclick="exitFocus(event)" title="Exit Full View">&#x2715; EXIT FULL VIEW</div>
+
+    <!-- Configuration Modal -->
+    <div class="modal-overlay" id="config-modal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <span class="modal-title">DECK CONFIGURATION</span>
+                <button class="modal-close" id="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Slot 1 -->
+                <div class="slot-card">
+                    <div class="slot-header">
+                        <span class="slot-label">Slot 01</span>
+                        <span class="slot-name-preview" id="slot-name-preview-0">Aaj Tak Live</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Channel/Stream Name</label>
+                        <input type="text" class="form-input" id="input-name-0" placeholder="e.g. Aaj Tak Live">
+                    </div>
+                    <div class="form-group">
+                        <label>Logo URL (Optional)</label>
+                        <input type="text" class="form-input" id="input-logo-0" placeholder="e.g. https://domain.com/logo.png">
+                    </div>
+                    <div class="form-group">
+                        <label>YouTube Live Stream / Video URL</label>
+                        <input type="text" class="form-input" id="input-url-0" placeholder="https://www.youtube.com/watch?v=...">
+                    </div>
+                </div>
+
+                <!-- Slot 2 -->
+                <div class="slot-card">
+                    <div class="slot-header">
+                        <span class="slot-label">Slot 02</span>
+                        <span class="slot-name-preview" id="slot-name-preview-1">NDTV India Live</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Channel/Stream Name</label>
+                        <input type="text" class="form-input" id="input-name-1" placeholder="e.g. NDTV India Live">
+                    </div>
+                    <div class="form-group">
+                        <label>Logo URL (Optional)</label>
+                        <input type="text" class="form-input" id="input-logo-1" placeholder="e.g. https://domain.com/logo.png">
+                    </div>
+                    <div class="form-group">
+                        <label>YouTube Live Stream / Video URL</label>
+                        <input type="text" class="form-input" id="input-url-1" placeholder="https://www.youtube.com/watch?v=...">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" id="reset-config">RESET TO DEFAULT</button>
+                <button class="btn btn-active" id="save-config">APPLY CHANGES</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Fallback configuration
+        let config = {
+            channels: [
+                {
+                    name: "Aaj Tak Live",
+                    url: "https://www.youtube.com/watch?v=Nq2wYlUXVxo",
+                    logo: "https://jiotvimages.cdn.jio.com/dare_images/images/AAJ_TAK.png"
+                },
+                {
+                    name: "NDTV India Live",
+                    url: "https://www.youtube.com/watch?v=MN8p-V1Ys1A",
+                    logo: "https://xstreamcp-assets-msp.streamready.in/assets/LIVETV/LIVECHANNEL/LIVETV_LIVETVCHANNEL_NDTV_INDIA/images/LOGO_HD/image.png"
+                }
+            ]
+        };
+
+        if (typeof DEFAULT_YOUTUBE_CONFIG !== 'undefined' && DEFAULT_YOUTUBE_CONFIG.channels) {
+            config = DEFAULT_YOUTUBE_CONFIG;
+        }
+
+        // Helper to extract YouTube ID
+        function getYouTubeId(url) {
+            if (!url) return '';
+            // Match watch URLs, embeds, share links, live streams, or direct 11-char IDs
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|live\/)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            if (match && match[2] && match[2].length === 11) {
+                return match[2];
+            }
+            // Strip any query parameters if paste raw ID with query
+            const cleanId = url.split('?')[0].split('&')[0].trim();
+            if (cleanId.length === 11) {
+                return cleanId;
+            }
+            return url.trim();
+        }
+
+        // Load configuration from local storage if available
+        function loadConfig() {
+            const saved = localStorage.getItem('youtube_deck_config');
+            if (saved) {
+                try {
+                    config = JSON.parse(saved);
+                } catch (e) {
+                    console.error('Error loading config from localStorage', e);
+                }
+            } else {
+                if (window.location.protocol !== 'file:') {
+                    fetch('config/youtube_config.json')
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data && data.channels) {
+                                config = data;
+                                initStreams();
+                                syncInputsWithConfig();
+                            }
+                        })
+                        .catch(err => console.log('Could not fetch JSON config, using fallback.', err));
+                }
+            }
+        }
+
+        // Build Iframe Embed URL with custom parameters
+        function buildEmbedUrl(videoId, isFocused) {
+            if (!videoId) return '';
+            const base = `https://www.youtube.com/embed/${videoId}`;
+            const params = new URLSearchParams({
+                autoplay: '1',
+                mute: isFocused ? '0' : '1',
+                controls: isFocused ? '1' : '0',
+                vq: isFocused ? 'hd720' : 'large', // hd720 = 720p, large = 480p (low data)
+                rel: '0',
+                showinfo: '0',
+                iv_load_policy: '3',
+                enablejsapi: '1',
+                origin: window.location.origin
+            });
+            return `${base}?${params.toString()}`;
+        }
+
+        // Initialize streams
+        function initStreams() {
+            for (let i = 0; i < 2; i++) {
+                const channel = config.channels[i];
+                const iframe = document.getElementById(`video-${i}`);
+                const statusBadge = document.getElementById(`status-${i}`);
+                const qualityBadge = document.getElementById(`quality-${i}`);
+                const noiseContainer = document.getElementById(`noise-${i}`);
+
+                // Update text overlays
+                document.getElementById(`name-${i}`).textContent = channel ? channel.name : 'Empty Slot';
+                document.querySelector(`[data-index="${i}"] .tag-name`).textContent = channel ? channel.name : 'Empty';
+                const logo = document.getElementById(`logo-${i}`);
+                if (channel && channel.logo) {
+                    logo.src = channel.logo;
+                    logo.style.display = 'block';
+                } else {
+                    logo.style.display = 'none';
+                }
+
+                const videoId = channel ? getYouTubeId(channel.url) : '';
+                if (!videoId) {
+                    statusBadge.textContent = "OFFLINE";
+                    statusBadge.className = "status-badge error";
+                    noiseContainer.style.opacity = '1';
+                    iframe.src = '';
+                    continue;
+                }
+
+                noiseContainer.style.opacity = '1';
+                statusBadge.textContent = "LOADING";
+                statusBadge.className = "status-badge loading";
+                qualityBadge.textContent = "480p SD";
+
+                // Build default grid-view URL (muted, 480p, no controls)
+                iframe.src = buildEmbedUrl(videoId, false);
+
+                // Simple load event watcher to hide noise
+                iframe.onload = () => {
+                    noiseContainer.style.opacity = '0';
+                    statusBadge.textContent = "LIVE";
+                    statusBadge.className = "status-badge";
+                };
+            }
+        }
+
+        // Toggle focus on player
+        function toggleFocus(element) {
+            const container = document.getElementById('viewer-deck');
+            const isFocused = element.classList.contains('focused');
+            const index = parseInt(element.getAttribute('data-index'));
+
+            if (isFocused) {
+                exitFocus();
+                return;
+            }
+
+            // Collapse other elements, mute them, load them in 480p
+            document.querySelectorAll('.player-wrapper').forEach(p => {
+                const pIndex = parseInt(p.getAttribute('data-index'));
+                if (pIndex !== index && p.classList.contains('focused')) {
+                    p.classList.remove('focused');
+                    const otherIframe = document.getElementById(`video-${pIndex}`);
+                    const otherChannel = config.channels[pIndex];
+                    if (otherChannel) {
+                        otherIframe.src = buildEmbedUrl(getYouTubeId(otherChannel.url), false);
+                        document.getElementById(`quality-${pIndex}`).textContent = "480p SD";
+                    }
+                }
+            });
+
+            // Expand this element
+            container.classList.add('has-focused');
+            element.classList.add('focused');
+
+            // Upgrade resolution (720p) and unmute
+            const focusedIframe = document.getElementById(`video-${index}`);
+            const focusedChannel = config.channels[index];
+            if (focusedChannel) {
+                const videoId = getYouTubeId(focusedChannel.url);
+                focusedIframe.src = buildEmbedUrl(videoId, true);
+                document.getElementById(`quality-${index}`).textContent = "720p HD";
+            }
+        }
+
+        // Exit focus
+        function exitFocus(event) {
+            if (event) {
+                event.stopPropagation();
+            }
+            const container = document.getElementById('viewer-deck');
+            container.classList.remove('has-focused');
+
+            document.querySelectorAll('.player-wrapper').forEach(p => {
+                if (p.classList.contains('focused')) {
+                    p.classList.remove('focused');
+                    const index = parseInt(p.getAttribute('data-index'));
+                    const iframe = document.getElementById(`video-${index}`);
+                    const channel = config.channels[index];
+                    if (channel) {
+                        iframe.src = buildEmbedUrl(getYouTubeId(channel.url), false);
+                        document.getElementById(`quality-${index}`).textContent = "480p SD";
+                    }
+                }
+            });
+        }
+
+        // Sync inputs
+        function syncInputsWithConfig() {
+            for (let i = 0; i < 2; i++) {
+                const channel = config.channels[i] || { name: '', url: '', logo: '' };
+                document.getElementById(`input-name-${i}`).value = channel.name || '';
+                document.getElementById(`input-url-${i}`).value = channel.url || '';
+                document.getElementById(`input-logo-${i}`).value = channel.logo || '';
+                document.getElementById(`slot-name-preview-${i}`).textContent = channel.name || `Slot ${i+1}`;
+            }
+        }
+
+        // DOM Listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            loadConfig();
+            initStreams();
+            syncInputsWithConfig();
+
+            // CRT Scanline Toggle
+            const toggleScanlinesBtn = document.getElementById('toggle-scanlines');
+            toggleScanlinesBtn.onclick = () => {
+                const scanlines = document.querySelector('.scanlines');
+                if (scanlines.style.display === 'none') {
+                    scanlines.style.display = 'block';
+                    toggleScanlinesBtn.classList.add('btn-active');
+                } else {
+                    scanlines.style.display = 'none';
+                    toggleScanlinesBtn.classList.remove('btn-active');
+                }
+            };
+
+            // Modal Toggles
+            const modal = document.getElementById('config-modal');
+            document.getElementById('open-config').onclick = () => {
+                modal.classList.add('open');
+                syncInputsWithConfig();
+            };
+            document.getElementById('close-modal').onclick = () => modal.classList.remove('open');
+            modal.onclick = (e) => {
+                if (e.target === modal) modal.classList.remove('open');
+            };
+
+            // Save config
+            document.getElementById('save-config').onclick = () => {
+                for (let i = 0; i < 2; i++) {
+                    config.channels[i] = {
+                        name: document.getElementById(`input-name-${i}`).value.trim(),
+                        url: document.getElementById(`input-url-${i}`).value.trim(),
+                        logo: document.getElementById(`input-logo-${i}`).value.trim()
+                    };
+                }
+                localStorage.setItem('youtube_deck_config', JSON.stringify(config));
+                initStreams();
+                modal.classList.remove('open');
+            };
+
+            // Reset Config
+            document.getElementById('reset-config').onclick = () => {
+                if (confirm('Are you sure you want to reset back to default streams?')) {
+                    localStorage.removeItem('youtube_deck_config');
+                    if (typeof DEFAULT_YOUTUBE_CONFIG !== 'undefined') {
+                        config = DEFAULT_YOUTUBE_CONFIG;
+                    } else {
+                        config = {
+                            channels: [
+                                {
+                                    name: "Aaj Tak Live",
+                                    url: "https://www.youtube.com/watch?v=Nq2wYlUXVxo",
+                                    logo: "https://jiotvimages.cdn.jio.com/dare_images/images/AAJ_TAK.png"
+                                },
+                                {
+                                    name: "NDTV India Live",
+                                    url: "https://www.youtube.com/watch?v=MN8p-V1Ys1A",
+                                    logo: "https://xstreamcp-assets-msp.streamready.in/assets/LIVETV/LIVECHANNEL/LIVETV_LIVETVCHANNEL_NDTV_INDIA/images/LOGO_HD/image.png"
+                                }
+                            ]
+                        };
+                    }
+                    syncInputsWithConfig();
+                    localStorage.setItem('youtube_deck_config', JSON.stringify(config));
+                    initStreams();
+                    modal.classList.remove('open');
+                }
+            };
+        });
+    </script>
+</body>
+</html>
