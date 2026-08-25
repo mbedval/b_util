@@ -358,6 +358,14 @@
             justify-content: center;
             border: 1px solid rgba(255,255,255,0.15);
             transition: all 0.2s ease;
+            pointer-events: auto;
+            cursor: pointer;
+        }
+
+        .audio-indicator:hover {
+            transform: scale(1.1);
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 8px var(--accent-cyan-glow);
         }
 
         .audio-indicator svg {
@@ -398,41 +406,36 @@
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 242, 254, 0.2);
         }
 
-        /* Close/Exit focus button overlay */
+        /* Exit Full View — inline header button, hidden until focus mode is active */
         .close-focus-btn {
-            position: absolute;
-            top: 20px;
-            right: 20px;
             background: var(--accent-cyan);
             color: #000;
-            border: 2px solid var(--accent-cyan);
-            border-radius: 30px;
-            padding: 10px 20px;
-            display: flex;
+            border: 1px solid var(--accent-cyan);
+            border-radius: 8px;
+            padding: 8px 16px;
+            display: none;           /* hidden by default */
             align-items: center;
             justify-content: center;
+            gap: 6px;
             font-size: 0.85rem;
             font-weight: 700;
             letter-spacing: 0.5px;
             cursor: pointer;
-            z-index: 1001;
-            opacity: 0;
-            pointer-events: none;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            box-shadow: 0 4px 15px rgba(0, 242, 254, 0.4), 0 0 20px rgba(0, 242, 254, 0.2);
-            backdrop-filter: blur(5px);
+            transition: all 0.2s ease;
+            box-shadow: 0 0 12px rgba(0, 242, 254, 0.35);
+            white-space: nowrap;
         }
 
         .close-focus-btn:hover {
             background: #00d7e2;
             border-color: #00d7e2;
-            box-shadow: 0 6px 20px rgba(0, 242, 254, 0.6);
-            transform: translateY(-2px);
+            box-shadow: 0 0 18px rgba(0, 242, 254, 0.6);
+            transform: translateY(-1px);
         }
 
-        .viewer-container.has-focused ~ .close-focus-btn {
-            opacity: 1;
-            pointer-events: auto;
+        /* Show the button only when focus mode is active */
+        header.focus-active .close-focus-btn {
+            display: flex;
         }
 
         /* CONFIGURATION MODAL / PANEL */
@@ -773,11 +776,13 @@
     <div class="scanlines"></div>
 
     <!-- Header bar -->
-    <header>
+    <header id="main-header">
         <div class="logo-section">
             <div class="logo-indicator"></div>
             <h1>IPTV CONTROL RECEIVER</h1>
         </div>
+        <!-- Exit Full View button: only visible when a channel is focused -->
+        <div class="close-focus-btn" id="exit-focus-btn" onclick="exitFocus(event)" title="Exit Full View">&#x2715; EXIT FULL VIEW</div>
         <div class="controls">
             <button id="toggle-cycle" class="btn">AUTO CYCLE</button>
             <button id="toggle-scanlines" class="btn btn-active">CRT SCANLINES</button>
@@ -810,7 +815,7 @@
                         <img class="channel-logo" id="logo-0" src="" alt="logo" onerror="this.style.display='none'">
                         <span class="channel-name" id="name-0">CNBC Awaaz</span>
                     </div>
-                    <div class="audio-indicator" id="audio-indicator-0">
+                    <div class="audio-indicator" id="audio-indicator-0" onclick="toggleAudioMute(event, 0)" title="Toggle Mute/Unmute">
                         <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
                     </div>
                 </div>
@@ -835,7 +840,7 @@
                         <img class="channel-logo" id="logo-1" src="" alt="logo" onerror="this.style.display='none'">
                         <span class="channel-name" id="name-1">Zee Business</span>
                     </div>
-                    <div class="audio-indicator" id="audio-indicator-1">
+                    <div class="audio-indicator" id="audio-indicator-1" onclick="toggleAudioMute(event, 1)" title="Toggle Mute/Unmute">
                         <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
                     </div>
                 </div>
@@ -860,16 +865,13 @@
                         <img class="channel-logo" id="logo-2" src="" alt="logo" onerror="this.style.display='none'">
                         <span class="channel-name" id="name-2">NDTV Profit</span>
                     </div>
-                    <div class="audio-indicator" id="audio-indicator-2">
+                    <div class="audio-indicator" id="audio-indicator-2" onclick="toggleAudioMute(event, 2)" title="Toggle Mute/Unmute">
                         <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Floating close button for focused mode -->
-    <div class="close-focus-btn" id="exit-focus-btn" onclick="exitFocus(event)" title="Exit Full View">&#x2715; EXIT FULL VIEW</div>
 
     <!-- Configuration Modal -->
     <div class="modal-overlay" id="config-modal">
@@ -949,10 +951,10 @@
                 <div class="picker-panel">
                     <h3>PRESET FINDER</h3>
                     <div class="search-bar-wrapper">
-                        <input type="text" class="search-input" id="preset-search" placeholder="Search Hindi channels (e.g. Awaaz, Zee Business, Profit)...">
+                        <input type="text" class="search-input" id="preset-search" placeholder="Search global channels (e.g. BBC, CNBC, CNN, Sky, sports)...">
                     </div>
                     <div class="playlist-info">
-                        <span>Source: iptv-org Hindi List</span>
+                        <span>Source: iptv-org Global List</span>
                         <span id="load-status">Ready</span>
                     </div>
                     <div class="channel-list-container" id="presets-list">
@@ -1001,6 +1003,7 @@
         const hlsInstances = [null, null, null];
         const channelStates = [true, true, true]; // active (online) vs standby (offline)
         const tempSuspendedStates = [false, false, false]; // trackers for focus mode suspension
+        let lastViewedIndex = null; // Track the last viewed/focused player
         let selectedSlot = 0;
         let presets = [];
 
@@ -1070,6 +1073,17 @@
             toggleBtn.textContent = "ONLINE";
             toggleBtn.classList.remove('standby');
             channelStates[i] = true;
+
+            // Preserve unmuted state if this is the last viewed player
+            if (lastViewedIndex !== null && i === lastViewedIndex) {
+                video.muted = false;
+                const mic = document.getElementById(`audio-indicator-${i}`);
+                if (mic) mic.classList.add('unmuted');
+            } else if (lastViewedIndex !== null) {
+                video.muted = true;
+                const mic = document.getElementById(`audio-indicator-${i}`);
+                if (mic) mic.classList.remove('unmuted');
+            }
 
             if (!channel || !channel.url) {
                 statusBadge.textContent = "OFFLINE";
@@ -1200,6 +1214,35 @@
             }
         }
 
+        // Manually toggle audio mute for a channel in grid view
+        function toggleAudioMute(event, index) {
+            if (event) event.stopPropagation(); // Prevent focusing card when clicking mute button
+            const video = document.getElementById(`video-${index}`);
+            const mic = document.getElementById(`audio-indicator-${index}`);
+            if (!video) return;
+
+            if (video.muted) {
+                lastViewedIndex = index;
+                // Unmute this channel, mute all others
+                for (let i = 0; i < 3; i++) {
+                    const v = document.getElementById(`video-${i}`);
+                    const m = document.getElementById(`audio-indicator-${i}`);
+                    if (v && m) {
+                        if (i === index) {
+                            v.muted = false;
+                            m.classList.add('unmuted');
+                        } else {
+                            v.muted = true;
+                            m.classList.remove('unmuted');
+                        }
+                    }
+                }
+            } else {
+                video.muted = true;
+                if (mic) mic.classList.remove('unmuted');
+            }
+        }
+
         // Toggle focus on a single player wrapper
         function toggleFocus(element) {
             const container = document.getElementById('viewer-deck');
@@ -1217,6 +1260,9 @@
                 return;
             }
 
+            // Track last viewed player
+            lastViewedIndex = index;
+
             // Remove focused class from any other element
             document.querySelectorAll('.player-wrapper').forEach(p => {
                 p.classList.remove('focused');
@@ -1232,6 +1278,7 @@
             // Focus this element
             container.classList.add('has-focused');
             element.classList.add('focused');
+            document.getElementById('main-header').classList.add('focus-active');
 
             // Unmute focused stream
             const video = document.getElementById(`video-${index}`);
@@ -1261,16 +1308,22 @@
             }
             const container = document.getElementById('viewer-deck');
             container.classList.remove('has-focused');
+            document.getElementById('main-header').classList.remove('focus-active');
 
             document.querySelectorAll('.player-wrapper').forEach(p => {
                 p.classList.remove('focused');
                 const index = parseInt(p.getAttribute('data-index'));
                 const v = document.getElementById(`video-${index}`);
-                if (v) {
-                    v.muted = true; // Mute all in grid view
-                }
                 const mic = document.getElementById(`audio-indicator-${index}`);
-                mic.classList.remove('unmuted');
+
+                // Keep unmuted the last viewed player
+                if (lastViewedIndex !== null && index === lastViewedIndex) {
+                    if (v) v.muted = false;
+                    if (mic) mic.classList.add('unmuted');
+                } else {
+                    if (v) v.muted = true;
+                    if (mic) mic.classList.remove('unmuted');
+                }
 
                 // OPTIMIZATION: Resume suspended background streams
                 if (tempSuspendedStates[index]) {
@@ -1345,12 +1398,12 @@
             }
         }
 
-        // Fetch presets from the official Hindi playlist from iptv-org
+        // Fetch presets from the global playlist from iptv-org
         async function fetchPresets() {
             const statusLabel = document.getElementById('load-status');
             statusLabel.textContent = "Loading presets...";
             try {
-                const response = await fetch('https://iptv-org.github.io/iptv/languages/hin.m3u');
+                const response = await fetch('https://iptv-org.github.io/iptv/index.m3u');
                 if (!response.ok) throw new Error('Network response not ok');
                 const text = await response.text();
                 
@@ -1455,7 +1508,6 @@
             loadConfig();
             initStreams();
             syncInputsWithConfig();
-            fetchPresets();
 
             // Auto Cycle Toggle
             document.getElementById('toggle-cycle').onclick = toggleAutoCycle;
@@ -1478,6 +1530,9 @@
             document.getElementById('open-config').onclick = () => {
                 modal.classList.add('open');
                 syncInputsWithConfig();
+                if (!presets || presets.length === 0) {
+                    fetchPresets();
+                }
             };
             document.getElementById('close-modal').onclick = () => modal.classList.remove('open');
             modal.onclick = (e) => {

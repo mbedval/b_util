@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radio Control Deck — Gujarat</title>
+    <style>
+        :root {
+            --bg-color: #030305;
+            --deck-bg: rgba(13, 14, 22, 0.85);
+            --panel-bg: rgba(20, 22, 37, 0.6);
+            --panel-border: rgba(0, 242, 254, 0.15);
+            --accent-cyan: #00f2fe;
+            --accent-cyan-glow: rgba(0, 242, 254, 0.35);
+            --accent-pink: #fe4baa;
+            --accent-pink-glow: rgba(254, 75, 170, 0.3);
+            --accent-green: #4facfe;
+            --text-color: #f1f5f9;
+            --text-muted: rgba(241, 245, 249, 0.5);
+            --button-bg: rgba(0, 242, 254, 0.06);
+            --button-hover: rgba(0, 242, 254, 0.2);
+            --danger-color: #ff4757;
+            --success-color: #00ff80;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at center, #0f1225 0%, #030305 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+            color: var(--text-color);
+            padding: 15px;
+            gap: 12px;
+        }
+
+        .scanlines {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.18) 50%);
+            background-size: 100% 4px;
+            z-index: 999;
+            pointer-events: none;
+            opacity: 0.45;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 24px;
+            background: var(--deck-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+            flex-shrink: 0;
+        }
+
+        .logo-section { display: flex; align-items: center; gap: 12px; }
+
+        .logo-indicator {
+            width: 12px; height: 12px;
+            border-radius: 50%;
+            background: var(--accent-pink);
+            box-shadow: 0 0 10px var(--accent-pink);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%   { transform: scale(0.95); opacity: 0.5; }
+            50%  { transform: scale(1.1);  opacity: 1; box-shadow: 0 0 18px var(--accent-pink); }
+            100% { transform: scale(0.95); opacity: 0.5; }
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            background: linear-gradient(90deg, var(--accent-pink), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-controls { display: flex; gap: 10px; align-items: center; }
+
+        .btn {
+            background: var(--button-bg);
+            border: 1px solid var(--panel-border);
+            color: var(--text-color);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+        .btn:hover {
+            background: var(--button-hover);
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 12px var(--accent-cyan-glow);
+            transform: translateY(-1px);
+        }
+        .btn-active {
+            background: var(--accent-pink);
+            color: #000;
+            border-color: var(--accent-pink);
+            font-weight: 700;
+        }
+        .btn-active:hover {
+            background: #ff6cc0;
+            color: #000;
+            box-shadow: 0 0 15px var(--accent-pink-glow);
+        }
+
+        /* Now Playing Bar */
+        .now-playing-bar {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 14px 24px;
+            background: var(--deck-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            flex-shrink: 0;
+            flex-wrap: wrap;
+        }
+
+        .now-playing-logo {
+            width: 52px; height: 52px;
+            border-radius: 10px;
+            object-fit: contain;
+            background: #111;
+            border: 1px solid rgba(255,255,255,0.1);
+            flex-shrink: 0;
+        }
+
+        .now-playing-logo-placeholder {
+            width: 52px; height: 52px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border: 1px solid rgba(0, 242, 254, 0.2);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .now-playing-info { flex-grow: 1; min-width: 0; }
+
+        .np-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--accent-pink);
+            font-weight: 700;
+        }
+
+        .np-station-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .np-freq {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* Waveform */
+        .waveform {
+            display: flex;
+            align-items: flex-end;
+            gap: 3px;
+            height: 30px;
+            flex-shrink: 0;
+        }
+
+        .waveform .bar {
+            width: 4px;
+            border-radius: 2px;
+            background: var(--accent-pink);
+            animation: wave 1s ease-in-out infinite;
+            opacity: 0.9;
+        }
+        .waveform .bar:nth-child(1) { animation-delay: 0s;    --h: 60%; }
+        .waveform .bar:nth-child(2) { animation-delay: 0.15s; --h: 90%; }
+        .waveform .bar:nth-child(3) { animation-delay: 0.05s; --h: 50%; }
+        .waveform .bar:nth-child(4) { animation-delay: 0.2s;  --h: 80%; }
+        .waveform .bar:nth-child(5) { animation-delay: 0.1s;  --h: 70%; }
+        .waveform .bar:nth-child(6) { animation-delay: 0.25s; --h: 95%; }
+        .waveform .bar:nth-child(7) { animation-delay: 0.08s; --h: 55%; }
+
+        @keyframes wave {
+            0%, 100% { height: 20%; }
+            50% { height: var(--h, 70%); }
+        }
+
+        .waveform.paused .bar { animation-play-state: paused; height: 20%; }
+
+        /* Volume */
+        .volume-section { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+        .vol-icon { font-size: 1rem; opacity: 0.7; }
+        input[type=range].vol-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100px;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255,255,255,0.15);
+            outline: none;
+            cursor: pointer;
+        }
+        input[type=range].vol-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px; height: 14px;
+            border-radius: 50%;
+            background: var(--accent-pink);
+            box-shadow: 0 0 6px var(--accent-pink-glow);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        input[type=range].vol-slider::-webkit-slider-thumb:hover { transform: scale(1.3); }
+
+        /* Playback controls */
+        .playback-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .ctrl-btn {
+            width: 38px; height: 38px;
+            border-radius: 50%;
+            border: 1px solid var(--panel-border);
+            background: var(--button-bg);
+            color: var(--text-color);
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s ease;
+            font-size: 1rem;
+        }
+        .ctrl-btn:hover {
+            background: var(--button-hover);
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 10px var(--accent-cyan-glow);
+        }
+        .ctrl-btn.play-pause {
+            width: 46px; height: 46px;
+            background: var(--accent-pink);
+            border-color: var(--accent-pink);
+            color: #000;
+            font-size: 1.2rem;
+        }
+        .ctrl-btn.play-pause:hover {
+            background: #ff6cc0;
+            box-shadow: 0 0 15px var(--accent-pink-glow);
+        }
+
+        /* Status pill */
+        .status-pill {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            flex-shrink: 0;
+        }
+        .status-pill.live  { background: rgba(0,255,128,0.15);  color: #00ff80; border: 1px solid rgba(0,255,128,0.3); }
+        .status-pill.loading { background: rgba(255,165,0,0.15); color: #ffa500; border: 1px solid rgba(255,165,0,0.3); }
+        .status-pill.error { background: rgba(255,71,87,0.15);  color: #ff4757; border: 1px solid rgba(255,71,87,0.3); }
+        .status-pill.idle  { background: rgba(255,255,255,0.07); color: var(--text-muted); border: 1px solid rgba(255,255,255,0.12); }
+
+        /* Filter Tabs */
+        .filter-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            padding: 12px 20px;
+            background: var(--deck-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            flex-shrink: 0;
+        }
+
+        .filter-tab {
+            padding: 5px 14px;
+            border-radius: 20px;
+            border: 1px solid var(--panel-border);
+            background: var(--button-bg);
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+        }
+        .filter-tab:hover { border-color: rgba(0,242,254,0.3); color: var(--text-color); }
+        .filter-tab.active { background: var(--accent-cyan); border-color: var(--accent-cyan); color: #000; }
+
+        /* Stations Grid */
+        .stations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+            gap: 12px;
+        }
+
+        .station-card {
+            background: var(--panel-bg);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        .station-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, transparent 60%, rgba(0,242,254,0.03));
+            pointer-events: none;
+        }
+        .station-card:hover {
+            border-color: rgba(0, 242, 254, 0.3);
+            background: rgba(20, 22, 37, 0.85);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5), 0 0 15px rgba(0,242,254,0.08);
+        }
+        .station-card.active {
+            border-color: var(--accent-pink);
+            background: rgba(254, 75, 170, 0.06);
+            box-shadow: 0 0 20px rgba(254,75,170,0.12), 0 8px 24px rgba(0,0,0,0.5);
+        }
+
+        .card-top { display: flex; align-items: center; gap: 12px; }
+
+        .card-logo {
+            width: 46px; height: 46px;
+            border-radius: 10px;
+            object-fit: contain;
+            background: #111;
+            border: 1px solid rgba(255,255,255,0.08);
+            flex-shrink: 0;
+        }
+
+        .card-logo-placeholder {
+            width: 46px; height: 46px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border: 1px solid rgba(255,255,255,0.08);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.4rem;
+            flex-shrink: 0;
+        }
+
+        .card-meta { min-width: 0; flex-grow: 1; }
+        .card-name { font-size: 0.9rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .card-freq { font-size: 0.7rem; color: var(--accent-cyan); font-family: monospace; font-weight: 600; margin-top: 2px; }
+        .card-genre { font-size: 0.65rem; color: var(--text-muted); margin-top: 2px; }
+
+        .card-bottom { display: flex; justify-content: space-between; align-items: center; }
+
+        .card-lang-badge {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-weight: 700;
+            background: rgba(0,242,254,0.08);
+            border: 1px solid rgba(0,242,254,0.15);
+            color: var(--accent-cyan);
+        }
+        .card-lang-badge.gujarati { background: rgba(255,165,0,0.1); border-color: rgba(255,165,0,0.25); color: #ffa500; }
+        .card-lang-badge.hindi    { background: rgba(0,255,128,0.08); border-color: rgba(0,255,128,0.2);  color: #00ff80; }
+        .card-lang-badge.english  { background: rgba(79,172,254,0.1); border-color: rgba(79,172,254,0.25); color: #4facfe; }
+
+        .card-play-icon {
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.15);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem;
+            transition: all 0.2s ease;
+            color: var(--text-muted);
+        }
+        .station-card.active .card-play-icon {
+            border-color: var(--accent-pink);
+            color: var(--accent-pink);
+            box-shadow: 0 0 8px var(--accent-pink-glow);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(3,3,5,0.85);
+            backdrop-filter: blur(15px);
+            z-index: 1000;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none;
+            transition: all 0.3s ease;
+        }
+        .modal-overlay.open { opacity: 1; pointer-events: auto; }
+
+        .modal-container {
+            width: 90%; max-width: 500px;
+            background: #0c0d16;
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 25px rgba(0,242,254,0.1);
+            overflow: hidden;
+            transform: scale(0.95);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .modal-overlay.open .modal-container { transform: scale(1); }
+
+        .modal-header { padding: 18px 24px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; }
+        .modal-title { font-size: 1rem; font-weight: 700; color: var(--accent-cyan); letter-spacing: 0.5px; }
+        .modal-close { background: none; border: none; color: var(--text-muted); font-size: 1.4rem; cursor: pointer; }
+        .modal-close:hover { color: #fff; }
+
+        .modal-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; }
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
+        .form-group label { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-input {
+            background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);
+            color: #fff; padding: 9px 12px; border-radius: 8px; font-size: 0.85rem; width: 100%;
+            transition: all 0.2s ease;
+        }
+        .form-input:focus { outline: none; border-color: var(--accent-cyan); box-shadow: 0 0 8px rgba(0,242,254,0.2); }
+
+        .modal-footer { padding: 14px 24px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: flex-end; gap: 10px; }
+
+        /* Status bar */
+        .status-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 20px;
+            background: rgba(13,14,22,0.6);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+        .status-bar-text { font-size: 0.7rem; color: var(--text-muted); font-family: monospace; }
+        .status-bar-text span { color: var(--accent-cyan); }
+
+        @media (max-width: 640px) {
+            .volume-section { display: none; }
+            .stations-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+            h1 { font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="scanlines"></div>
+
+    <header>
+        <div class="logo-section">
+            <div class="logo-indicator"></div>
+            <h1>&#128251; RADIO CONTROL DECK &mdash; GUJARAT</h1>
+        </div>
+        <div class="header-controls">
+            <button class="btn btn-active" id="btn-scanlines" onclick="toggleScanlines()">CRT SCANLINES</button>
+            <button class="btn" id="btn-add" onclick="openModal()">
+                <svg width="13" height="13" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                </svg>
+                ADD CUSTOM
+            </button>
+        </div>
+    </header>
+
+    <div class="now-playing-bar">
+        <div class="now-playing-logo-placeholder" id="np-logo-wrap">&#127925;</div>
+        <div class="now-playing-info">
+            <div class="np-label">&#128270; Now Playing</div>
+            <div class="np-station-name" id="np-name">&mdash; Select a Station &mdash;</div>
+            <div class="np-freq" id="np-freq">Gujarat, India &bull; Click any station to tune in</div>
+        </div>
+        <div class="waveform paused" id="waveform">
+            <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+            <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+            <div class="bar"></div>
+        </div>
+        <div class="playback-controls">
+            <button class="ctrl-btn" title="Previous Station [&larr;]" onclick="prevStation()">&#9664;&#9664;</button>
+            <button class="ctrl-btn play-pause" id="play-pause-btn" title="Play/Pause [Space]" onclick="togglePlayPause()">&#9654;</button>
+            <button class="ctrl-btn" title="Next Station [&rarr;]" onclick="nextStation()">&#9654;&#9654;</button>
+        </div>
+        <div class="volume-section">
+            <span class="vol-icon">&#128264;</span>
+            <input type="range" class="vol-slider" id="vol-slider" min="0" max="100" value="80" oninput="setVolume(this.value)">
+            <span class="vol-icon">&#128266;</span>
+        </div>
+        <span class="status-pill idle" id="np-status">IDLE</span>
+    </div>
+
+    <div class="filter-tabs">
+        <div class="filter-tab active" data-filter="all" onclick="setFilter('all',this)">ALL STATIONS</div>
+        <div class="filter-tab" data-filter="gujarati" onclick="setFilter('gujarati',this)">&#127818; GUJARATI</div>
+        <div class="filter-tab" data-filter="hindi" onclick="setFilter('hindi',this)">&#127822; HINDI</div>
+        <div class="filter-tab" data-filter="english" onclick="setFilter('english',this)">&#127824; ENGLISH</div>
+        <div class="filter-tab" data-filter="news" onclick="setFilter('news',this)">&#128225; NEWS / AIR</div>
+        <div class="filter-tab" data-filter="custom" onclick="setFilter('custom',this)">&#9881; CUSTOM</div>
+    </div>
+
+    <div class="stations-grid" id="stations-grid"></div>
+
+    <div class="status-bar">
+        <span class="status-bar-text">SIGNAL: <span id="sb-url">—</span></span>
+        <span class="status-bar-text">STATIONS: <span id="sb-count">—</span> &bull; [SPACE] Play/Pause &bull; [&#8592;&#8594;] Prev/Next</span>
+    </div>
+
+    <div class="modal-overlay" id="custom-modal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <span class="modal-title">ADD CUSTOM STATION</span>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Station Name *</label>
+                    <input type="text" class="form-input" id="cm-name" placeholder="e.g. My Favourite FM">
+                </div>
+                <div class="form-group">
+                    <label>Frequency / Tag</label>
+                    <input type="text" class="form-input" id="cm-freq" placeholder="e.g. 98.3 MHz / Surat">
+                </div>
+                <div class="form-group">
+                    <label>Stream URL * (MP3 / AAC / M3U8)</label>
+                    <input type="text" class="form-input" id="cm-url" placeholder="https://stream.example.com/live.mp3">
+                </div>
+                <div class="form-group">
+                    <label>Logo URL (optional)</label>
+                    <input type="text" class="form-input" id="cm-logo" placeholder="https://example.com/logo.png">
+                </div>
+                <div class="form-group">
+                    <label>Language</label>
+                    <select class="form-input" id="cm-lang">
+                        <option value="gujarati">Gujarati</option>
+                        <option value="hindi" selected>Hindi</option>
+                        <option value="english">English</option>
+                        <option value="news">News / AIR</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeModal()">CANCEL</button>
+                <button class="btn btn-active" onclick="addCustomStation()">ADD STATION</button>
+            </div>
+        </div>
+    </div>
+
+    <audio id="radio-audio" preload="none"></audio>
+
+    <script>
+    const BUILTIN_STATIONS = [
+        // ── Ahmedabad / Gujarat FM ──
+        {
+            id: 'mirchi-ahmedabad',
+            name: 'Radio Mirchi 98.3',
+            freq: '98.3 MHz \u2022 Ahmedabad',
+            genre: 'Bollywood Hits',
+            lang: 'hindi',
+            emoji: '\ud83d\udd25',
+            logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Radio_Mirchi_Logo.svg/1200px-Radio_Mirchi_Logo.svg.png',
+            url: 'https://radiomirchi.out.airtime.pro/radiomirchi_a'
+        },
+        {
+            id: 'redfm-ahmedabad',
+            name: 'Red FM 93.5',
+            freq: '93.5 MHz \u2022 Ahmedabad',
+            genre: 'Chartbusters & RJ Talks',
+            lang: 'hindi',
+            emoji: '\ud83d\udd34',
+            logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Red_FM_93.5_logo.png/800px-Red_FM_93.5_logo.png',
+            url: 'https://airhlspush.akamaized.net/hls/live/2004900/air_redfm_ahmedabad/playlist.m3u8'
+        },
+        {
+            id: 'bigfm-ahmedabad',
+            name: 'Big FM 92.7',
+            freq: '92.7 MHz \u2022 Ahmedabad',
+            genre: 'Retro Bollywood',
+            lang: 'hindi',
+            emoji: '\ud83c\udfb6',
+            logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Big_FM_logo.png/1200px-Big_FM_logo.png',
+            url: 'https://playerservices.streamtheworld.com/api/livestream-redirect/BIGFM_AHMEDABAD.mp3'
+        },
+        {
+            id: 'fever-ahmedabad',
+            name: 'Fever FM 104',
+            freq: '104 MHz \u2022 Ahmedabad',
+            genre: 'Party & Dance',
+            lang: 'hindi',
+            emoji: '\ud83d\udd7a',
+            logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/Fever_FM.png/800px-Fever_FM.png',
+            url: 'https://playerservices.streamtheworld.com/api/livestream-redirect/FEVERFM_AHMEDABAD.mp3'
+        },
+        {
+            id: 'radiocity-ahmedabad',
+            name: 'Radio City 91.1',
+            freq: '91.1 MHz \u2022 Ahmedabad',
+            genre: 'Latest Hits',
+            lang: 'hindi',
+            emoji: '\ud83c\udfd9',
+            logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/Radio_city_91.1_logo.jpg/1200px-Radio_city_91.1_logo.jpg',
+            url: 'https://playerservices.streamtheworld.com/api/livestream-redirect/RADIOCITY_AHMEDABAD.mp3'
+        },
+        {
+            id: 'myfm-ahmedabad',
+            name: 'My FM 94.3',
+            freq: '94.3 MHz \u2022 Ahmedabad',
+            genre: 'Punjabi & Bollywood',
+            lang: 'hindi',
+            emoji: '\ud83c\udfb5',
+            logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/MY_FM_logo.jpg/1200px-MY_FM_logo.jpg',
+            url: 'https://playerservices.streamtheworld.com/api/livestream-redirect/MYFM_AHMEDABAD.mp3'
+        },
+        {
+            id: 'radio-one-ahmedabad',
+            name: 'Radio One 95 (Gold)',
+            freq: '95 MHz \u2022 Ahmedabad',
+            genre: 'Classic Bollywood',
+            lang: 'hindi',
+            emoji: '\ud83c\udfc5',
+            logo: '',
+            url: 'https://playerservices.streamtheworld.com/api/livestream-redirect/RADIOONE_AHMEDABAD.mp3'
+        },
+        // ── Surat ──
+        {
+            id: 'mirchi-surat',
+            name: 'Radio Mirchi 98.3 Surat',
+            freq: '98.3 MHz \u2022 Surat',
+            genre: 'Bollywood Hits',
+            lang: 'hindi',
+            emoji: '\ud83d\udd25',
+            logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Radio_Mirchi_Logo.svg/1200px-Radio_Mirchi_Logo.svg.png',
+            url: 'https://radiomirchi.out.airtime.pro/radiomirchi_a'
+        },
+        // ── Gujarati / AIR ──
+        {
+            id: 'vividh-bharati-ahmedabad',
+            name: 'Vividh Bharati 101.9',
+            freq: '101.9 MHz \u2022 AIR Gujarat',
+            genre: 'Old Hindi & Gujarati Songs',
+            lang: 'gujarati',
+            emoji: '\ud83c\uddee\ud83c\uddf3',
+            logo: '',
+            url: 'https://airhlspush.akamaized.net/hls/live/2004900/air_vividhbharati_ahmedabad/playlist.m3u8'
+        },
+        {
+            id: 'air-ahmedabad-a',
+            name: 'AIR Ahmedabad A',
+            freq: 'AIR \u2022 Ahmedabad Primary',
+            genre: 'Gujarati News & Culture',
+            lang: 'gujarati',
+            emoji: '\ud83d\udce1',
+            logo: '',
+            url: 'https://airhlspush.akamaized.net/hls/live/2004900/air_ahmedabad_a/playlist.m3u8'
+        },
+        {
+            id: 'air-rajkot',
+            name: 'AIR Rajkot',
+            freq: 'AIR \u2022 Rajkot, Saurashtra',
+            genre: 'Gujarati Regional',
+            lang: 'gujarati',
+            emoji: '\ud83d\udce1',
+            logo: '',
+            url: 'https://airhlspush.akamaized.net/hls/live/2004900/air_rajkot/playlist.m3u8'
+        },
+        {
+            id: 'air-baroda',
+            name: 'AIR Vadodara',
+            freq: 'AIR \u2022 Vadodara (Baroda)',
+            genre: 'Gujarati Culture',
+            lang: 'gujarati',
+            emoji: '\ud83d\udce1',
+            logo: '',
+            url: 'https://airhlspush.akamaized.net/hls/live/2004900/air_baroda/playlist.m3u8'
+        },
+        // ── National News / AIR ──
+        {
+            id: 'air-news-national',
+            name: 'AIR News National',
+            freq: 'All India Radio News',
+            genre: 'Hindi / English News',
+            lang: 'news',
+            emoji: '\ud83d\udcf0',
+            logo: '',
+            url: 'https://airhlspush.akamaized.net/hls/live/2013309/air_national_channel/playlist.m3u8'
+        },
+        {
+            id: 'air-fm-gold',
+            name: 'AIR FM Gold 106.4',
+            freq: '106.4 MHz \u2022 Delhi',
+            genre: 'Classic Hindi / Retro',
+            lang: 'hindi',
+            emoji: '\ud83e\udd47',
+            logo: '',
+            url: 'https://airhlspush.akamaized.net/hls/live/2004900/air_fmgold/playlist.m3u8'
+        },
+        {
+            id: 'air-rainbow-mumbai',
+            name: 'AIR Rainbow FM',
+            freq: 'FM Rainbow \u2022 Mumbai',
+            genre: 'Light Hindi Music',
+            lang: 'hindi',
+            emoji: '\ud83c\udf08',
+            logo: '',
+            url: 'https://airhlspush.akamaized.net/hls/live/2004900/air_rainbow_mumbai/playlist.m3u8'
+        },
+        // ── Hindi Online ──
+        {
+            id: 'bbc-hindi',
+            name: 'BBC Hindi Radio',
+            freq: 'BBC World Service',
+            genre: 'Hindi News & Affairs',
+            lang: 'news',
+            emoji: '\ud83c\udf0d',
+            logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/BBC_News_2019.svg/1024px-BBC_News_2019.svg.png',
+            url: 'https://stream.live.vc.bbcmedia.co.uk/bbc_hindi_radio'
+        },
+        // ── English ──
+        {
+            id: 'bbc-world-service',
+            name: 'BBC World Service',
+            freq: 'BBC \u2022 International',
+            genre: 'English News',
+            lang: 'english',
+            emoji: '\ud83d\udcfb',
+            logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/BBC_News_2019.svg/1024px-BBC_News_2019.svg.png',
+            url: 'https://stream.live.vc.bbcmedia.co.uk/bbc_world_service'
+        },
+        {
+            id: 'air-english',
+            name: 'AIR English Service',
+            freq: 'All India Radio \u2022 English',
+            genre: 'English News & Talk',
+            lang: 'english',
+            emoji: '\ud83c\udfa4',
+            logo: '',
+            url: 'https://airhlspush.akamaized.net/hls/live/2004900/air_english/playlist.m3u8'
+        }
+    ];
+
+    let customStations = [];
+    try { customStations = JSON.parse(localStorage.getItem('radio_custom_stations') || '[]'); } catch(e) {}
+
+    const audio = document.getElementById('radio-audio');
+    let currentStation = null;
+    let isPlaying = false;
+    let activeFilter = 'all';
+
+    function allStations() { return [...BUILTIN_STATIONS, ...customStations]; }
+
+    function renderGrid() {
+        const grid = document.getElementById('stations-grid');
+        const stations = allStations().filter(s => {
+            if (activeFilter === 'all') return true;
+            if (activeFilter === 'custom') return customStations.some(c => c.id === s.id);
+            return s.lang === activeFilter;
+        });
+        document.getElementById('sb-count').textContent = stations.length;
+        if (stations.length === 0) {
+            grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted);">No stations in this category. Add a custom stream via &ldquo;+ ADD CUSTOM&rdquo;.</div>';
+            return;
+        }
+        grid.innerHTML = stations.map(buildCard).join('');
+    }
+
+    function buildCard(s) {
+        const isActive = currentStation && currentStation.id === s.id;
+        const logoHtml = s.logo
+            ? `<img class="card-logo" src="${esc(s.logo)}" alt="${esc(s.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="card-logo-placeholder" style="display:none">${esc(s.emoji||'')}</div>`
+            : `<div class="card-logo-placeholder">${esc(s.emoji||'\ud83d\udcfb')}</div>`;
+        const lc = {gujarati:'gujarati',hindi:'hindi',english:'english',news:''}[s.lang]||'';
+        const ll = {gujarati:'\ud83d\udfe0 Gujarati',hindi:'\ud83d\udfe2 Hindi',english:'\ud83d\udd35 English',news:'\ud83d\udce1 News/AIR'}[s.lang]||s.lang;
+        return `<div class="station-card${isActive?' active':''}" onclick="selectStation('${esc(s.id)}')" title="${esc(s.name)}">
+            <div class="card-top">${logoHtml}<div class="card-meta">
+                <div class="card-name">${esc(s.name)}</div>
+                <div class="card-freq">${esc(s.freq)}</div>
+                <div class="card-genre">${esc(s.genre)}</div>
+            </div></div>
+            <div class="card-bottom">
+                <span class="card-lang-badge ${lc}">${ll}</span>
+                <div class="card-play-icon">${isActive&&isPlaying?'\u23f8':'\u25b6'}</div>
+            </div>
+        </div>`;
+    }
+
+    function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+    function selectStation(id) {
+        const s = allStations().find(x => x.id === id);
+        if (!s) return;
+        if (currentStation && currentStation.id === id) { togglePlayPause(); return; }
+        currentStation = s;
+        isPlaying = false;
+        updateNPUI(s);
+        playStream(s.url);
+        renderGrid();
+    }
+
+    function playStream(url) {
+        audio.pause();
+        audio.src = url;
+        audio.volume = document.getElementById('vol-slider').value / 100;
+        setStatus('loading');
+        document.getElementById('waveform').classList.add('paused');
+        document.getElementById('play-pause-btn').innerHTML = '\u23f8';
+        audio.load();
+        const p = audio.play();
+        if (p) p.then(()=>{ isPlaying=true; setStatus('live'); document.getElementById('waveform').classList.remove('paused'); renderGrid(); }).catch(()=>{ isPlaying=false; setStatus('idle'); document.getElementById('play-pause-btn').innerHTML='\u25b6'; renderGrid(); });
+    }
+
+    audio.addEventListener('error', ()=>{ setStatus('error'); isPlaying=false; document.getElementById('waveform').classList.add('paused'); document.getElementById('play-pause-btn').innerHTML='\u25b6'; renderGrid(); });
+    audio.addEventListener('waiting', ()=>setStatus('loading'));
+    audio.addEventListener('playing', ()=>{ setStatus('live'); isPlaying=true; document.getElementById('waveform').classList.remove('paused'); document.getElementById('play-pause-btn').innerHTML='\u23f8'; renderGrid(); });
+    audio.addEventListener('pause', ()=>{ setStatus('idle'); isPlaying=false; document.getElementById('waveform').classList.add('paused'); document.getElementById('play-pause-btn').innerHTML='\u25b6'; renderGrid(); });
+
+    function togglePlayPause() {
+        if (!currentStation) return;
+        if (audio.paused || !audio.src) playStream(currentStation.url);
+        else audio.pause();
+    }
+
+    function filteredStations() {
+        return allStations().filter(s => {
+            if (activeFilter === 'all') return true;
+            if (activeFilter === 'custom') return customStations.some(c => c.id === s.id);
+            return s.lang === activeFilter;
+        });
+    }
+
+    function prevStation() {
+        const list = filteredStations();
+        if (!list.length) return;
+        const idx = currentStation ? list.findIndex(s=>s.id===currentStation.id) : 0;
+        selectStation(list[(idx-1+list.length)%list.length].id);
+    }
+
+    function nextStation() {
+        const list = filteredStations();
+        if (!list.length) return;
+        const idx = currentStation ? list.findIndex(s=>s.id===currentStation.id) : -1;
+        selectStation(list[(idx+1)%list.length].id);
+    }
+
+    function setVolume(v) { audio.volume = v/100; }
+
+    function updateNPUI(s) {
+        document.getElementById('np-name').textContent = s.name;
+        document.getElementById('np-freq').textContent = s.freq + ' \u2022 ' + s.genre;
+        document.getElementById('sb-url').textContent = s.url;
+        const wrap = document.getElementById('np-logo-wrap');
+        if (s.logo) {
+            const img = document.createElement('img');
+            img.className = 'now-playing-logo';
+            img.id = 'np-logo-wrap';
+            img.src = s.logo;
+            img.alt = 'logo';
+            img.onerror = function(){ this.outerHTML='<div class="now-playing-logo-placeholder" id="np-logo-wrap">'+esc(s.emoji||'\ud83d\udcfb')+'</div>'; };
+            wrap.replaceWith(img);
+        } else {
+            wrap.className = 'now-playing-logo-placeholder';
+            wrap.textContent = s.emoji || '\ud83d\udcfb';
+        }
+    }
+
+    function setStatus(t) {
+        const pill = document.getElementById('np-status');
+        const m = {live:['LIVE','live'],loading:['TUNING...','loading'],error:['SIGNAL LOST','error'],idle:['IDLE','idle']};
+        const [txt,cls] = m[t]||['IDLE','idle'];
+        pill.textContent = txt; pill.className = 'status-pill '+cls;
+    }
+
+    function setFilter(f,el) {
+        activeFilter = f;
+        document.querySelectorAll('.filter-tab').forEach(t=>t.classList.remove('active'));
+        el.classList.add('active');
+        renderGrid();
+    }
+
+    let scanlinesOn = true;
+    function toggleScanlines() {
+        scanlinesOn = !scanlinesOn;
+        document.querySelector('.scanlines').style.opacity = scanlinesOn ? '0.45' : '0';
+        document.getElementById('btn-scanlines').classList.toggle('btn-active', scanlinesOn);
+    }
+
+    function openModal()  { document.getElementById('custom-modal').classList.add('open'); }
+    function closeModal() { document.getElementById('custom-modal').classList.remove('open'); }
+    document.getElementById('custom-modal').addEventListener('click', e=>{ if(e.target.id==='custom-modal') closeModal(); });
+
+    function addCustomStation() {
+        const name = document.getElementById('cm-name').value.trim();
+        const url  = document.getElementById('cm-url').value.trim();
+        if (!name||!url) { alert('Station name and Stream URL are required.'); return; }
+        const s = {
+            id: 'custom-'+Date.now(),
+            name, freq: document.getElementById('cm-freq').value.trim()||'Custom Stream',
+            genre: 'Custom', lang: document.getElementById('cm-lang').value,
+            emoji: '\ud83d\udcfb', logo: document.getElementById('cm-logo').value.trim(), url
+        };
+        customStations.push(s);
+        localStorage.setItem('radio_custom_stations', JSON.stringify(customStations));
+        ['cm-name','cm-freq','cm-url','cm-logo'].forEach(id=>document.getElementById(id).value='');
+        closeModal(); renderGrid();
+    }
+
+    document.addEventListener('keydown', e=>{
+        if (e.target.tagName==='INPUT'||e.target.tagName==='SELECT') return;
+        if (e.code==='Space') { e.preventDefault(); togglePlayPause(); }
+        if (e.code==='ArrowLeft')  prevStation();
+        if (e.code==='ArrowRight') nextStation();
+        if (e.code==='ArrowUp') {
+            e.preventDefault();
+            let slider = document.getElementById('vol-slider');
+            let currentVal = parseInt(slider.value) || 0;
+            let newVal = Math.min(100, currentVal + 5);
+            setVolume(newVal);
+        }
+        if (e.code==='ArrowDown') {
+            e.preventDefault();
+            let slider = document.getElementById('vol-slider');
+            let currentVal = parseInt(slider.value) || 0;
+            let newVal = Math.max(0, currentVal - 5);
+            setVolume(newVal);
+        }
+    });
+
+    renderGrid();
+    </script>
+</body>
+</html>

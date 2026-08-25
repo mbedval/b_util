@@ -1,0 +1,72 @@
+{
+  "categories": [
+    {
+      "id": "business",
+      "name": "Business",
+      "channels": [
+        { "name": "CNBC Awaaz", "url": "https://n18syndication.akamaized.net/bpk-tv/CNBC_Awaaz_NW18_MOB/output01/master.m3u8", "dir": "West", "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/CNBCAwaaz.png" },
+        { "name": "Zee Business", "url": "https://dwby15d04agvq.cloudfront.net/index_5.m3u8", "dir": "South", "logo": "https://dtil.tmsimg.com/assets/GNLZZGG00230YYJ.png?lock=720x540" },
+        { "name": "NDTV Profit", "url": "https://ndtvprofit.akamaized.net/hls/live/2107404/ndtvprofit/chunklist_5.m3u8", "dir": "East", "logo": "https://xstreamcp-assets-msp.streamready.in/assets/LIVETV/LIVECHANNEL/LIVETV_LIVETVCHANNEL_NDTV_PROFIT_PRIME/images/LOGO_HD/image.png" },
+        { "name": "CNBC TV18", "url": "https://n18syndication.akamaized.net/bpk-tv/CNBC_Tv18_Prime_HD_NW18_MOB/output01/index.m3u8", "dir": "NE", "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/CNBC_TV18.png" },
+        { "name": "CNBC Bajar", "url": "https://n18syndication.akamaized.net/bpk-tv/CNBC_Bazaar_NW18_MOB/output01/master.m3u8", "dir": "SE", "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/CNBC_Bajar.png" }
+      ]
+    },
+    {
+      "id": "news",
+      "name": "News",
+      "channels": [
+        { "name": "Aaj Tak", "url": "https://feeds.intoday.in/aajtak/api/aajtakhd/master.m3u8", "dir": "NE", "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Aaj_Tak.png" },
+        { "name": "Zee News", "url": "https://dknttpxmr0dwf.cloudfront.net/index_57.m3u8", "dir": "SE", "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Zee_News.png" },
+        { "name": "Times Now Navbharat", "url": "https://raw.githubusercontent.com/amazeyourself/adaptive-streams/refs/heads/main/streams/in/YuppTV/TimesNowNavbharat.m3u8", "dir": "SW", "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Times_Now_Navbharat.png" },
+        { "name": "DD News", "url": "https://d3qs3d2rkhfqrt.cloudfront.net/out/v1/0811cd8c37ca4c409d5385a6cd2fa18b/index.m3u8", "dir": "NW", "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/DD_News.png" },
+        { "name": "TV9 Bharatvarsh", "url": "https://dyjmyiv3bp2ez.cloudfront.net/pub-iotv9hinjzgtpe/liveabr/playlist.m3u8", "dir": "NE", "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/TV9_Bharatvarsh.png" }
+      ]
+    },
+    {
+      "id": "music",
+      "name": "Music",
+      "channels": [
+        { "name": "9XM", "url": "https://9xjio.wiseplayout.com/9XM/master.m3u8", "dir": "SE", "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/9XM.png" },
+        { "name": "B4U Music", "url": "https://cdnb4u.wiseplayout.com/B4U_Music/master.m3u8", "dir": "SW", "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/B4U_Music.png" }
+      ]
+    },
+    {
+      "id": "lifestyle",
+      "name": "Lifestyle",
+      "channels": [
+        { "name": "Global Fashion", "url": "https://pubgfc.teleosmedia.com/linear/globalfashionchannel/globalfashionchannel/playlist.m3u8", "dir": "NE", "logo": "👗" },
+        { "name": "FashionTV Paris", "url": "https://edge-fast3.evrideo.tv/bfdbb576-83f7-11f0-9f89-0200170e3e04_1000028043_HLS/manifest.m3u8", "dir": "SE", "logo": "👜" },
+        { "name": "FashionBox", "url": "https://dash2.antik.sk/live/test_fashionbox_medium_atk/playlist.m3u8", "dir": "SW", "logo": "👠" },
+        { "name": "FashionTV Secrets", "url": "https://ssai.aniview.com/api/v1/hls/stream.m3u8?AVS_SSAIID=67c0c39764ad6f7dab07aa0b&AV_CLIENT_SECTION=ftv_secrets&content_livestream=1", "dir": "NW", "logo": "💄" },
+        { "name": "Kaloopy", "url": "https://d35j504z0x2vu2.cloudfront.net/v1/master/0bc8e8376bd8417a1b6761138aa41c26c7309312/kaloopy/master.m3u8", "dir": "NE", "logo": "🎬" }
+      ]
+    },
+    {
+      "id": "english_news",
+      "name": "English News",
+      "channels": [
+        { "name": "WION", "url": "http://vg-zeefta.akamaized.net/ptnr-yupptv/title-wion/v1/master/611d79b11b77e2f571934fd80ca1413453772ac7/20c3c0d9-0256-43fe-bca6-70fdd490b957/main.m3u8", "dir": "NE", "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/WION.png" }
+      ]
+    },
+    {
+      "id": "gujarati_news",
+      "name": "Gujarati News",
+      "channels": [
+        { "name": "TV9 Gujarati", "url": "https://d2l4ar6y3mrs4k.cloudfront.net/live-streaming/asmita-livetv/master.m3u8", "dir": "West", "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/TV9_Gujarati.png" },
+        { "name": "ABP Asmita", "url": "https://d2l4ar6y3mrs4k.cloudfront.net/live-streaming/asmita-livetv/master.m3u8", "dir": "East", "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/ABP_Asmita.png" },
+        { "name": "Gujarat First", "url": "https://mumt03.tangotv.in/Dsly5z3HGUJARATFIRST/index.m3u8", "dir": "NE", "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Gujarat_First.png" },
+        { "name": "News18 Gujarati", "url": "https://n18syndication.akamaized.net/bpk-tv/News18_Gujarati_NW18_MOB/output01/master.m3u8", "dir": "SE", "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/News18_Gujarati.png" }
+      ]
+    },
+    {
+      "id": "rajasthani",
+      "name": "Rajasthani",
+      "channels": [
+        { "name": "Zee Rajasthan", "url": "https://vg-zeefta.akamaized.net/ptnr-yupptv/title-zeerajashthannews/v1/master/611d79b11b77e2f571934fd80ca1413453772ac7/8e864b9a-1681-41a0-99a6-387490bc5b24/main.m3u8", "dir": "NE", "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Zee_Rajasthan_News.png" },
+        { "name": "News18 Rajasthan", "url": "https://n18syndication.akamaized.net/bpk-tv/News18_Rajasthan_NW18_MOB/output01/master.m3u8", "dir": "SE", "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/News18_Rajasthan.png" },
+        { "name": "NDTV Rajasthan", "url": "https://ndtvregional.akamaized.net/hls/live/2102726-b/ndtvraj/master_1.m3u8", "dir": "SW", "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/NDTV_Rajasthan.png" },
+        { "name": "DD Rajasthan", "url": "https://cdn-1.pishow.tv/live/34/master.m3u8", "dir": "NW", "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/DD_Rajasthan.png" }
+      ]
+    }
+  ]
+}
