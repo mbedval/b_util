@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Face Mask Camera Utility | Bindsol Utility</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- MediaPipe Tasks Vision CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.js" crossorigin="anonymous"></script>
+  
+  <style>
+    :root {
+      --bg-gradient: radial-gradient(circle at 50% 20%, #1a1e2e 0%, #0d0f17 100%);
+      --panel-bg: rgba(22, 27, 43, 0.75);
+      --panel-border: rgba(255, 255, 255, 0.1);
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --accent: #06b6d4;
+      --danger: #ef4444;
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+      --radius-lg: 20px;
+      --radius-md: 12px;
+      --shadow-glow: 0 0 25px rgba(99, 102, 241, 0.3);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+      user-select: none;
+    }
+
+    body {
+      background: var(--bg-gradient);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+      padding: 20px;
+    }
+
+    /* Header */
+    header {
+      width: 100%;
+      max-width: 1100px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 24px;
+      background: var(--panel-bg);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius-md);
+      margin-bottom: 20px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      box-shadow: var(--shadow-glow);
+    }
+
+    .brand-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, #fff, #94a3b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255,255,255,0.08);
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #eab308;
+      box-shadow: 0 0 10px #eab308;
+      transition: background 0.3s, box-shadow 0.3s;
+    }
+
+    .status-dot.active {
+      background: #10b981;
+      box-shadow: 0 0 10px #10b981;
+    }
+
+    .status-dot.error {
+      background: #ef4444;
+      box-shadow: 0 0 10px #ef4444;
+    }
+
+    /* Main Container */
+    main {
+      width: 100%;
+      max-width: 1100px;
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 24px;
+      flex: 1;
+    }
+
+    @media (max-width: 900px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Camera Viewport Container */
+    .viewport-card {
+      background: var(--panel-bg);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    }
+
+    .viewport-stage {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #webcamVideo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1); /* Mirror view */
+      display: block;
+    }
+
+    #outputCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      transform: scaleX(-1); /* Mirror canvas to match video */
+    }
+
+    /* Overlay Overlay Elements */
+    .viewport-overlay-controls {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      right: 16px;
+      display: flex;
+      justify-content: space-between;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .overlay-tag {
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.15);
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #e2e8f0;
+      pointer-events: auto;
+    }
+
+    /* Bottom Quick Action Toolbar inside Stage */
+    .viewport-quick-toolbar {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      padding: 8px 16px;
+      border-radius: 40px;
+      border: 1px solid rgba(255,255,255,0.15);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      z-index: 10;
+    }
+
+    .btn-icon {
+      background: transparent;
+      border: none;
+      color: var(--text);
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 1.1rem;
+    }
+
+    .btn-icon:hover {
+      background: rgba(255, 255, 255, 0.15);
+      transform: scale(1.05);
+    }
+
+    .btn-icon.active {
+      background: var(--primary);
+      box-shadow: 0 0 12px var(--primary);
+    }
+
+    .btn-toggle-mask {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 18px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: var(--text);
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+
+    .btn-toggle-mask.active {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      box-shadow: var(--shadow-glow);
+    }
+
+    /* Side Control Panel */
+    .control-panel {
+      background: var(--panel-bg);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    }
+
+    .panel-title {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Filter Carousel / Selection */
+    .filter-selector-box {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .filter-nav-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .filter-name-display {
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: #fff;
+    }
+
+    .nav-arrow-btn {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #fff;
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      transition: all 0.2s ease;
+    }
+
+    .nav-arrow-btn:hover {
+      background: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      max-height: 220px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .filter-grid::-webkit-scrollbar {
+      width: 6px;
+    }
+    .filter-grid::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
+    }
+
+    .filter-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+
+    .filter-card:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .filter-card.selected {
+      background: rgba(99, 102, 241, 0.2);
+      border-color: var(--primary);
+      box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
+    }
+
+    .filter-icon {
+      font-size: 1.8rem;
+    }
+
+    .filter-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    /* Controls Form */
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .control-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    select, input[type="range"] {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      color: #fff;
+      padding: 8px 12px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    select:focus {
+      border-color: var(--primary);
+    }
+
+    input[type="range"] {
+      padding: 0;
+      accent-color: var(--primary);
+      height: 6px;
+      cursor: pointer;
+    }
+
+    /* Action Buttons */
+    .btn-action-large {
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
+      border: none;
+      background: linear-gradient(135deg, var(--primary), #4f46e5);
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+      transition: all 0.25s ease;
+    }
+
+    .btn-action-large:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
+    }
+
+    /* Modal / Gallery preview of snapshot */
+    .snapshot-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(12px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .snapshot-modal.open {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      max-width: 600px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.8);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .snapshot-img {
+      width: 100%;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">🎭</div>
+      <div>
+        <div class="brand-title">Masked Web Camera Client</div>
+        <div style="font-size: 0.75rem; color: var(--text-muted);">Bindsol AI Vision Utility</div>
+      </div>
+    </div>
+    
+    <div class="status-badge">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">Initializing Landmarker...</span>
+    </div>
+  </header>
+
+  <!-- Main Grid -->
+  <main>
+    <!-- Viewport Stage -->
+    <div class="viewport-card">
+      <div class="viewport-stage">
+        <video id="webcamVideo" autoplay playsinline muted></video>
+        <canvas id="outputCanvas"></canvas>
+
+        <!-- Top overlay tags -->
+        <div class="viewport-overlay-controls">
+          <div class="overlay-tag" id="currentFilterTag">Filter: Superhero Mask</div>
+          <div class="overlay-tag" id="fpsTag">FPS: 0</div>
+        </div>
+
+        <!-- Quick Toolbar bottom center -->
+        <div class="viewport-quick-toolbar">
+          <button class="btn-toggle-mask active" id="btnToggleMask" onclick="toggleMaskState()">
+            <span id="toggleMaskIcon">✨</span>
+            <span id="toggleMaskLabel">Filter ON</span>
+          </button>
+          <div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2);"></div>
+          <button class="btn-icon" title="Previous Filter" onclick="cycleFilter(-1)">◀</button>
+          <button class="btn-icon" title="Next Filter" onclick="cycleFilter(1)">▶</button>
+          <div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2);"></div>
+          <button class="btn-icon" title="Capture Photo" onclick="takeSnapshot()">📸</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Side Control Panel -->
+    <div class="control-panel">
+      <!-- Filter Selector -->
+      <div>
+        <div class="panel-title">
+          <span>Face Filters</span>
+          <span id="filterCount">1 / 6</span>
+        </div>
+        
+        <div class="filter-selector-box">
+          <div class="filter-nav-header">
+            <button class="nav-arrow-btn" onclick="cycleFilter(-1)">◀</button>
+            <div class="filter-name-display" id="activeFilterName">Superhero Mask</div>
+            <button class="nav-arrow-btn" onclick="cycleFilter(1)">▶</button>
+          </div>
+
+          <div class="filter-grid" id="filterGrid">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings -->
+      <div class="control-group">
+        <div class="panel-title">Camera Source</div>
+        <select id="cameraSelect" onchange="switchCamera()"></select>
+      </div>
+
+      <div class="control-group">
+        <div class="panel-title">Filter Customization</div>
+        <div class="control-label">
+          <span>Scale</span>
+          <span id="opacityVal">100%</span>
+        </div>
+        <input type="range" id="filterScale" min="50" max="200" value="100" oninput="updateFilterConfig()">
+
+        <div class="control-label" style="margin-top: 10px;">
+          <span>Horizontal Offset (X)</span>
+          <span id="offsetXVal">0px</span>
+        </div>
+        <input type="range" id="filterOffsetX" min="-300" max="300" value="0" oninput="updateFilterConfig()">
+
+        <div class="control-label" style="margin-top: 10px;">
+          <span>Vertical Offset (Y)</span>
+          <span id="offsetYVal">0px</span>
+        </div>
+        <input type="range" id="filterOffsetY" min="-200" max="200" value="0" oninput="updateFilterConfig()">
+      </div>
+
+      <button class="btn-action-large" onclick="takeSnapshot()">
+        <span>📸 Capture Photo</span>
+      </button>
+    </div>
+  </main>
+
+  <!-- Snapshot Modal -->
+  <div class="snapshot-modal" id="snapshotModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 style="font-weight: 700;">Captured Photo</h3>
+        <button class="nav-arrow-btn" onclick="closeSnapshotModal()">✕</button>
+      </div>
+      <img id="snapshotImg" class="snapshot-img" alt="Snapshot">
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeSnapshotModal()">Close</button>
+        <a id="downloadSnapshotBtn" class="btn-action-large" style="text-decoration: none; width: auto;" download="masked_camera.png">
+          📥 Download Image
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Face Filter Definitions
+    const FILTERS = [
+      {
+        id: 'superhero',
+        name: 'Venetian Superhero Mask',
+        icon: '🦹',
+        description: 'Classic sleek upper-face masquerade mask'
+      },
+      {
+        id: 'privacy',
+        name: 'Privacy Censor Bar',
+        icon: '🕶️',
+        description: 'Black out eyes for anonymity'
+      },
+      {
+        id: 'cyber',
+        name: 'Neon Sci-Fi Visor',
+        icon: '⚡',
+        description: 'Futuristic luminous glowing visor'
+      },
+      {
+        id: 'pixelate',
+        name: 'Face Anonymizer Blur',
+        icon: '🧩',
+        description: 'Mosaic pixelation across upper facial features'
+      },
+      {
+        id: 'gold_carnival',
+        name: 'Golden Venetian Leaf',
+        icon: '👑',
+        description: 'Ornate gold masquerade crown & eye mask'
+      },
+      {
+        id: 'phantom',
+        name: 'Phantom Half-Mask',
+        icon: '🎭',
+        description: 'Elegant partial half-face porcelain mask'
+      }
+    ];
+
+    let currentFilterIndex = 0;
+    let isMaskActive = true;
+    let faceLandmarker = null;
+    let webcamRunning = false;
+    let videoElement = document.getElementById('webcamVideo');
+    let canvasElement = document.getElementById('outputCanvas');
+    let canvasCtx = canvasElement.getContext('2d');
+    let lastVideoTime = -1;
+    let results = null;
+
+    // Performance tracking
+    let frameCount = 0;
+    let lastFpsTime = performance.now();
+    let currentFps = 0;
+
+    // Initialize application
+    window.addEventListener('DOMContentLoaded', async () => {
+      renderFilterGrid();
+      await setupMediaPipe();
+      await initWebcam();
+    });
+
+    // Populate Filter Cards UI
+    function renderFilterGrid() {
+      const grid = document.getElementById('filterGrid');
+      grid.innerHTML = '';
+
+      FILTERS.forEach((filter, idx) => {
+        const card = document.createElement('div');
+        card.className = `filter-card ${idx === currentFilterIndex ? 'selected' : ''}`;
+        card.onclick = () => selectFilter(idx);
+        card.innerHTML = `
+          <div class="filter-icon">${filter.icon}</div>
+          <div class="filter-label">${filter.name}</div>
+        `;
+        grid.appendChild(card);
+      });
+
+      updateFilterHeaderDisplay();
+    }
+
+    function selectFilter(idx) {
+      currentFilterIndex = idx;
+      renderFilterGrid();
+    }
+
+    function cycleFilter(direction) {
+      currentFilterIndex = (currentFilterIndex + direction + FILTERS.length) % FILTERS.length;
+      renderFilterGrid();
+    }
+
+    function updateFilterHeaderDisplay() {
+      const active = FILTERS[currentFilterIndex];
+      document.getElementById('activeFilterName').innerText = active.name;
+      document.getElementById('currentFilterTag').innerText = `Filter: ${active.name}`;
+      document.getElementById('filterCount').innerText = `${currentFilterIndex + 1} / ${FILTERS.length}`;
+    }
+
+    function toggleMaskState() {
+      isMaskActive = !isMaskActive;
+      const btn = document.getElementById('btnToggleMask');
+      const icon = document.getElementById('toggleMaskIcon');
+      const label = document.getElementById('toggleMaskLabel');
+
+      if (isMaskActive) {
+        btn.classList.add('active');
+        icon.innerText = '✨';
+        label.innerText = 'Filter ON';
+      } else {
+        btn.classList.remove('active');
+        icon.innerText = '🚫';
+        label.innerText = 'Filter OFF';
+      }
+    }
+
+    // MediaPipe Setup
+    async function setupMediaPipe() {
+      const statusDot = document.getElementById('statusDot');
+      const statusText = document.getElementById('statusText');
+
+      try {
+        const { FaceLandmarker, FilesetResolver } = vision;
+        const filesetResolver = await FilesetResolver.forVisionTasks(
+          "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
+        );
+
+        try {
+          faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
+            baseOptions: {
+              modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
+              delegate: "GPU"
+            },
+            outputFaceBlendshapes: false,
+            runningMode: "VIDEO",
+            numFaces: 1
+          });
+        } catch (gpuErr) {
+          console.warn("GPU delegate failed, attempting CPU delegate fallback...", gpuErr);
+          faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
+            baseOptions: {
+              modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
+              delegate: "CPU"
+            },
+            outputFaceBlendshapes: false,
+            runningMode: "VIDEO",
+            numFaces: 1
+          });
+        }
+
+        statusDot.className = 'status-dot active';
+        statusText.innerText = 'AI Face Tracking Active';
+      } catch (err) {
+        console.error("MediaPipe initialization failed:", err);
+        statusDot.className = 'status-dot error';
+        statusText.innerText = 'Manual Face Positioning Mode';
+      }
+    }
+
+    // Webcam Setup
+    async function initWebcam() {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+        const cameraSelect = document.getElementById('cameraSelect');
+
+        cameraSelect.innerHTML = '';
+        videoDevices.forEach((device, index) => {
+          const option = document.createElement('option');
+          option.value = device.deviceId;
+          option.text = device.label || `Camera ${index + 1}`;
+          cameraSelect.appendChild(option);
+        });
+
+        startCameraStream();
+      } catch (err) {
+        console.error("Webcam enumerating failed:", err);
+      }
+    }
+
+    async function startCameraStream(deviceId = null) {
+      const constraints = {
+        video: deviceId ? { deviceId: { exact: deviceId } } : { width: { ideal: 1280 }, height: { ideal: 720 } }
+      };
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        videoElement.srcObject = stream;
+        videoElement.onloadedmetadata = () => {
+          videoElement.play();
+          webcamRunning = true;
+          resizeCanvas();
+          requestAnimationFrame(renderLoop);
+        };
+      } catch (err) {
+        console.error("Camera access error:", err);
+        document.getElementById('statusText').innerText = 'Camera Access Denied';
+        document.getElementById('statusDot').className = 'status-dot error';
+      }
+    }
+
+    function switchCamera() {
+      const select = document.getElementById('cameraSelect');
+      startCameraStream(select.value);
+    }
+
+    function resizeCanvas() {
+      canvasElement.width = videoElement.videoWidth || 640;
+      canvasElement.height = videoElement.videoHeight || 480;
+    }
+
+    // Main Render Animation Loop
+    async function renderLoop() {
+      if (!webcamRunning) return;
+
+      // Track FPS
+      frameCount++;
+      const now = performance.now();
+      if (now - lastFpsTime >= 1000) {
+        currentFps = Math.round((frameCount * 1000) / (now - lastFpsTime));
+        document.getElementById('fpsTag').innerText = `FPS: ${currentFps}`;
+        frameCount = 0;
+        lastFpsTime = now;
+      }
+
+      if (videoElement.currentTime !== lastVideoTime) {
+        lastVideoTime = videoElement.currentTime;
+
+        if (faceLandmarker) {
+          try {
+            results = faceLandmarker.detectForVideo(videoElement, performance.now());
+          } catch (e) {
+            console.error("Landmark detection error:", e);
+          }
+        }
+      }
+
+      // Clear Canvas
+      canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
+      // Render Active Mask Filter
+      if (isMaskActive) {
+        if (results && results.faceLandmarks && results.faceLandmarks.length > 0) {
+          const landmarks = results.faceLandmarks[0];
+          document.getElementById('statusDot').className = 'status-dot active';
+          document.getElementById('statusText').innerText = 'Tracking Face Live';
+          drawMaskFilter(landmarks);
+        } else {
+          // If model is downloading or face not locked yet, update status badge
+          if (faceLandmarker) {
+            document.getElementById('statusText').innerText = 'Searching for Face...';
+          }
+          drawFallbackMask();
+        }
+      }
+
+      requestAnimationFrame(renderLoop);
+    }
+
+    // Fallback Face Mask drawing when AI model is downloading or face undetected
+    function drawFallbackMask() {
+      const w = canvasElement.width;
+      const h = canvasElement.height;
+      const scaleFactor = parseInt(document.getElementById('filterScale').value) / 100;
+      const offsetX = parseInt(document.getElementById('filterOffsetX').value);
+      const offsetY = parseInt(document.getElementById('filterOffsetY').value);
+      
+      // Face center points adjusted by manual X and Y offset controls
+      const noseBridge = { x: (w * 0.5) + offsetX, y: (h * 0.45) + offsetY };
+      const leftEye = { x: (w * 0.41) + offsetX, y: (h * 0.40) + offsetY };
+      const rightEye = { x: (w * 0.59) + offsetX, y: (h * 0.40) + offsetY };
+      const cheekLeft = { x: (w * 0.35) + offsetX, y: (h * 0.52) + offsetY };
+      const cheekRight = { x: (w * 0.65) + offsetX, y: (h * 0.52) + offsetY };
+      const forehead = { x: (w * 0.5) + offsetX, y: (h * 0.30) + offsetY };
+
+      const filter = FILTERS[currentFilterIndex];
+      canvasCtx.save();
+
+      switch (filter.id) {
+        case 'superhero':
+          drawSuperheroMask(canvasCtx, leftEye, rightEye, noseBridge, cheekLeft, cheekRight, forehead, scaleFactor);
+          break;
+        case 'privacy':
+          drawPrivacyCensorBar(canvasCtx, leftEye, rightEye, noseBridge, scaleFactor);
+          break;
+        case 'cyber':
+          drawCyberVisor(canvasCtx, leftEye, rightEye, noseBridge, scaleFactor);
+          break;
+        case 'pixelate':
+          drawPixelatedMask(canvasCtx, leftEye, rightEye, noseBridge, cheekLeft, cheekRight, scaleFactor);
+          break;
+        case 'gold_carnival':
+          drawGoldCarnivalMask(canvasCtx, leftEye, rightEye, noseBridge, forehead, scaleFactor);
+          break;
+        case 'phantom':
+          drawPhantomMask(canvasCtx, rightEye, noseBridge, cheekRight, forehead, scaleFactor);
+          break;
+      }
+
+      canvasCtx.restore();
+    }
+
+    // Draw Masks on Canvas based on Facial Landmarks
+    function drawMaskFilter(landmarks) {
+      const filter = FILTERS[currentFilterIndex];
+      const scaleFactor = parseInt(document.getElementById('filterScale').value) / 100;
+      const w = canvasElement.width;
+      const h = canvasElement.height;
+
+      // Convert Normalized MediaPipe landmarks to Canvas pixels
+      const pt = (index) => ({
+        x: landmarks[index].x * w,
+        y: landmarks[index].y * h
+      });
+
+      // Key Facial Reference Points:
+      // Left eye corner: 33, Right eye corner: 263
+      // Nose bridge: 6, Nose tip: 4, Forehead: 10, Chin: 152
+      const leftEye = pt(33);
+      const rightEye = pt(263);
+      const noseBridge = pt(6);
+      const noseTip = pt(4);
+      const forehead = pt(10);
+      const cheekLeft = pt(234);
+      const cheekRight = pt(454);
+
+      canvasCtx.save();
+
+      switch (filter.id) {
+        case 'superhero':
+          drawSuperheroMask(canvasCtx, leftEye, rightEye, noseBridge, cheekLeft, cheekRight, forehead, scaleFactor);
+          break;
+        case 'privacy':
+          drawPrivacyCensorBar(canvasCtx, leftEye, rightEye, noseBridge, scaleFactor);
+          break;
+        case 'cyber':
+          drawCyberVisor(canvasCtx, leftEye, rightEye, noseBridge, scaleFactor);
+          break;
+        case 'pixelate':
+          drawPixelatedMask(canvasCtx, leftEye, rightEye, noseBridge, cheekLeft, cheekRight, scaleFactor);
+          break;
+        case 'gold_carnival':
+          drawGoldCarnivalMask(canvasCtx, leftEye, rightEye, noseBridge, forehead, scaleFactor);
+          break;
+        case 'phantom':
+          drawPhantomMask(canvasCtx, rightEye, noseBridge, cheekRight, forehead, scaleFactor);
+          break;
+      }
+
+      canvasCtx.restore();
+    }
+
+    // 1. Superhero Venetian Eye Mask
+    function drawSuperheroMask(ctx, lEye, rEye, nose, lCheek, rCheek, forehead, scale) {
+      const eyeDx = rEye.x - lEye.x;
+      const eyeDy = rEye.y - lEye.y;
+      const angle = Math.atan2(eyeDy, eyeDx);
+      const eyeDist = Math.hypot(eyeDx, eyeDy);
+
+      ctx.translate(nose.x, nose.y);
+      ctx.rotate(angle);
+      ctx.scale(scale, scale);
+
+      ctx.fillStyle = '#0f172a';
+      ctx.strokeStyle = '#6366f1';
+      ctx.lineWidth = 4;
+
+      ctx.beginPath();
+      // Outer wing top right
+      ctx.moveTo(eyeDist * 1.5, -eyeDist * 0.4);
+      // Dip over nose
+      ctx.quadraticCurveTo(eyeDist * 0.5, -eyeDist * 0.6, 0, -eyeDist * 0.2);
+      ctx.quadraticCurveTo(-eyeDist * 0.5, -eyeDist * 0.6, -eyeDist * 1.5, -eyeDist * 0.4);
+      // Wing bottom left
+      ctx.quadraticCurveTo(-eyeDist * 1.8, eyeDist * 0.5, -eyeDist * 0.8, eyeDist * 0.4);
+      // Nose beak point
+      ctx.lineTo(0, eyeDist * 0.7);
+      ctx.lineTo(eyeDist * 0.8, eyeDist * 0.4);
+      ctx.quadraticCurveTo(eyeDist * 1.8, eyeDist * 0.5, eyeDist * 1.5, -eyeDist * 0.4);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Eye Holes
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.beginPath();
+      ctx.ellipse(-eyeDist * 0.5, -eyeDist * 0.05, eyeDist * 0.28, eyeDist * 0.18, 0, 0, Math.PI * 2);
+      ctx.ellipse(eyeDist * 0.5, -eyeDist * 0.05, eyeDist * 0.28, eyeDist * 0.18, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // 2. Privacy Censor Bar
+    function drawPrivacyCensorBar(ctx, lEye, rEye, nose, scale) {
+      const eyeDx = rEye.x - lEye.x;
+      const eyeDy = rEye.y - lEye.y;
+      const angle = Math.atan2(eyeDy, eyeDx);
+      const eyeDist = Math.hypot(eyeDx, eyeDy);
+
+      ctx.translate(nose.x, nose.y);
+      ctx.rotate(angle);
+      ctx.scale(scale, scale);
+
+      const barWidth = eyeDist * 2.6;
+      const barHeight = eyeDist * 0.7;
+
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(-barWidth / 2, -barHeight / 2, barWidth, barHeight);
+
+      // Redacted text overlay
+      ctx.fillStyle = '#ef4444';
+      ctx.font = `bold ${Math.round(barHeight * 0.4)}px 'JetBrains Mono', monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('[ REDACTED ]', 0, 0);
+    }
+
+    // 3. Neon Cyber Visor
+    function drawCyberVisor(ctx, lEye, rEye, nose, scale) {
+      const eyeDx = rEye.x - lEye.x;
+      const eyeDy = rEye.y - lEye.y;
+      const angle = Math.atan2(eyeDy, eyeDx);
+      const eyeDist = Math.hypot(eyeDx, eyeDy);
+
+      ctx.translate(nose.x, nose.y);
+      ctx.rotate(angle);
+      ctx.scale(scale, scale);
+
+      const width = eyeDist * 2.4;
+      const height = eyeDist * 0.75;
+
+      // Glow visor background
+      const grad = ctx.createLinearGradient(-width/2, 0, width/2, 0);
+      grad.addColorStop(0, 'rgba(6, 182, 212, 0.8)');
+      grad.addColorStop(0.5, 'rgba(99, 102, 241, 0.85)');
+      grad.addColorStop(1, 'rgba(236, 72, 153, 0.8)');
+
+      ctx.fillStyle = grad;
+      ctx.shadowColor = '#06b6d4';
+      ctx.shadowBlur = 20;
+
+      ctx.beginPath();
+      ctx.moveTo(-width/2, -height/2);
+      ctx.lineTo(width/2, -height/2);
+      ctx.lineTo(width/2 - 15, height/2);
+      ctx.lineTo(-width/2 + 15, height/2);
+      ctx.closePath();
+      ctx.fill();
+
+      // Cyber tech lines
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `bold ${Math.round(height * 0.3)}px 'Outfit', sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('CYBER // MASK v1.0', 0, 0);
+    }
+
+    // 4. Pixelated / Anonymizer Blur Mask
+    function drawPixelatedMask(ctx, lEye, rEye, nose, lCheek, rCheek, scale) {
+      const eyeDx = rEye.x - lEye.x;
+      const eyeDy = rEye.y - lEye.y;
+      const eyeDist = Math.hypot(eyeDx, eyeDy);
+      const width = eyeDist * 2.4 * scale;
+      const height = eyeDist * 1.1 * scale;
+
+      const x = nose.x - width / 2;
+      const y = nose.y - height / 2;
+
+      // Create pixel mosaic effect by sampling video
+      try {
+        const offCanvas = document.createElement('canvas');
+        const sampleW = 16;
+        const sampleH = 8;
+        offCanvas.width = sampleW;
+        offCanvas.height = sampleH;
+        const offCtx = offCanvas.getContext('2d');
+
+        offCtx.drawImage(videoElement, x, y, width, height, 0, 0, sampleW, sampleH);
+
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(offCanvas, 0, 0, sampleW, sampleH, x, y, width, height);
+      } catch (e) {
+        // Fallback mosaic rects if canvas sampling blocked
+        ctx.fillStyle = '#334155';
+        ctx.fillRect(x, y, width, height);
+      }
+    }
+
+    // 5. Golden Venetian Carnival Mask
+    function drawGoldCarnivalMask(ctx, lEye, rEye, nose, forehead, scale) {
+      const eyeDx = rEye.x - lEye.x;
+      const eyeDy = rEye.y - lEye.y;
+      const angle = Math.atan2(eyeDy, eyeDx);
+      const eyeDist = Math.hypot(eyeDx, eyeDy);
+
+      ctx.translate(nose.x, nose.y);
+      ctx.rotate(angle);
+      ctx.scale(scale, scale);
+
+      const grad = ctx.createLinearGradient(-eyeDist, -eyeDist, eyeDist, eyeDist);
+      grad.addColorStop(0, '#f59e0b');
+      grad.addColorStop(0.5, '#fbbf24');
+      grad.addColorStop(1, '#d97706');
+
+      ctx.fillStyle = grad;
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+
+      ctx.beginPath();
+      ctx.arc(0, -eyeDist * 0.3, eyeDist * 1.2, Math.PI, 0);
+      ctx.lineTo(eyeDist * 1.2, eyeDist * 0.3);
+      ctx.lineTo(0, eyeDist * 0.6);
+      ctx.lineTo(-eyeDist * 1.2, eyeDist * 0.3);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Crown Jewels
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath();
+      ctx.arc(0, -eyeDist * 1.1, 10, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // 6. Phantom Half-Mask
+    function drawPhantomMask(ctx, rEye, nose, rCheek, forehead, scale) {
+      const eyeDist = 80;
+      ctx.translate(nose.x + 20, nose.y - 10);
+      ctx.scale(scale, scale);
+
+      ctx.fillStyle = '#f8fafc';
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.lineWidth = 3;
+
+      ctx.beginPath();
+      ctx.moveTo(-10, -eyeDist * 1.2);
+      ctx.quadraticCurveTo(eyeDist * 1.2, -eyeDist * 1.2, eyeDist * 1.2, eyeDist * 0.5);
+      ctx.quadraticCurveTo(eyeDist * 0.5, eyeDist * 1.2, -10, eyeDist * 0.5);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Eye cutout
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.beginPath();
+      ctx.ellipse(eyeDist * 0.4, -eyeDist * 0.1, 22, 14, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function updateFilterConfig() {
+      const scale = document.getElementById('filterScale').value;
+      const offsetX = document.getElementById('filterOffsetX').value;
+      const offsetY = document.getElementById('filterOffsetY').value;
+
+      document.getElementById('opacityVal').innerText = `${scale}%`;
+      document.getElementById('offsetXVal').innerText = `${offsetX}px`;
+      document.getElementById('offsetYVal').innerText = `${offsetY}px`;
+    }
+
+    // Capture Photo Snapshot
+    function takeSnapshot() {
+      const snapshotCanvas = document.createElement('canvas');
+      snapshotCanvas.width = videoElement.videoWidth || 640;
+      snapshotCanvas.height = videoElement.videoHeight || 480;
+      const ctx = snapshotCanvas.getContext('2d');
+
+      // Draw mirrored video
+      ctx.translate(snapshotCanvas.width, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(videoElement, 0, 0, snapshotCanvas.width, snapshotCanvas.height);
+
+      // Draw mirrored filter canvas
+      ctx.drawImage(canvasElement, 0, 0, snapshotCanvas.width, snapshotCanvas.height);
+
+      const dataUrl = snapshotCanvas.toDataURL('image/png');
+      document.getElementById('snapshotImg').src = dataUrl;
+      document.getElementById('downloadSnapshotBtn').href = dataUrl;
+      document.getElementById('snapshotModal').classList.add('open');
+    }
+
+    function closeSnapshotModal() {
+      document.getElementById('snapshotModal').classList.remove('open');
+    }
+  </script>
+</body>
+</html>
