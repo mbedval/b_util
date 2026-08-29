@@ -784,6 +784,12 @@
         <!-- Exit Full View button: only visible when a channel is focused -->
         <div class="close-focus-btn" id="exit-focus-btn" onclick="exitFocus(event)" title="Exit Full View">&#x2715; EXIT FULL VIEW</div>
         <div class="controls">
+            <span class="shortcuts-hint" style="font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 8px; margin-right: 6px;">
+                <span><kbd style="background: rgba(0,242,254,0.1); color: var(--accent-cyan); border-radius: 4px; padding: 2px 5px; border: 1px solid rgba(0,242,254,0.2); font-family: monospace;">F</kbd> Fullscreen</span>
+                <span><kbd style="background: rgba(0,242,254,0.1); color: var(--accent-cyan); border-radius: 4px; padding: 2px 5px; border: 1px solid rgba(0,242,254,0.2); font-family: monospace;">M</kbd> Mute</span>
+                <span><kbd style="background: rgba(0,242,254,0.1); color: var(--accent-cyan); border-radius: 4px; padding: 2px 5px; border: 1px solid rgba(0,242,254,0.2); font-family: monospace;">&#8592; &#8594;</kbd> Channel</span>
+                <span><kbd style="background: rgba(0,242,254,0.1); color: var(--accent-cyan); border-radius: 4px; padding: 2px 5px; border: 1px solid rgba(0,242,254,0.2); font-family: monospace;">Esc</kbd> Mini Deck</span>
+            </span>
             <button id="toggle-cycle" class="btn">AUTO CYCLE</button>
             <button id="toggle-scanlines" class="btn btn-active">CRT SCANLINES</button>
             <button id="open-config" class="btn">
@@ -1296,7 +1302,10 @@
                         stopChannel(i, true); // Suspend feed
                     }
                 } else {
-                    tempSuspendedStates[i] = false;
+                    if (tempSuspendedStates[index] || !hlsInstances[index]) {
+                        startChannel(index, true);
+                    }
+                    tempSuspendedStates[index] = false;
                 }
             }
         }
@@ -1606,6 +1615,92 @@
                     modal.classList.remove('open');
                 }
             };
+
+            // Keyboard Navigation & Shortcuts
+            document.addEventListener('keydown', (e) => {
+                // Ignore keyboard shortcuts when typing in input fields
+                if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
+                    if (e.key === 'Escape') {
+                        const modal = document.getElementById('config-modal');
+                        if (modal && modal.classList.contains('open')) {
+                            modal.classList.remove('open');
+                            document.activeElement.blur();
+                        }
+                    }
+                    return;
+                }
+
+                const key = e.key;
+
+                if (key === 'f' || key === 'F') {
+                    e.preventDefault();
+                    if (!document.fullscreenElement) {
+                        document.documentElement.requestFullscreen().catch(err => console.log('Fullscreen error:', err));
+                    } else {
+                        if (document.exitFullscreen) {
+                            document.exitFullscreen().catch(err => console.log('Exit fullscreen error:', err));
+                        }
+                    }
+                } else if (key === 'm' || key === 'M') {
+                    e.preventDefault();
+                    let targetIdx = lastViewedIndex !== null ? lastViewedIndex : 0;
+                    const focusedPlayer = document.querySelector('.player-wrapper.focused');
+                    if (focusedPlayer) {
+                        targetIdx = parseInt(focusedPlayer.getAttribute('data-index'));
+                    }
+                    toggleAudioMute(null, targetIdx);
+                } else if (key === 'ArrowRight') {
+                    e.preventDefault();
+                    let currentIdx = lastViewedIndex !== null ? lastViewedIndex : 0;
+                    const focusedPlayer = document.querySelector('.player-wrapper.focused');
+                    if (focusedPlayer) {
+                        currentIdx = parseInt(focusedPlayer.getAttribute('data-index'));
+                    }
+                    const nextIdx = (currentIdx + 1) % 3;
+                    const container = document.getElementById('viewer-deck');
+                    if (container && container.classList.contains('has-focused')) {
+                        const nextWrapper = document.querySelector(`.player-wrapper[data-index="${nextIdx}"]`);
+                        if (nextWrapper) {
+                            toggleFocus(nextWrapper);
+                        }
+                    } else {
+                        lastViewedIndex = nextIdx;
+                        toggleAudioMute(null, nextIdx);
+                    }
+                } else if (key === 'ArrowLeft') {
+                    e.preventDefault();
+                    let currentIdx = lastViewedIndex !== null ? lastViewedIndex : 0;
+                    const focusedPlayer = document.querySelector('.player-wrapper.focused');
+                    if (focusedPlayer) {
+                        currentIdx = parseInt(focusedPlayer.getAttribute('data-index'));
+                    }
+                    const prevIdx = (currentIdx - 1 + 3) % 3;
+                    const container = document.getElementById('viewer-deck');
+                    if (container && container.classList.contains('has-focused')) {
+                        const prevWrapper = document.querySelector(`.player-wrapper[data-index="${prevIdx}"]`);
+                        if (prevWrapper) {
+                            toggleFocus(prevWrapper);
+                        }
+                    } else {
+                        lastViewedIndex = prevIdx;
+                        toggleAudioMute(null, prevIdx);
+                    }
+                } else if (key === 'Escape') {
+                    e.preventDefault();
+                    const modal = document.getElementById('config-modal');
+                    if (modal && modal.classList.contains('open')) {
+                        modal.classList.remove('open');
+                        return;
+                    }
+                    if (document.fullscreenElement) {
+                        document.exitFullscreen().catch(err => console.log(err));
+                    }
+                    const container = document.getElementById('viewer-deck');
+                    if (container && container.classList.contains('has-focused')) {
+                        exitFocus();
+                    }
+                }
+            });
         });
     </script>
 </body>

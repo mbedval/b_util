@@ -92,6 +92,44 @@ app.get('/api/files', (req, res) => {
   }
 });
 
+// API endpoint to scan ANY relative folder path (used by CCTV path settings)
+app.get('/api/files/scan', (req, res) => {
+  const relPath = req.query.path;
+  if (!relPath) {
+    return res.status(400).json({ error: 'Missing ?path= parameter' });
+  }
+
+  // Safety: resolve and confirm it stays inside the project root
+  const resolved = path.resolve(__dirname, relPath);
+  if (!resolved.startsWith(__dirname)) {
+    return res.status(403).json({ error: 'Path outside project root is not allowed' });
+  }
+
+  if (!fs.existsSync(resolved)) {
+    return res.status(404).json({ error: `Folder not found: ${relPath}` });
+  }
+
+  const IMAGE_EXTS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'];
+  const VIDEO_EXTS = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv'];
+  const ALL_EXTS = [...IMAGE_EXTS, ...VIDEO_EXTS];
+
+  try {
+    const files = fs.readdirSync(resolved)
+      .filter(file => {
+        if (file.toLowerCase().includes('backup')) return false;
+        try {
+          const stat = fs.statSync(path.join(resolved, file));
+          return stat.isFile() && ALL_EXTS.includes(path.extname(file).toLowerCase());
+        } catch (e) { return false; }
+      })
+      .map(file => relPath.replace(/\/+$/, '') + '/' + file);
+
+    res.json(files);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // Serve static files from the root directory
 app.use(express.static(__dirname));
 

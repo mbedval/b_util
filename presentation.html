@@ -297,19 +297,44 @@
         ];
 
         // Try to detect additional image files via API
+        const PATH_KEY = 'bindsol_path_presentation';
+        const defaultPath = (window.BindsolConfig && window.BindsolConfig.apps && window.BindsolConfig.apps.presentation)
+            ? `${window.BindsolConfig.apps.presentation.parent}/${window.BindsolConfig.apps.presentation.folder}`
+            : 'input/wallpapers';
+
+        function getSavedPath() {
+            return localStorage.getItem(PATH_KEY) || defaultPath;
+        }
+
         async function detectAdditionalFiles() {
+            const targetPath = getSavedPath();
             try {
-                const response = await fetch('/api/files?folder=' + window.BindsolConfig.apps.presentation.folder);
-                if (response.ok) {
-                    const files = await response.json();
+                // Try dynamic scanner endpoint first
+                let files = [];
+                const resScan = await fetch(`/api/files/scan?path=${encodeURIComponent(targetPath)}`);
+                if (resScan.ok) {
+                    files = await resScan.json();
+                } else {
+                    const folderKey = targetPath.split('/').pop();
+                    const resFolder = await fetch(`/api/files?folder=${folderKey}`);
+                    if (resFolder.ok) files = await resFolder.json();
+                }
+
+                if (files && files.length > 0) {
                     const newFiles = files.filter(filePath => !imagePool.includes(filePath));
-                    if (newFiles.length > 0) {
-                        imagePool = [...imagePool, ...newFiles];
-                        console.log(`[API] Detected ${newFiles.length} additional image files`);
+                    if (newFiles.length > 0 || imagePool.length === 0) {
+                        imagePool = files;
+                        console.log(`[API Sync] Live updated image pool to ${files.length} images.`);
+                        // Append new images to current active slideshow queue without interrupting current view
+                        newFiles.forEach(nf => {
+                            if (!currentImages.includes(nf)) {
+                                currentImages.push(nf);
+                            }
+                        });
                     }
                 }
             } catch (e) {
-                console.log('Could not fetch via API, relying on files.js fallback');
+                console.log('Could not sync images via API');
             }
         }
 
@@ -484,7 +509,10 @@
         // Async Initialization
         async function init() {
             // 1. Try static list from files.js
-            if (window.collageFiles && window.collageFiles[window.BindsolConfig.apps.presentation.folder]) {
+            const targetFolder = getSavedPath().split('/').pop();
+            if (window.collageFiles && window.collageFiles[targetFolder]) {
+                imagePool = [...window.collageFiles[targetFolder]];
+            } else if (window.collageFiles && window.collageFiles[window.BindsolConfig.apps.presentation.folder]) {
                 imagePool = [...window.collageFiles[window.BindsolConfig.apps.presentation.folder]];
             }
 
@@ -500,6 +528,9 @@
             }
 
             startPresentation();
+
+            // Periodically check for newly copied files every 10 seconds without interrupting presentation
+            setInterval(detectAdditionalFiles, 10000);
         }
 
         // Run initialization

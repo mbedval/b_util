@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta name="google" content="notranslate">
@@ -339,14 +339,38 @@
     </div>
 
     <script>
+        const PATH_KEY = 'bindsol_path_videoViewer';
+        const defaultPath = (window.BindsolConfig && window.BindsolConfig.apps && window.BindsolConfig.apps.videoViewer)
+            ? `${window.BindsolConfig.apps.videoViewer.parent}/${window.BindsolConfig.apps.videoViewer.folder}`
+            : 'input/videos';
+
+        function getSavedPath() {
+            return localStorage.getItem(PATH_KEY) || defaultPath;
+        }
+
         let videoPool = [];
-        if (window.collageFiles && Array.isArray(window.collageFiles[window.BindsolConfig.apps.videoViewer.folder]) && window.collageFiles[window.BindsolConfig.apps.videoViewer.folder].length > 0) {
-            videoPool = window.collageFiles[window.BindsolConfig.apps.videoViewer.folder];
-        } else {
-            videoPool = [
-                'input/videos/sample1.mp4',
-                'input/videos/sample2.mp4'
-            ];
+        const currentPath = getSavedPath();
+        const currentFolderKey = currentPath.split('/').pop();
+        
+        if (window.collageFiles && Array.isArray(window.collageFiles[currentFolderKey]) && window.collageFiles[currentFolderKey].length > 0) {
+            videoPool = window.collageFiles[currentFolderKey];
+        } else if (window.collageFiles && Array.isArray(window.collageFiles['videos']) && window.collageFiles['videos'].length > 0) {
+            videoPool = window.collageFiles['videos'];
+        }
+
+        async function fetchVideosDynamic() {
+            const pathVal = getSavedPath();
+            try {
+                const res = await fetch(`/api/files/scan?path=${encodeURIComponent(pathVal)}`);
+                if (res.ok) {
+                    const files = await res.json();
+                    if (files && files.length > 0) {
+                        videoPool = files;
+                        buildGrid();
+                        return;
+                    }
+                }
+            } catch (e) {}
         }
 
         let activeLayout = '3x3';
@@ -508,6 +532,8 @@
 
         // Init
         buildGrid();
+        fetchVideosDynamic();
+        setInterval(fetchVideosDynamic, 10000);
     </script>
 </body>
 </html>

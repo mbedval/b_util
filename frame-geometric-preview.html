@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Geometric Frame — --frame-style geometric</title>
+  <meta name="description" content="Interactive preview of the geometric frame generator. 60 unique combinations driven by time (seconds 0–59).">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;400;600;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0a0c10;
+      --panel: rgba(255,255,255,0.04);
+      --border: rgba(255,255,255,0.08);
+      --accent: #40c4ff;
+      --accent2: #d4a017;
+      --text: #e0e6f0;
+      --muted: #5a6070;
+      --radius: 14px;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── HEADER ── */
+    header {
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    header .badge {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 30px;
+      background: linear-gradient(135deg, #40c4ff22, #7f34c022);
+      border: 1px solid #40c4ff44;
+      color: var(--accent);
+    }
+    header h1 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      background: linear-gradient(90deg, var(--accent), #9b59b6, var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    header .live-pill {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    header .live-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #2ecc71;
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 #2ecc7166; }
+      50%      { opacity: 0.6; transform: scale(0.85); box-shadow: 0 0 0 6px transparent; }
+    }
+
+    /* ── LAYOUT ── */
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 0;
+      overflow: hidden;
+      height: calc(100vh - 62px);
+    }
+
+    /* ── SIDEBAR ── */
+    aside {
+      background: rgba(255,255,255,0.025);
+      border-right: 1px solid var(--border);
+      padding: 24px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      overflow-y: auto;
+    }
+    .ctrl-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .ctrl-group label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .ctrl-group .value-display {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--accent);
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .ctrl-group .value-display small {
+      font-size: 0.7rem;
+      font-weight: 400;
+      color: var(--muted);
+      margin-left: 4px;
+    }
+
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 4px;
+      border-radius: 2px;
+      background: linear-gradient(to right, var(--accent) var(--pct,0%), var(--border) var(--pct,0%));
+      outline: none;
+      cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+      transition: box-shadow .2s;
+    }
+    input[type=range]:hover::-webkit-slider-thumb {
+      box-shadow: 0 0 16px var(--accent);
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+    }
+    button {
+      flex: 1;
+      padding: 9px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .2s;
+      letter-spacing: 0.04em;
+    }
+    button:hover {
+      background: rgba(255,255,255,0.08);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    button.primary {
+      background: linear-gradient(135deg, #1a6da0, #7f34c0);
+      border-color: transparent;
+      color: #fff;
+    }
+    button.primary:hover {
+      background: linear-gradient(135deg, #2080bf, #9b59b6);
+      box-shadow: 0 0 20px #40c4ff44;
+    }
+    button.danger {
+      border-color: #c0392b44;
+      color: #e74c3c;
+    }
+    button.danger:hover {
+      background: #c0392b22;
+      border-color: #e74c3c;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+    }
+
+    .info-block {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: rgba(64,196,255,0.04);
+      font-size: 0.78rem;
+      line-height: 1.7;
+      color: var(--muted);
+    }
+    .info-block b { color: var(--text); }
+    .info-block code {
+      font-size: 0.7rem;
+      background: rgba(255,255,255,0.06);
+      padding: 1px 5px;
+      border-radius: 4px;
+      color: var(--accent);
+    }
+
+    /* shape + palette tag list */
+    .tag-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .tag {
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      background: var(--panel);
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .tag.active, .tag:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(64,196,255,0.1);
+    }
+
+    /* ── PREVIEW AREA ── */
+    .preview-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .canvas-area {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse at 30% 20%, rgba(64,196,255,0.04) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 80%, rgba(127,52,192,0.05) 0%, transparent 60%);
+    }
+
+    /* checkerboard to show transparency */
+    .canvas-area::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        repeating-conic-gradient(#111214 0% 25%, #0d0f12 0% 50%);
+      background-size: 24px 24px;
+      opacity: 0.55;
+    }
+
+    #mainCanvas {
+      position: relative;
+      z-index: 1;
+      border-radius: 4px;
+      box-shadow: 0 8px 60px rgba(0,0,0,0.7);
+      display: block;
+      max-width: 100%;
+      max-height: 100%;
+      transition: opacity .3s;
+    }
+
+    /* ── STRIP (all 60 frames) ── */
+    .strip-bar {
+      border-top: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .strip-bar span {
+      font-size: 0.7rem;
+      color: var(--muted);
+      white-space: nowrap;
+      letter-spacing: 0.06em;
+    }
+    .strip-scroll {
+      flex: 1;
+      overflow-x: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+    .strip-scroll::-webkit-scrollbar { height: 4px; }
+    .strip-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .strip-inner {
+      display: flex;
+      gap: 6px;
+      width: max-content;
+      padding: 4px 2px;
+    }
+
+    .thumb {
+      width: 56px; height: 32px;
+      border-radius: 4px;
+      border: 1.5px solid transparent;
+      cursor: pointer;
+      overflow: hidden;
+      flex-shrink: 0;
+      background: #111;
+      transition: border-color .15s, transform .15s;
+    }
+    .thumb:hover { transform: scale(1.1); border-color: var(--accent); }
+    .thumb.current { border-color: var(--accent); box-shadow: 0 0 10px var(--accent); }
+    .thumb svg { width: 100%; height: 100%; }
+
+    /* ── TOAST ── */
+    #toast {
+      position: fixed;
+      bottom: 28px; right: 28px;
+      background: rgba(10,12,16,0.92);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 20px;
+      font-size: 0.82rem;
+      color: var(--accent);
+      backdrop-filter: blur(12px);
+      opacity: 0;
+      transform: translateY(12px);
+      transition: all .3s;
+      pointer-events: none;
+      z-index: 999;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+
+    /* ── EXPORT MODAL ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(6px);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: #12141a;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      max-width: 480px;
+      width: 90%;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .modal h2 { font-size: 1rem; font-weight: 700; color: var(--text); }
+    .modal code-block {
+      font-family: 'Courier New', monospace;
+      font-size: 0.76rem;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      display: block;
+      white-space: pre;
+      color: var(--accent);
+      overflow-x: auto;
+    }
+    .modal .close-btn { align-self: flex-end; }
+  </style>
+</head>
+<body>
+
+<!-- ── HEADER ─────────────────────────────────────────────── -->
+<header>
+  <span class="badge">frame-style</span>
+  <h1>geometric</h1>
+  <div class="live-pill">
+    <div class="live-dot" id="liveDot"></div>
+    <span id="livePillText">Live: <b id="liveSecDisplay">--</b>s</span>
+  </div>
+</header>
+
+<!-- ── MAIN ───────────────────────────────────────────────── -->
+<main>
+
+  <!-- SIDEBAR -->
+  <aside>
+    <!-- Seconds control -->
+    <div class="ctrl-group">
+      <label>Time Seed (seconds)</label>
+      <div class="value-display"><span id="secVal">0</span><small>/ 59</small></div>
+      <input type="range" id="secSlider" min="0" max="59" value="0">
+    </div>
+
+    <!-- Resolution -->
+    <div class="ctrl-group">
+      <label>Resolution</label>
+      <div class="btn-row" id="resBtns">
+        <button data-w="1920" data-h="1080">16:9</button>
+        <button data-w="1080" data-h="1920">9:16</button>
+        <button data-w="1080" data-h="1080">1:1</button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Auto-tick -->
+    <div class="ctrl-group">
+      <label>Live Clock Mode</label>
+      <div class="btn-row">
+        <button id="liveBtn" class="primary">▶ Start Live</button>
+        <button id="stopBtn" class="danger" disabled>■ Stop</button>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="ctrl-group">
+      <label>Actions</label>
+      <div class="btn-row">
+        <button id="exportSVG">⤓ SVG</button>
+        <button id="exportPNG">⤓ PNG</button>
+      </div>
+      <button id="exportAllBtn">⤓ Export All 60 SVGs</button>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Info -->
+    <div class="info-block">
+      <b>--frame-style geometric</b><br>
+      60 unique frames via <code>--seconds 0-59</code>.<br><br>
+      • Corner zone ≤ <code>4%</code> axis<br>
+      • Wall zone = <code>2%</code> axis<br>
+      • Shape wall replaces dotted borders<br>
+      • Transparent inner area<br>
+    </div>
+
+    <!-- Shapes -->
+    <div class="ctrl-group">
+      <label>Shape Vocabulary</label>
+      <div class="tag-list" id="shapeList"></div>
+    </div>
+
+    <!-- Palettes -->
+    <div class="ctrl-group">
+      <label>Palettes (10 groups × 6s)</label>
+      <div class="tag-list" id="paletteList"></div>
+    </div>
+  </aside>
+
+  <!-- CANVAS + STRIP -->
+  <div class="preview-wrap">
+    <div class="canvas-area">
+      <canvas id="mainCanvas"></canvas>
+    </div>
+
+    <!-- Bottom strip -->
+    <div class="strip-bar">
+      <span>ALL 60</span>
+      <div class="strip-scroll">
+        <div class="strip-inner" id="stripInner"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ── TOAST ─────────────────────────────────────────────── -->
+<div id="toast"></div>
+
+<!-- ── EXPORT MODAL ──────────────────────────────────────── -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2>Exporting All 60 Frames…</h2>
+    <p style="font-size:.82rem;color:var(--muted)">
+      Generating SVG files for seconds 0–59. Each file will be
+      downloaded sequentially. Allow pop-ups if prompted.
+    </p>
+    <div id="exportProgress" style="font-size:.8rem;color:var(--accent)">Starting…</div>
+    <button class="close-btn" id="closeModal">Close</button>
+  </div>
+</div>
+
+<!-- ── SCRIPT ─────────────────────────────────────────────── -->
+<script src="frame-geometric.js"></script>
+<script>
+/* ─────────────────────────────────────────────────────────
+   PREVIEW CONTROLLER
+───────────────────────────────────────────────────────── */
+(function () {
+
+  const canvas   = document.getElementById('mainCanvas');
+  const slider   = document.getElementById('secSlider');
+  const secVal   = document.getElementById('secVal');
+  const liveBtn  = document.getElementById('liveBtn');
+  const stopBtn  = document.getElementById('stopBtn');
+  const liveDot  = document.getElementById('liveDot');
+  const livePill = document.getElementById('liveSecDisplay');
+  const stripInner = document.getElementById('stripInner');
+  const toast    = document.getElementById('toast');
+
+  let resW = 1920, resH = 1080;
+  let currentSec = 0;
+  let liveTicker = null;
+
+  /* ── canvas sizing ── */
+  function sizeCanvas() {
+    const area = canvas.parentElement;
+    const maxW = area.clientWidth  - 48;
+    const maxH = area.clientHeight - 48;
+    const scale = Math.min(maxW / resW, maxH / resH);
+    canvas.width  = resW;
+    canvas.height = resH;
+    canvas.style.width  = Math.floor(resW * scale) + 'px';
+    canvas.style.height = Math.floor(resH * scale) + 'px';
+  }
+  window.addEventListener('resize', () => { sizeCanvas(); drawFrame(currentSec); });
+
+  /* ── draw ── */
+  function drawFrame(sec) {
+    currentSec = sec;
+    secVal.textContent = sec;
+    slider.value = sec;
+    updateSliderTrack();
+    highlightThumb(sec);
+    GeometricFrame.render(canvas, { seconds: sec, width: resW, height: resH });
+  }
+
+  /* ── slider track gradient ── */
+  function updateSliderTrack() {
+    const pct = (slider.value / 59) * 100;
+    slider.style.setProperty('--pct', pct + '%');
+  }
+  slider.addEventListener('input', () => {
+    if (liveTicker) stopLive();
+    drawFrame(parseInt(slider.value));
+  });
+
+  /* ── resolution buttons ── */
+  document.getElementById('resBtns').querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      resW = parseInt(btn.dataset.w);
+      resH = parseInt(btn.dataset.h);
+      sizeCanvas();
+      drawFrame(currentSec);
+      buildStrip();
+    });
+  });
+
+  /* ── live tick ── */
+  function startLive() {
+    liveBtn.disabled = true;
+    stopBtn.disabled = false;
+    liveDot.style.background = '#2ecc71';
+    liveTicker = GeometricFrame.liveTick(canvas, { width: resW, height: resH });
+    liveInterval = setInterval(() => {
+      const s = new Date().getSeconds();
+      secVal.textContent = s;
+      livePill.textContent = s + 's';
+      slider.value = s;
+      updateSliderTrack();
+      highlightThumb(s);
+    }, 250);
+  }
+  function stopLive() {
+    if (liveTicker) { liveTicker.stop(); liveTicker = null; }
+    clearInterval(liveInterval);
+    liveBtn.disabled = false;
+    stopBtn.disabled = true;
+  }
+  liveBtn.addEventListener('click', startLive);
+  stopBtn.addEventListener('click', stopLive);
+
+  /* ── thumbnail strip ── */
+  const THUMB_W = 192, THUMB_H = 108;
+  const thumbSVGs = [];
+
+  function buildStrip() {
+    stripInner.innerHTML = '';
+    thumbSVGs.length = 0;
+    for (let s = 0; s < 60; s++) {
+      const svg = GeometricFrame.renderSVG({ seconds: s, width: THUMB_W, height: THUMB_H });
+      thumbSVGs.push(svg);
+      const div = document.createElement('div');
+      div.className = 'thumb' + (s === currentSec ? ' current' : '');
+      div.dataset.sec = s;
+      div.title = `Second ${s}`;
+      div.innerHTML = svg;
+      div.addEventListener('click', () => {
+        if (liveTicker) stopLive();
+        drawFrame(s);
+      });
+      stripInner.appendChild(div);
+    }
+  }
+
+  function highlightThumb(sec) {
+    stripInner.querySelectorAll('.thumb').forEach((d, i) => {
+      d.classList.toggle('current', i === sec);
+    });
+    const active = stripInner.children[sec];
+    if (active) active.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+  }
+
+  /* ── shape tag list ── */
+  const shapeList = document.getElementById('shapeList');
+  GeometricFrame.SHAPE_KEYS.forEach(k => {
+    const t = document.createElement('span');
+    t.className = 'tag';
+    t.textContent = k;
+    shapeList.appendChild(t);
+  });
+
+  /* ── palette tag list ── */
+  const pal_names = ['Steel', 'Gold', 'Crimson', 'Emerald', 'Violet',
+                     'Cyan', 'Bronze', 'Silver Neon', 'Obsidian', 'Rose Gold'];
+  const paletteList = document.getElementById('paletteList');
+  pal_names.forEach((n, i) => {
+    const t = document.createElement('span');
+    t.className = 'tag';
+    t.textContent = `${i*6}-${i*6+5}s: ${n}`;
+    t.addEventListener('click', () => {
+      if (liveTicker) stopLive();
+      drawFrame(i * 6);
+    });
+    paletteList.appendChild(t);
+  });
+
+  /* ── export SVG ── */
+  document.getElementById('exportSVG').addEventListener('click', () => {
+    const svg = GeometricFrame.renderSVG({ seconds: currentSec, width: resW, height: resH });
+    downloadBlob(new Blob([svg], { type: 'image/svg+xml' }),
+      `frame_geometric_s${currentSec}_${resW}x${resH}.svg`);
+    showToast(`SVG exported — seconds=${currentSec}`);
+  });
+
+  /* ── export PNG ── */
+  document.getElementById('exportPNG').addEventListener('click', () => {
+    canvas.toBlob(blob => {
+      downloadBlob(blob, `frame_geometric_s${currentSec}_${resW}x${resH}.png`);
+      showToast(`PNG exported — seconds=${currentSec}`);
+    }, 'image/png');
+  });
+
+  /* ── export ALL 60 SVGs ── */
+  const modal   = document.getElementById('modalOverlay');
+  const progress= document.getElementById('exportProgress');
+  document.getElementById('exportAllBtn').addEventListener('click', () => {
+    modal.classList.add('open');
+    let i = 0;
+    const tick = () => {
+      if (i >= 60) { progress.textContent = '✓ Done — 60 files exported.'; return; }
+      progress.textContent = `Exporting second ${i}…`;
+      const svg = GeometricFrame.renderSVG({ seconds: i, width: resW, height: resH });
+      downloadBlob(new Blob([svg], { type: 'image/svg+xml' }),
+        `frame_geometric_s${String(i).padStart(2,'0')}.svg`);
+      i++;
+      setTimeout(tick, 80);
+    };
+    tick();
+  });
+  document.getElementById('closeModal').addEventListener('click', () => {
+    modal.classList.remove('open');
+  });
+
+  /* ── utils ── */
+  function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a   = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  let toastTimer;
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+  }
+
+  /* ── init ── */
+  sizeCanvas();
+  const initSec = new Date().getSeconds();
+  buildStrip();
+  drawFrame(initSec);
+
+})();
+</script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta name="google" content="notranslate">
@@ -558,6 +558,67 @@
             box-shadow: 0 0 10px var(--accent-glow);
             transition: width 0.1s ease;
         }
+        /* Path Settings input */
+        .path-input-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .path-input {
+            background: rgba(0,0,0,0.6);
+            border: 1px solid var(--panel-border);
+            border-radius: 4px;
+            color: var(--text-color);
+            font-family: 'Courier New', monospace;
+            font-size: 0.68rem;
+            padding: 6px 8px;
+            width: 100%;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .path-input:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 6px var(--accent-glow);
+        }
+        .path-hint {
+            font-size: 0.58rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+        .path-current {
+            font-size: 0.6rem;
+            color: var(--accent-color);
+            font-family: 'Courier New', monospace;
+            background: rgba(0,255,128,0.06);
+            border: 1px solid rgba(0,255,128,0.15);
+            border-radius: 3px;
+            padding: 3px 6px;
+            word-break: break-all;
+        }
+
+        /* Toast notification */
+        .path-toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: rgba(0,255,128,0.12);
+            border: 1px solid var(--accent-color);
+            border-radius: 6px;
+            color: var(--accent-color);
+            font-size: 0.72rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            padding: 8px 20px;
+            z-index: 9000;
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            pointer-events: none;
+        }
+        .path-toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
     </style>
 </head>
 <body class="crt-active">
@@ -572,6 +633,9 @@
             <div style="font-size: 0.7rem; margin-top: 8px; color: var(--text-muted);" id="preloader-text">Configuring receiver...</div>
         </div>
     </div>
+
+    <!-- Path toast notification -->
+    <div class="path-toast" id="path-toast"></div>
 
     <!-- Screen Close Button -->
     <button class="close-button" id="closeButton" title="Exit Full Screen (ESC)">Ã—</button>
@@ -644,6 +708,8 @@
                 </div>
             </div>
 
+            </div>
+
             <!-- Keybind Instructions -->
             <div class="control-section">
                 <h2>Shortcuts Reference</h2>
@@ -671,6 +737,73 @@
 
     <!-- Scripting Dashboard Interactions -->
     <script>
+        // ── PATH SETTINGS ──────────────────────────────────────────────────────
+        const PATH_KEY = 'bindsol_path_cctv';
+        const defaultCctvFolder = (window.BindsolConfig && window.BindsolConfig.apps && window.BindsolConfig.apps.cctv)
+            ? window.BindsolConfig.apps.cctv.parent + '/' + window.BindsolConfig.apps.cctv.folder
+            : 'input/videos';
+
+        function getSavedPath() {
+            return localStorage.getItem(PATH_KEY) || defaultCctvFolder;
+        }
+
+        function showPathToast(msg) {
+            let t = document.getElementById('path-toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2200);
+        }
+
+        function applyPath(newPath) {
+            newPath = newPath.trim().replace(/\/+$/, ''); // strip trailing slash
+            if (!newPath) return;
+
+            localStorage.setItem(PATH_KEY, newPath);
+            document.getElementById('path-display').textContent = newPath;
+            document.getElementById('path-input').value = '';
+            showPathToast('Scanning folder...');
+            addLogLine('system', `Video source path changed to: ${newPath} — scanning...`);
+
+            // Fetch via the new scan endpoint that accepts any relative path
+            fetch('/api/files/scan?path=' + encodeURIComponent(newPath))
+                .then(r => {
+                    if (!r.ok) return r.json().then(e => Promise.reject(e.error || r.statusText));
+                    return r.json();
+                })
+                .then(files => {
+                    if (files && files.length > 0) {
+                        videoPool = files;
+                        addLogLine('system', `Loaded ${files.length} video(s) from ${newPath}.`);
+                        showPathToast(`\u2713 ${files.length} video(s) loaded`);
+                        buildGrid();
+                    } else {
+                        addLogLine('alert', `No videos found in "${newPath}". Keeping current feeds.`);
+                        showPathToast('No videos found at that path');
+                    }
+                })
+                .catch(err => {
+                    addLogLine('alert', `Path error: ${err}. Keeping current feeds.`);
+                    showPathToast('Error: ' + err);
+                });
+        }
+
+        function resetPath() {
+            localStorage.removeItem(PATH_KEY);
+            document.getElementById('path-display').textContent = defaultCctvFolder;
+            document.getElementById('path-input').value = '';
+            addLogLine('system', `Video source path reset to default: ${defaultCctvFolder}`);
+            showPathToast('Reset to default path');
+            // Restore original pool
+            const folderKey = defaultCctvFolder.split('/').pop();
+            if (window.collageFiles && Array.isArray(window.collageFiles[folderKey]) && window.collageFiles[folderKey].length > 0) {
+                videoPool = window.collageFiles[folderKey];
+            } else {
+                videoPool = fallbackVideos;
+            }
+            buildGrid();
+        }
+
+        // ── FALLBACK VIDEOS ──────────────────────────────────────────────────────
         // Fallback videos in case files.js is unavailable
         const fallbackVideos = [
             "assets/videos/tumblr_0a3f03f882b557143357653b5d740a64_55f2d1d4_720.mp4",
@@ -685,14 +818,23 @@
             "assets/videos/tumblr_27045c0f917a19eb96c3f592b7cc0044_67f7f816_0.mp4"
         ];
 
-        // Retrieve video pool
+        // Retrieve video pool using saved path or default
         let videoPool = [];
-        if (window.collageFiles && Array.isArray(window.collageFiles[window.BindsolConfig.apps.cctv.folder]) && window.collageFiles[window.BindsolConfig.apps.cctv.folder].length > 0) {
+        const _savedPath = getSavedPath();
+        const _savedFolderKey = _savedPath.split('/').pop();
+        if (window.collageFiles && Array.isArray(window.collageFiles[_savedFolderKey]) && window.collageFiles[_savedFolderKey].length > 0) {
+            videoPool = window.collageFiles[_savedFolderKey];
+        } else if (window.BindsolConfig && window.collageFiles && Array.isArray(window.collageFiles[window.BindsolConfig.apps.cctv.folder]) && window.collageFiles[window.BindsolConfig.apps.cctv.folder].length > 0) {
             videoPool = window.collageFiles[window.BindsolConfig.apps.cctv.folder];
         } else {
-            console.log("No videos found in files.js, applying fallback list.");
+            console.log('No videos found in files.js, applying fallback list.');
             videoPool = fallbackVideos;
         }
+        // Sync display with saved path
+        document.addEventListener('DOMContentLoaded', () => {
+            const pd = document.getElementById('path-display');
+            if (pd) pd.textContent = getSavedPath();
+        });
 
         // Dashboard State variables
         let activeLayout = '3x3'; // '2x2', '3x3', '4x4', 'split'
@@ -1053,6 +1195,20 @@
 
             // Simulation alarm system
             document.getElementById('trigger-alarm-btn').addEventListener('click', triggerSimulatedAlarm);
+
+            // Path settings buttons
+            document.getElementById('path-apply-btn').addEventListener('click', () => {
+                const val = document.getElementById('path-input').value;
+                if (val.trim()) applyPath(val);
+                else showPathToast('Enter a path first');
+            });
+            document.getElementById('path-reset-btn').addEventListener('click', resetPath);
+            document.getElementById('path-input').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    const val = e.target.value;
+                    if (val.trim()) applyPath(val);
+                }
+            });
 
             // Close fullscreen button click
             closeButton.addEventListener('click', exitFullscreenFocus);

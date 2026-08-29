@@ -31,20 +31,20 @@
         }
 
         .header {
-            position: relative;
-            text-align: center;
-            padding: 15px;
+            padding: 12px 25px;
             background: rgba(255, 255, 255, 0.05);
             border-radius: 12px;
             box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
             display: flex;
-            justify-content: center;
+            justify-content: space-between;
             align-items: center;
             flex-shrink: 0;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         .header h1 {
-            font-size: 2rem;
+            font-size: 1.8rem;
             font-weight: 300;
             letter-spacing: 2px;
             text-transform: uppercase;
@@ -65,23 +65,40 @@
             filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
         }
 
-        .help-link {
-            position: absolute;
-            right: 25px;
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn-link {
             color: #4ecdc4;
             text-decoration: none;
             font-weight: 600;
-            font-size: 0.95rem;
-            padding: 6px 12px;
+            font-size: 0.9rem;
+            padding: 7px 14px;
             border: 1px solid #4ecdc4;
             border-radius: 6px;
             transition: all 0.3s ease;
+            white-space: nowrap;
         }
 
-        .help-link:hover {
+        .nav-btn-link:hover {
             background: #4ecdc4;
             color: #1a1a1a;
             box-shadow: 0 0 12px rgba(78, 205, 196, 0.4);
+        }
+
+        .nav-btn-settings {
+            color: #ff6b6b;
+            border-color: #ff6b6b;
+        }
+
+        .nav-btn-settings:hover {
+            background: #ff6b6b;
+            color: #1a1a1a;
+            box-shadow: 0 0 12px rgba(255, 107, 107, 0.4);
         }
 
         .apps-section {
@@ -188,10 +205,13 @@
             .container { height: auto; padding: 15px; }
             .header {
                 flex-direction: column;
+                align-items: center;
+                text-align: center;
                 gap: 12px;
             }
-            .help-link {
-                position: static;
+            .header-actions {
+                justify-content: center;
+                width: 100%;
             }
             .header h1 {
                 font-size: 1.5rem;
@@ -206,7 +226,10 @@
     <div class="container">
         <div class="header">
             <h1><img src="assets/bindsol.png" alt="Bindsol" class="logo">Bindsol.util</h1>
-            <a href="document.html" class="help-link">❓ Help & Docs</a>
+            <div class="header-actions">
+                <a href="setting.html" class="nav-btn-link nav-btn-settings">⚙️ Settings</a>
+                <a href="document.html" class="nav-btn-link">❓ Help & Docs</a>
+            </div>
         </div>
 
         <div class="apps-section">
@@ -248,6 +271,16 @@
                     <h3>🖼️ Presentation</h3>
                     <p>Full-screen slideshow presentation with auto-shuffle images, click to pause/resume, and ESC key to show animated Thank You message.</p>
                 </div>
+
+                <div class="app-card" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/morph.jpg');" onclick="window.open('playingcard.html', '_blank')">
+                    <h3>🎴 Playing Card Viewer</h3>
+                    <p>Rummy table styled image viewer where wallpaper images are shuffled like playing cards and revealed 1-by-1 with card corner suit details.</p>
+                </div>
+
+                <div class="app-card" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/mobile.jpg');" onclick="window.open('mobile.html', '_blank')">
+                    <h3>📱 Mobile Simulator</h3>
+                    <p>A hybrid smartphone mockup (blending features of iOS and Android). Includes an interactive lock screen, home app launcher, and a virtual finger tap tutorial animation that opens the gallery. Double-clicking a grid stream launches a TikTok/Reels vertical feed equipped with heart burst visual reactions, spinning vinyl soundtracks, and gesture controls.</p>
+                </div>
             </div>
 
             <!-- SECTION 3: Online -->
@@ -257,35 +290,23 @@
                     <h3>🔴 YouTube</h3>
                     <p>Interactive 2-view YouTube live streams receiver. Auto-extracts YouTube video IDs, dynamically scales stream resolution (480p when small to save data, up to 720p HD when focused), with click-to-audio routing controls.</p>
                 </div>
-            </div>
 
-            <!-- SECTION 4: Television -->
-            <h2 class="category-title">4) Television</h2>
-            <div class="apps-grid">
                 <div class="app-card" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/bindsol.png');" onclick="window.open('television.html', '_blank')">
                     <h3>📺 Live Television</h3>
-                    <p>Vintage wood-cabinet CRT TV featuring Bindsol branding. Access four categories (Business News, Hindi News, Hindi Music, Lifestyle Fashion) dynamically from a single config. Features viewport auto-scaling, customizable cards strip, CRT screen filters, and scanlines.</p>
+                    <p>Vintage wood-cabinet CRT TV featuring Bindsol branding. Access categories (Business, News, Music, Lifestyle, English News, Gujarati News, Rajasthani) dynamically from a single config. Features viewport auto-scaling, channel cards strip, CRT screen filters, and scanlines.</p>
                 </div>
 
-                <div class="app-card" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/cctv.jpg');" onclick="window.open('radio.html', '_blank')">
-                    <h3>📻 Radio — Gujarat</h3>
-                    <p>Online radio player with cyberpunk Control Deck aesthetic. 18+ Indian stations including Radio Mirchi 98.3, Red FM 93.5, Big FM 92.7, Fever FM 104, Radio City 91.1 and AIR Gujarat stations. Filter by Gujarati / Hindi / English / News. Waveform animation, volume control, CH prev/next, and custom station support.</p>
-                </div>
-
-                <div class="app-card" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/tv.jpg');" onclick="window.open('iptv.html', '_blank')">
+                <div class="app-card" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/cctv.jpg');" onclick="window.open('iptv.html', '_blank')">
                     <h3>📡 IP TV</h3>
                     <p>Interactive 3-view live IPTV dashboard receiver. Configurable slots for HLS streams. Click a stream to expand to full viewport with live audio. Auto Cycle mode, CRT scanlines, preset finder and per-feed power controls.</p>
                 </div>
             </div>
 
-            <!-- SECTION 5: Other -->
-            <h2 class="category-title">5) Other</h2>
-            <div class="apps-grid">
-                <div class="app-card" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/mobile.jpg');" onclick="window.open('mobile.html', '_blank')">
-                    <h3>📱 Mobile Simulator</h3>
-                    <p>A hybrid smartphone mockup (blending features of iOS and Android). Includes an interactive lock screen, home app launcher, and a virtual finger tap tutorial animation that opens the gallery. Double-clicking a grid stream launches a TikTok/Reels vertical feed equipped with heart burst visual reactions, spinning vinyl soundtracks, and gesture controls.</p>
-                </div>
 
+
+            <!-- SECTION 4: Other -->
+            <h2 class="category-title">4) Other</h2>
+            <div class="apps-grid">
                 <div class="app-card" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/chat.jpg');" onclick="window.open('Whatsapp.html', '_blank')">
                     <h3>💬 Chat Story Simulator</h3>
                     <p>A smartphone mockup simulation running a WhatsApp-style chat app. Dynamically parses input/chatstory/story.json to replay conversations with typing indicator delays, checkmark receipts, and attachment images. Includes click-to-zoom image lightboxes and interactive send inputs that trigger automated chatbot responses.</p>

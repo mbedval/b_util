@@ -10,8 +10,8 @@
     <script src="files.js" onerror="console.warn('files.js not found. Using fallback files.')"></script>
     <style>
         :root {
-            --phone-width: 320px;
-            --phone-height: 660px;
+            --phone-height: min(840px, 86vh);
+            --phone-width: calc(var(--phone-height) * 0.485);
             --bezel-color: #121214;
             --screen-bg: #000000;
             --accent-color: #38bdf8;
@@ -816,7 +816,7 @@
     <div class="blur-blob" style="top: 10%; left: 15%;"></div>
     <div class="blur-blob" style="bottom: 10%; right: 15%; background: radial-gradient(circle, rgba(236, 72, 153, 0.08) 0%, rgba(236, 72, 153, 0) 70%);"></div>
 
-    <div class="tv-wrapper" style="display: flex; gap: 40px; align-items: center; justify-content: center; max-width: 1200px; width: 100%; position: relative; z-index: 10;">
+    <div class="tv-wrapper" style="display: flex; gap: 40px; align-items: center; justify-content: center; max-width: 1400px; width: 100%; height: 100%; position: relative; z-index: 10;">
         
         <!-- Physical Mobile Layout Simulator -->
         <div class="phone-wrapper">
@@ -1059,13 +1059,45 @@
             "assets/videos/tumblr_1efdffc08f67914e20bd0a1a22b6e9e2_b3a07469_720.mp4"
         ];
 
-        // Retrieve video pool
+        // Retrieve video pool with support for Settings path & config.js
+        const PATH_KEY = 'bindsol_path_mobileSimulator';
+        const defaultPath = (window.BindsolConfig && window.BindsolConfig.apps && window.BindsolConfig.apps.mobileSimulator)
+            ? `${window.BindsolConfig.apps.mobileSimulator.parent}/${window.BindsolConfig.apps.mobileSimulator.folder}`
+            : 'input/mobilevideos';
+
+        function getSavedPath() {
+            return localStorage.getItem(PATH_KEY) || defaultPath;
+        }
+
         let videoPool = [];
-        if (window.collageFiles && Array.isArray(window.collageFiles[window.BindsolConfig.apps.mobileSimulator.folder]) && window.collageFiles[window.BindsolConfig.apps.mobileSimulator.folder].length > 0) {
-            videoPool = window.collageFiles[window.BindsolConfig.apps.mobileSimulator.folder];
+        const currentPath = getSavedPath();
+        const currentFolderKey = currentPath.split('/').pop();
+
+        if (window.collageFiles && Array.isArray(window.collageFiles[currentFolderKey]) && window.collageFiles[currentFolderKey].length > 0) {
+            videoPool = window.collageFiles[currentFolderKey];
+        } else if (window.collageFiles && Array.isArray(window.collageFiles['mobilevideos']) && window.collageFiles['mobilevideos'].length > 0) {
+            videoPool = window.collageFiles['mobilevideos'];
+        } else if (window.collageFiles && Array.isArray(window.collageFiles['videos']) && window.collageFiles['videos'].length > 0) {
+            videoPool = window.collageFiles['videos'];
         } else {
             console.log("No videos found in files.js, using fallback list.");
             videoPool = fallbackVideos;
+        }
+
+        async function fetchVideosDynamic() {
+            const pathVal = getSavedPath();
+            try {
+                const res = await fetch(`/api/files/scan?path=${encodeURIComponent(pathVal)}`);
+                if (res.ok) {
+                    const files = await res.json();
+                    if (files && files.length > 0) {
+                        videoPool = files;
+                        if (typeof populateGalleryGrid === 'function') {
+                            populateGalleryGrid();
+                        }
+                    }
+                }
+            } catch (e) {}
         }
 
         // Simulator state variables
@@ -1569,7 +1601,10 @@
         });
 
         // Launch Simulator
-        window.addEventListener('DOMContentLoaded', initSimulator);
+        window.addEventListener('DOMContentLoaded', () => {
+            initSimulator();
+            fetchVideosDynamic();
+        });
     </script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta name="google" content="notranslate">
@@ -345,18 +345,43 @@
                 </div>
             </div>
 
-        </div>
     </div>
 
     <script>
+        const PATH_KEY = 'bindsol_path_animationGallery';
+        const defaultPath = (window.BindsolConfig && window.BindsolConfig.apps && window.BindsolConfig.apps.animationGallery)
+            ? `${window.BindsolConfig.apps.animationGallery.parent}/${window.BindsolConfig.apps.animationGallery.folder}`
+            : 'input/animation';
+
+        function getSavedPath() {
+            return localStorage.getItem(PATH_KEY) || defaultPath;
+        }
+
         let imagePool = [];
-        if (window.collageFiles && Array.isArray(window.collageFiles[window.BindsolConfig.apps.animationGallery.folder]) && window.collageFiles[window.BindsolConfig.apps.animationGallery.folder].length > 0) {
+        const currentPath = getSavedPath();
+        const currentFolderKey = currentPath.split('/').pop();
+
+        if (window.collageFiles && Array.isArray(window.collageFiles[currentFolderKey]) && window.collageFiles[currentFolderKey].length > 0) {
+            imagePool = window.collageFiles[currentFolderKey];
+        } else if (window.collageFiles && Array.isArray(window.collageFiles[window.BindsolConfig.apps.animationGallery.folder]) && window.collageFiles[window.BindsolConfig.apps.animationGallery.folder].length > 0) {
             imagePool = window.collageFiles[window.BindsolConfig.apps.animationGallery.folder];
-        } else {
-            imagePool = [
-                'input/' + window.BindsolConfig.apps.animationGallery.folder + '/tumblr_06d3d3a87634d03e6be7bedbfa1b015f_7d7ed30b_640.webp',
-                'input/' + window.BindsolConfig.apps.animationGallery.folder + '/tumblr_9247a88b3634a3c931da463fbf1be0db_69f69ace_400.webp'
-            ];
+        }
+
+        async function fetchDynamicFiles() {
+            const pathVal = getSavedPath();
+            try {
+                const res = await fetch(`/api/files/scan?path=${encodeURIComponent(pathVal)}`);
+                if (res.ok) {
+                    const files = await res.json();
+                    if (files && files.length > 0) {
+                        const isNew = files.some(f => !imagePool.includes(f));
+                        imagePool = files;
+                        if (isNew) {
+                            buildGrid();
+                        }
+                    }
+                }
+            } catch (e) {}
         }
 
         let activeLayout = '3x3';
@@ -501,6 +526,8 @@
 
         // Init
         buildGrid();
+        fetchDynamicFiles();
+        setInterval(fetchDynamicFiles, 10000);
     </script>
 </body>
 </html>

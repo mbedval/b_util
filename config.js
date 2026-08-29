@@ -1,4 +1,4 @@
-﻿// Bindsol.util Global Configuration
+// Bindsol.util Global Configuration
 // Edit this file to change which folders each application reads from.
 // All custom folders should be placed in the "input" directory.
 
@@ -30,6 +30,11 @@ const config = {
             type: "image"
         },
         "presentation": {
+            folder: "wallpapers",
+            parent: "input",
+            type: "image"
+        },
+        "playingCard": {
             folder: "wallpapers",
             parent: "input",
             type: "image"
