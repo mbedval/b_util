@@ -1,0 +1,56 @@
+{
+  "apps": {
+    "twitter": {
+      "name": "🐦 Twitter-X Post",
+      "enabled": true
+    },
+    "stockCall": {
+      "name": "📈 Insta BSA-Call",
+      "enabled": true
+    },
+    "cctv": {
+      "name": "📡 CCTV Control Center",
+      "enabled": true
+    },
+    "videoViewer": {
+      "name": "🎞️ Video Viewer",
+      "enabled": true
+    },
+    "animationGallery": {
+      "name": "🖼️ Animation Gallery",
+      "enabled": true
+    },
+    "presentation": {
+      "name": "🖼️ Presentation",
+      "enabled": true
+    },
+    "playingCard": {
+      "name": "🎴 Playing Card Viewer",
+      "enabled": true
+    },
+    "mobileSimulator": {
+      "name": "📱 Mobile Simulator",
+      "enabled": true
+    },
+    "youtube": {
+      "name": "🔴 YouTube",
+      "enabled": true
+    },
+    "retroTV": {
+      "name": "📺 Live Television",
+      "enabled": true
+    },
+    "iptv": {
+      "name": "📡 IP TV",
+      "enabled": true
+    },
+    "chatStory": {
+      "name": "💬 Chat Story Simulator",
+      "enabled": true
+    },
+    "styleMorph": {
+      "name": "🎨 Style Morph Animator",
+      "enabled": true
+    }
+  }
+}

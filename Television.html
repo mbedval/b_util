@@ -855,10 +855,34 @@
             });
         }
 
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => console.log('Fullscreen error:', err));
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen().catch(err => console.log('Exit fullscreen error:', err));
+                }
+            }
+        }
+
         document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space') {
+            if (e.code === 'Space' || e.key === ' ') {
                 e.preventDefault();
                 togglePower();
+                return;
+            }
+            if (e.key === 'f' || e.key === 'F') {
+                e.preventDefault();
+                toggleFullScreen();
+                return;
+            }
+            if (e.key === 'm' || e.key === 'M') {
+                e.preventDefault();
+                if (tvPowerOn) {
+                    isMuted = !isMuted;
+                    updateAudioState();
+                    showLEDChannelBadge(isMuted ? "MUTE ON" : "MUTE OFF");
+                }
                 return;
             }
             if (!tvPowerOn) return;

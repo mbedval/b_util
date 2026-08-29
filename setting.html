@@ -22,7 +22,7 @@
         }
 
         .container {
-            max-width: 900px;
+            max-width: 950px;
             margin: 0 auto;
         }
 
@@ -71,6 +71,7 @@
             border-radius: 12px;
             padding: 25px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            margin-bottom: 25px;
         }
 
         .settings-card h2 {
@@ -82,6 +83,91 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+
+        /* Toggle Switch Styling */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #334155;
+            transition: .3s;
+            border-radius: 26px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: #94a3b8;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #10b981;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+            background-color: #ffffff;
+        }
+
+        .app-toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: rgba(15, 23, 42, 0.4);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: background 0.2s ease;
+        }
+
+        .app-toggle-row:hover {
+            background: rgba(15, 23, 42, 0.7);
+        }
+
+        .app-toggles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px;
+        }
+
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        .status-badge.enabled {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        .status-badge.disabled {
+            background: rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.3);
         }
 
         .app-row {
@@ -225,9 +311,21 @@
             <a href="index.html" class="back-link">← Back to Dashboard</a>
         </div>
 
+        <!-- APP VISIBILITY SETTINGS SECTION -->
         <div class="settings-card">
             <h2>
-                <span>Application File & Folder Locations</span>
+                <span>📱 App Visibility (Enable / Disable Apps on index.html)</span>
+                <span style="font-size: 0.8rem; font-weight: normal; color: #94a3b8;">Controls app availability on dashboard</span>
+            </h2>
+            <div id="app-visibility-grid" class="app-toggles-grid">
+                <!-- Populated dynamically -->
+            </div>
+        </div>
+
+        <!-- PATH CONFIGURATION SECTION -->
+        <div class="settings-card">
+            <h2>
+                <span>📁 Application File & Folder Locations</span>
                 <span style="font-size: 0.8rem; font-weight: normal; color: #94a3b8;">Paths are relative to workspace root</span>
             </h2>
 
@@ -245,20 +343,50 @@
     <div class="toast" id="toast">Settings Saved Successfully!</div>
 
     <script>
-        const APP_NAMES = {
-            "cctv": "📡 CCTV Control Center",
-            "videoViewer": "🎞️ Video Viewer",
-            "retroTV": "📺 Live Television",
-            "mobileSimulator": "📱 Mobile Simulator",
-            "animationGallery": "🖼️ Animation Gallery",
-            "presentation": "🖼️ Presentation",
-            "playingCard": "🎴 Playing Card Viewer",
-            "styleMorph": "🎨 Style Morph Animator",
-            "stockCall": "📈 Insta BSA-Call",
-            "chatStory": "💬 Chat Story Simulator"
+        const ALL_APPS = {
+            "twitter": { name: "🐦 Twitter-X Post", defaultEnabled: true },
+            "stockCall": { name: "📈 Insta BSA-Call", defaultEnabled: true },
+            "cctv": { name: "📡 CCTV Control Center", defaultEnabled: true },
+            "videoViewer": { name: "🎞️ Video Viewer", defaultEnabled: true },
+            "animationGallery": { name: "🖼️ Animation Gallery", defaultEnabled: true },
+            "presentation": { name: "🖼️ Presentation", defaultEnabled: true },
+            "playingCard": { name: "🎴 Playing Card Viewer", defaultEnabled: true },
+            "mobileSimulator": { name: "📱 Mobile Simulator", defaultEnabled: true },
+            "youtube": { name: "🔴 YouTube", defaultEnabled: true },
+            "retroTV": { name: "📺 Live Television", defaultEnabled: true },
+            "iptv": { name: "📡 IP TV", defaultEnabled: true },
+            "chatStory": { name: "💬 Chat Story Simulator", defaultEnabled: true },
+            "styleMorph": { name: "🎨 Style Morph Animator", defaultEnabled: true }
         };
 
         const STORAGE_PREFIX = "bindsol_path_";
+        const ENABLED_PREFIX = "bindsol_app_enabled_";
+        let defaultAppConfig = {};
+
+        async function fetchAppConfig() {
+            try {
+                const res = await fetch('config/app.config.json');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.apps) {
+                        defaultAppConfig = data.apps;
+                    }
+                }
+            } catch (err) {
+                console.warn('Could not load config/app.config.json, using defaults:', err);
+            }
+        }
+
+        function isAppEnabled(appKey) {
+            const savedState = localStorage.getItem(ENABLED_PREFIX + appKey);
+            if (savedState !== null) {
+                return savedState === 'true';
+            }
+            if (defaultAppConfig[appKey] && typeof defaultAppConfig[appKey].enabled === 'boolean') {
+                return defaultAppConfig[appKey].enabled;
+            }
+            return ALL_APPS[appKey] ? ALL_APPS[appKey].defaultEnabled : true;
+        }
 
         function getDefaultPath(appKey) {
             if (window.BindsolConfig && window.BindsolConfig.apps && window.BindsolConfig.apps[appKey]) {
@@ -272,6 +400,42 @@
             return localStorage.getItem(STORAGE_PREFIX + appKey) || getDefaultPath(appKey);
         }
 
+        function renderVisibilitySection() {
+            const gridEl = document.getElementById('app-visibility-grid');
+            gridEl.innerHTML = '';
+
+            for (const appKey in ALL_APPS) {
+                const appInfo = ALL_APPS[appKey];
+                const enabled = isAppEnabled(appKey);
+
+                const row = document.createElement('div');
+                row.className = 'app-toggle-row';
+                row.innerHTML = `
+                    <div class="app-info">
+                        <span class="app-name">
+                            ${appInfo.name}
+                            <span class="status-badge ${enabled ? 'enabled' : 'disabled'}" id="badge-${appKey}">
+                                ${enabled ? 'ON' : 'OFF'}
+                            </span>
+                        </span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" data-app-toggle="${appKey}" ${enabled ? 'checked' : ''} onchange="onToggleChange('${appKey}', this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                `;
+                gridEl.appendChild(row);
+            }
+        }
+
+        function onToggleChange(appKey, isChecked) {
+            const badge = document.getElementById(`badge-${appKey}`);
+            if (badge) {
+                badge.textContent = isChecked ? 'ON' : 'OFF';
+                badge.className = `status-badge ${isChecked ? 'enabled' : 'disabled'}`;
+            }
+        }
+
         function renderAppsList() {
             const listEl = document.getElementById('apps-list');
             listEl.innerHTML = '';
@@ -279,7 +443,8 @@
             const apps = window.BindsolConfig ? window.BindsolConfig.apps : {};
             
             for (const appKey in apps) {
-                const displayName = APP_NAMES[appKey] || appKey;
+                const appInfo = ALL_APPS[appKey];
+                const displayName = appInfo ? appInfo.name : appKey;
                 const currentPath = getSavedPath(appKey);
                 const defaultPath = getDefaultPath(appKey);
 
@@ -317,6 +482,7 @@
         }
 
         document.getElementById('save-btn').addEventListener('click', () => {
+            // Save paths
             const inputs = document.querySelectorAll('.path-input');
             inputs.forEach(input => {
                 const appKey = input.getAttribute('data-app');
@@ -325,6 +491,14 @@
                     localStorage.setItem(STORAGE_PREFIX + appKey, val);
                 }
             });
+
+            // Save visibility toggles
+            const toggles = document.querySelectorAll('[data-app-toggle]');
+            toggles.forEach(toggle => {
+                const appKey = toggle.getAttribute('data-app-toggle');
+                localStorage.setItem(ENABLED_PREFIX + appKey, toggle.checked ? 'true' : 'false');
+            });
+
             showToast("✓ All settings saved successfully!");
         });
 
@@ -334,11 +508,22 @@
                 const appKey = input.getAttribute('data-app');
                 localStorage.removeItem(STORAGE_PREFIX + appKey);
             });
+
+            for (const appKey in ALL_APPS) {
+                localStorage.removeItem(ENABLED_PREFIX + appKey);
+            }
+
+            renderVisibilitySection();
             renderAppsList();
-            showToast("↺ All paths reset to defaults!");
+            showToast("↺ All settings & paths reset to defaults!");
         });
 
-        document.addEventListener('DOMContentLoaded', renderAppsList);
+        document.addEventListener('DOMContentLoaded', async () => {
+            await fetchAppConfig();
+            renderVisibilitySection();
+            renderAppsList();
+        });
     </script>
 </body>
 </html>
+

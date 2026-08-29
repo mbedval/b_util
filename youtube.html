@@ -143,7 +143,7 @@
             box-shadow: 0 0 15px rgba(255, 71, 87, 0.6);
         }
 
-        /* Main Viewport Container - Single Row 2 Columns */
+        /* Main Viewport Container - Single Full Column */
         .viewer-container {
             flex-grow: 1;
             position: relative;
@@ -154,7 +154,7 @@
             backdrop-filter: blur(10px);
             overflow: hidden;
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr;
             grid-template-rows: 1fr;
             gap: 12px;
             padding: 12px;
@@ -332,41 +332,36 @@
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 71, 87, 0.2);
         }
 
-        /* Close/Exit focus button overlay */
+        /* Exit Full View — inline header button between YouTube Stream Deck title and CRT Scanlines button */
         .close-focus-btn {
-            position: absolute;
-            top: 20px;
-            right: 20px;
             background: var(--accent-red);
             color: #fff;
-            border: 2px solid var(--accent-red);
-            border-radius: 30px;
-            padding: 10px 20px;
-            display: flex;
+            border: 1px solid var(--accent-red);
+            border-radius: 8px;
+            padding: 8px 16px;
+            display: none;           /* hidden by default */
             align-items: center;
             justify-content: center;
+            gap: 6px;
             font-size: 0.85rem;
             font-weight: 700;
             letter-spacing: 0.5px;
             cursor: pointer;
-            z-index: 1001; /* Must sit above everything including scanlines if necessary */
-            opacity: 0;
-            pointer-events: none;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4), 0 0 20px rgba(255, 71, 87, 0.2);
-            backdrop-filter: blur(5px);
+            transition: all 0.2s ease;
+            box-shadow: 0 0 12px rgba(255, 71, 87, 0.35);
+            white-space: nowrap;
         }
 
         .close-focus-btn:hover {
             background: #ff5e6c;
             border-color: #ff5e6c;
-            box-shadow: 0 6px 20px rgba(255, 71, 87, 0.6);
-            transform: translateY(-2px);
+            box-shadow: 0 0 18px rgba(255, 71, 87, 0.6);
+            transform: translateY(-1px);
         }
 
-        .viewer-container.has-focused ~ .close-focus-btn {
-            opacity: 1;
-            pointer-events: auto;
+        /* Show the button only when focus mode is active */
+        header.focus-active .close-focus-btn {
+            display: flex;
         }
 
         /* CONFIGURATION MODAL / PANEL */
@@ -570,11 +565,13 @@
     <div class="scanlines"></div>
 
     <!-- Header bar -->
-    <header>
+    <header id="main-header">
         <div class="logo-section">
             <div class="logo-indicator"></div>
-            <h1>YOUTUBE MULTI-STREAM DECK</h1>
+            <h1>YOUTUBE STREAM DECK</h1>
         </div>
+        <!-- Exit Full View button between Youtube Stream Deck title and CRT Scanlines button -->
+        <div class="close-focus-btn" id="exit-focus-btn" onclick="exitFocus(event)" title="Exit Full View">&#x2715; EXIT FULL VIEW</div>
         <div class="controls">
             <button id="toggle-scanlines" class="btn btn-active">CRT SCANLINES</button>
             <button id="open-config" class="btn">
@@ -610,33 +607,8 @@
                 </div>
             </div>
         </div>
-
-        <!-- Channel 2 -->
-        <div class="player-wrapper" data-index="1" onclick="toggleFocus(this)">
-            <div class="iframe-shield"></div>
-            <div class="noise-container" id="noise-1">
-                <div class="noise-bg"></div>
-                <div class="noise-text">LOADING TUBE FEED...</div>
-            </div>
-            <iframe class="player-frame" id="video-1" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-            <div class="player-overlay">
-                <div class="player-header">
-                    <span class="channel-tag"><span class="channel-num">LIVE 02</span> <span class="tag-name">NDTV India</span></span>
-                    <span class="status-badge" id="status-1">CONNECTING</span>
-                </div>
-                <div class="player-footer">
-                    <div class="channel-info">
-                        <img class="channel-logo" id="logo-1" src="" alt="logo" onerror="this.style.display='none'">
-                        <span class="channel-name" id="name-1">NDTV India Live</span>
-                    </div>
-                    <span class="quality-badge" id="quality-1">480p SD</span>
-                </div>
-            </div>
-        </div>
     </div>
 
-    <!-- Floating close button for focused mode -->
-    <div class="close-focus-btn" id="exit-focus-btn" onclick="exitFocus(event)" title="Exit Full View">&#x2715; EXIT FULL VIEW</div>
 
     <!-- Configuration Modal -->
     <div class="modal-overlay" id="config-modal">
@@ -665,26 +637,6 @@
                         <input type="text" class="form-input" id="input-url-0" placeholder="https://www.youtube.com/watch?v=...">
                     </div>
                 </div>
-
-                <!-- Slot 2 -->
-                <div class="slot-card">
-                    <div class="slot-header">
-                        <span class="slot-label">Slot 02</span>
-                        <span class="slot-name-preview" id="slot-name-preview-1">NDTV India Live</span>
-                    </div>
-                    <div class="form-group">
-                        <label>Channel/Stream Name</label>
-                        <input type="text" class="form-input" id="input-name-1" placeholder="e.g. NDTV India Live">
-                    </div>
-                    <div class="form-group">
-                        <label>Logo URL (Optional)</label>
-                        <input type="text" class="form-input" id="input-logo-1" placeholder="e.g. https://domain.com/logo.png">
-                    </div>
-                    <div class="form-group">
-                        <label>YouTube Live Stream / Video URL</label>
-                        <input type="text" class="form-input" id="input-url-1" placeholder="https://www.youtube.com/watch?v=...">
-                    </div>
-                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn" id="reset-config">RESET TO DEFAULT</button>
@@ -699,13 +651,8 @@
             channels: [
                 {
                     name: "Aaj Tak Live",
-                    url: "https://www.youtube.com/watch?v=Nq2wYlUXVxo",
+                    url: "",
                     logo: "https://jiotvimages.cdn.jio.com/dare_images/images/AAJ_TAK.png"
-                },
-                {
-                    name: "NDTV India Live",
-                    url: "https://www.youtube.com/watch?v=MN8p-V1Ys1A",
-                    logo: "https://xstreamcp-assets-msp.streamready.in/assets/LIVETV/LIVECHANNEL/LIVETV_LIVETVCHANNEL_NDTV_INDIA/images/LOGO_HD/image.png"
                 }
             ]
         };
@@ -736,7 +683,16 @@
             const saved = localStorage.getItem('youtube_deck_config');
             if (saved) {
                 try {
-                    config = JSON.parse(saved);
+                    const parsed = JSON.parse(saved);
+                    if (parsed && parsed.channels) {
+                        // Force clear url if user requested empty default url
+                        parsed.channels.forEach(ch => {
+                            if (ch.url === "https://www.youtube.com/watch?v=Nq2wYlUXVxo") {
+                                ch.url = "";
+                            }
+                        });
+                        config = parsed;
+                    }
                 } catch (e) {
                     console.error('Error loading config from localStorage', e);
                 }
@@ -776,7 +732,7 @@
 
         // Initialize streams
         function initStreams() {
-            for (let i = 0; i < 2; i++) {
+            for (let i = 0; i < 1; i++) {
                 const channel = config.channels[i];
                 const iframe = document.getElementById(`video-${i}`);
                 const statusBadge = document.getElementById(`status-${i}`);
@@ -823,6 +779,7 @@
         // Toggle focus on player
         function toggleFocus(element) {
             const container = document.getElementById('viewer-deck');
+            const header = document.getElementById('main-header');
             const isFocused = element.classList.contains('focused');
             const index = parseInt(element.getAttribute('data-index'));
 
@@ -846,6 +803,7 @@
             });
 
             // Expand this element
+            if (header) header.classList.add('focus-active');
             container.classList.add('has-focused');
             element.classList.add('focused');
 
@@ -864,6 +822,8 @@
             if (event) {
                 event.stopPropagation();
             }
+            const header = document.getElementById('main-header');
+            if (header) header.classList.remove('focus-active');
             const container = document.getElementById('viewer-deck');
             container.classList.remove('has-focused');
 
@@ -883,7 +843,7 @@
 
         // Sync inputs
         function syncInputsWithConfig() {
-            for (let i = 0; i < 2; i++) {
+            for (let i = 0; i < 1; i++) {
                 const channel = config.channels[i] || { name: '', url: '', logo: '' };
                 document.getElementById(`input-name-${i}`).value = channel.name || '';
                 document.getElementById(`input-url-${i}`).value = channel.url || '';
@@ -924,7 +884,7 @@
 
             // Save config
             document.getElementById('save-config').onclick = () => {
-                for (let i = 0; i < 2; i++) {
+                for (let i = 0; i < 1; i++) {
                     config.channels[i] = {
                         name: document.getElementById(`input-name-${i}`).value.trim(),
                         url: document.getElementById(`input-url-${i}`).value.trim(),
@@ -947,13 +907,8 @@
                             channels: [
                                 {
                                     name: "Aaj Tak Live",
-                                    url: "https://www.youtube.com/watch?v=Nq2wYlUXVxo",
+                                    url: "",
                                     logo: "https://jiotvimages.cdn.jio.com/dare_images/images/AAJ_TAK.png"
-                                },
-                                {
-                                    name: "NDTV India Live",
-                                    url: "https://www.youtube.com/watch?v=MN8p-V1Ys1A",
-                                    logo: "https://xstreamcp-assets-msp.streamready.in/assets/LIVETV/LIVECHANNEL/LIVETV_LIVETVCHANNEL_NDTV_INDIA/images/LOGO_HD/image.png"
                                 }
                             ]
                         };
@@ -964,6 +919,67 @@
                     modal.classList.remove('open');
                 }
             };
+
+            // Volume mute state
+            let isMuted = false;
+            function toggleVolumeMute() {
+                isMuted = !isMuted;
+                document.querySelectorAll('iframe.player-frame').forEach(iframe => {
+                    if (iframe.contentWindow) {
+                        const cmd = isMuted ? 'mute' : 'unMute';
+                        iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: cmd, args: '' }), '*');
+                    }
+                });
+            }
+
+            function toggleFullScreen() {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => console.log('Fullscreen error:', err));
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen().catch(err => console.log('Exit fullscreen error:', err));
+                    }
+                }
+            }
+
+            // Keyboard Navigation & Shortcuts ('f' for Full mode, 'm' for Mute/Unmute)
+            document.addEventListener('keydown', (e) => {
+                // Ignore keyboard shortcuts when typing in input fields
+                if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
+                    if (e.key === 'Escape') {
+                        const modal = document.getElementById('config-modal');
+                        if (modal && modal.classList.contains('open')) {
+                            modal.classList.remove('open');
+                            document.activeElement.blur();
+                        }
+                    }
+                    return;
+                }
+
+                const key = e.key;
+
+                if (key === 'f' || key === 'F') {
+                    e.preventDefault();
+                    toggleFullScreen();
+                } else if (key === 'm' || key === 'M') {
+                    e.preventDefault();
+                    toggleVolumeMute();
+                } else if (key === 'Escape') {
+                    e.preventDefault();
+                    const modal = document.getElementById('config-modal');
+                    if (modal && modal.classList.contains('open')) {
+                        modal.classList.remove('open');
+                        return;
+                    }
+                    if (document.fullscreenElement) {
+                        document.exitFullscreen().catch(err => console.log(err));
+                    }
+                    const container = document.getElementById('viewer-deck');
+                    if (container && container.classList.contains('has-focused')) {
+                        exitFocus();
+                    }
+                }
+            });
         });
     </script>
 </body>
