@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="google" content="notranslate">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>b_util - Help Center & User Guide</title>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --panel-bg: #151d30;
+            --card-bg: #1e293b;
+            --border-color: #334155;
+            --accent-cyan: #38bdf8;
+            --accent-green: #34d399;
+            --accent-orange: #fbbf24;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .help-container {
+            width: 100%;
+            max-width: 1000px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        header {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-title h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .back-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .back-btn:hover {
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+
+        .tab-btn {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn.active {
+            background: var(--accent-cyan);
+            color: #0b0f19;
+            border-color: var(--accent-cyan);
+        }
+
+        .tab-content {
+            display: none;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .tab-content.active {
+            display: flex;
+        }
+
+        .card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        .card h2 {
+            font-size: 1.2rem;
+            color: var(--accent-cyan);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .gesture-item, .shortcut-item {
+            background: var(--card-bg);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+        }
+
+        .icon-badge {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: rgba(56, 189, 248, 0.15);
+            border: 1px solid var(--accent-cyan);
+            color: var(--accent-cyan);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .item-text h3 {
+            font-size: 0.95rem;
+            margin-bottom: 4px;
+        }
+
+        .item-text p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        kbd {
+            background: #090d16;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: var(--accent-green);
+        }
+
+        ul.app-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        ul.app-list li {
+            background: var(--card-bg);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 14px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        ul.app-list li a {
+            color: var(--accent-cyan);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        ul.app-list li a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="help-container">
+        
+        <header>
+            <div class="header-title">
+                <span style="font-size: 1.8rem;">❓</span>
+                <h1>b_util Help Center & Navigation Guide</h1>
+            </div>
+            <a href="index.html" class="back-btn">🏠 Back to Main Hub</a>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('mobile')">📱 Mobile & Touch Controls</button>
+            <button class="tab-btn" onclick="switchTab('keyboard')">⌨️ PC Keyboard Shortcuts</button>
+            <button class="tab-btn" onclick="switchTab('apps')">🚀 App Features Guide</button>
+        </div>
+
+        <!-- TAB 1: Mobile & Touch -->
+        <div class="tab-content active" id="tab-mobile">
+            <div class="card">
+                <h2>📱 Mobile Touch & Swipe Gestures</h2>
+                <div class="grid-2">
+
+                    <div class="gesture-item">
+                        <div class="icon-badge">👆👆</div>
+                        <div class="item-text">
+                            <h3>Double Touch / Double Tap</h3>
+                            <p><strong>Television / IPTV / Video:</strong> Toggles Full Screen mode on mobile device.<br><strong>Mobile Reels:</strong> Likes the video with floating heart animation.</p>
+                        </div>
+                    </div>
+
+                    <div class="gesture-item">
+                        <div class="icon-badge">👈👉</div>
+                        <div class="item-text">
+                            <h3>Swipe Left / Swipe Right</h3>
+                            <p><strong>Television & IPTV:</strong> Swiping left/right switches channels (Next/Previous).<br><strong>Gallery:</strong> Swiping switches tabs and views.</p>
+                        </div>
+                    </div>
+
+                    <div class="gesture-item">
+                        <div class="icon-badge">👆👇</div>
+                        <div class="item-text">
+                            <h3>Swipe Up / Swipe Down</h3>
+                            <p><strong>Mobile Reels Feed:</strong> Swiping up/down moves to the next or previous video loop.<br><strong>Lock Screen:</strong> Swipes up to unlock device.</p>
+                        </div>
+                    </div>
+
+                    <div class="gesture-item">
+                        <div class="icon-badge">📜</div>
+                        <div class="item-text">
+                            <h3>Mobile Portrait Scrolling</h3>
+                            <p>In portrait view on mobile (like <code>twitter.html</code> or <code>StockCall.html</code>), scroll down smoothly to view generated cards and preview panels stacked below the input forms.</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: Keyboard Shortcuts -->
+        <div class="tab-content" id="tab-keyboard">
+            <div class="card">
+                <h2>⌨️ PC Keyboard Controls</h2>
+                <div class="grid-2">
+
+                    <div class="shortcut-item">
+                        <div class="icon-badge"><kbd>F</kbd></div>
+                        <div class="item-text">
+                            <h3>Toggle Fullscreen</h3>
+                            <p>Press <kbd>F</kbd> key on any video player or simulator app to enter/exit native browser full screen.</p>
+                        </div>
+                    </div>
+
+                    <div class="shortcut-item">
+                        <div class="icon-badge"><kbd>M</kbd></div>
+                        <div class="item-text">
+                            <h3>Mute / Unmute Audio</h3>
+                            <p>Press <kbd>M</kbd> to toggle global audio mute state instantly across stream players.</p>
+                        </div>
+                    </div>
+
+                    <div class="shortcut-item">
+                        <div class="icon-badge"><kbd>←</kbd> <kbd>→</kbd></div>
+                        <div class="item-text">
+                            <h3>Left / Right Arrows</h3>
+                            <p>Switch channels on Television/IPTV or navigate items horizontally.</p>
+                        </div>
+                    </div>
+
+                    <div class="shortcut-item">
+                        <div class="icon-badge"><kbd>↑</kbd> <kbd>↓</kbd></div>
+                        <div class="item-text">
+                            <h3>Up / Down Arrows</h3>
+                            <p>Scroll vertical reels video loops or change TV channels.</p>
+                        </div>
+                    </div>
+
+                    <div class="shortcut-item">
+                        <div class="icon-badge"><kbd>Esc</kbd></div>
+                        <div class="item-text">
+                            <h3>Escape / Close</h3>
+                            <p>Exit focused player view, close configuration dialogs, or return to previous screen.</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: Apps Guide -->
+        <div class="tab-content" id="tab-apps">
+            <div class="card">
+                <h2>🚀 Applications Directory</h2>
+                <ul class="app-list">
+                    <li>
+                        <div>
+                            <strong>Twitter / X Card Designer</strong>
+                            <p style="font-size: 0.8rem; color: var(--text-muted);">Create custom social media tweet cards. Responsive side-by-side on PC & stacked scroll on mobile.</p>
+                        </div>
+                        <a href="twitter.html">Open twitter.html →</a>
+                    </li>
+                    <li>
+                        <div>
+                            <strong>Insta Stock Call Designer</strong>
+                            <p style="font-size: 0.8rem; color: var(--text-muted);">Design stock call trade target & stop-loss cards with custom colors & export features.</p>
+                        </div>
+                        <a href="StockCall.html">Open StockCall.html →</a>
+                    </li>
+                    <li>
+                        <div>
+                            <strong>Mobile Chat Story Simulator</strong>
+                            <p style="font-size: 0.8rem; color: var(--text-muted);">WhatsApp-style chat simulation with typing indicators, automated response script playback, image zoom lightboxes, and native mobile navigation buttons (🔄 Replay, 🗑️ Clear).</p>
+                        </div>
+                        <a href="Whatsapp.html">Open Whatsapp.html →</a>
+                    </li>
+                    <li>
+                        <div>
+                            <strong>Reel Viewer & Mobile Simulator</strong>
+                            <p style="font-size: 0.8rem; color: var(--text-muted);">Simulate mobile launcher, gallery & TikTok/Reels feed with full touch swipe support.</p>
+                        </div>
+                        <a href="reelviewer.html">Open reelviewer.html →</a>
+                    </li>
+                    <li>
+                        <div>
+                            <strong>Television (Retro Live TV)</strong>
+                            <p style="font-size: 0.8rem; color: var(--text-muted);">Classic retro CRT television live stream tuner with channel dial and touch swipe.</p>
+                        </div>
+                        <a href="Television.html">Open Television.html →</a>
+                    </li>
+                    <li>
+                        <div>
+                            <strong>IPTV Deck & Youtube Stream Deck</strong>
+                            <p style="font-size: 0.8rem; color: var(--text-muted);">Multi-channel live video feeds deck with high resolution focus view & controls.</p>
+                        </div>
+                        <a href="iptv.html">Open iptv.html →</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById('tab-' + tabId).classList.add('active');
+        }
+    </script>
+</body>
+</html>

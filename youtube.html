@@ -61,15 +61,105 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 24px;
+            padding: 8px 16px;
             background: var(--deck-bg);
             border: 1px solid var(--panel-border);
             border-radius: 12px;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(10px);
             z-index: 10;
             flex-shrink: 0;
+        }
+
+        /* Responsive Mobile & Tablet Container Viewport Adaptation */
+        @media (max-width: 768px) {
+            body {
+                padding: 6px;
+            }
+
+            header {
+                padding: 8px 12px;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            h1 {
+                font-size: 1rem;
+            }
+
+            .header-url-container {
+                margin: 0;
+                max-width: 100%;
+            }
+
+            .btn, .close-focus-btn {
+                padding: 5px 10px;
+                font-size: 0.72rem;
+                gap: 4px;
+            }
+
+            .controls {
+                gap: 6px;
+            }
+        }
+
+        /* Mobile Landscape Orientation 80% player / 20% header layout split */
+        @media (orientation: landscape) and (max-height: 500px) {
+            body {
+                flex-direction: row;
+                padding: 4px;
+                gap: 6px;
+            }
+
+            header {
+                width: 20vw;
+                height: 100vh;
+                flex-direction: column;
+                justify-content: flex-start;
+                align-items: stretch;
+                margin-bottom: 0;
+                padding: 8px 6px;
+                gap: 8px;
+                overflow-y: auto;
+            }
+
+            .logo-section h1 {
+                font-size: 0.75rem;
+            }
+
+            .header-url-container {
+                flex-direction: column;
+                margin: 0;
+                max-width: 100%;
+                width: 100%;
+            }
+
+            .controls {
+                flex-direction: column;
+                width: 100%;
+                gap: 5px;
+            }
+
+            .btn, .close-focus-btn {
+                width: 100%;
+                padding: 4px 6px;
+                font-size: 0.65rem;
+                justify-content: center;
+                white-space: nowrap;
+            }
+
+            .viewer-container {
+                width: 80vw;
+                height: 100vh;
+            }
+        }
+
+        /* Hide Settings button and modal completely on Mobile Devices */
+        @media (max-width: 768px), (pointer: coarse) {
+            #open-config, #config-modal {
+                display: none !important;
+            }
         }
 
         .logo-section {
@@ -332,7 +422,33 @@
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 71, 87, 0.2);
         }
 
-        /* Exit Full View — inline header button between YouTube Stream Deck title and CRT Scanlines button */
+        /* Exit Full View & Top Bar Quick URL Bar */
+        .header-url-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            max-width: 500px;
+            margin: 0 16px;
+        }
+
+        .header-url-input {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--panel-border);
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            width: 100%;
+            transition: all 0.2s ease;
+        }
+
+        .header-url-input:focus {
+            outline: none;
+            border-color: var(--accent-red);
+            box-shadow: 0 0 8px var(--accent-red-glow);
+        }
+
         .close-focus-btn {
             background: var(--accent-red);
             color: #fff;
@@ -359,7 +475,7 @@
             transform: translateY(-1px);
         }
 
-        /* Show the button only when focus mode is active */
+        /* Show the exit focus button only when focus mode is active */
         header.focus-active .close-focus-btn {
             display: flex;
         }
@@ -570,8 +686,11 @@
             <div class="logo-indicator"></div>
             <h1>YOUTUBE STREAM DECK</h1>
         </div>
-        <!-- Exit Full View button between Youtube Stream Deck title and CRT Scanlines button -->
-        <div class="close-focus-btn" id="exit-focus-btn" onclick="exitFocus(event)" title="Exit Full View">&#x2715; EXIT FULL VIEW</div>
+        <div class="header-url-container">
+            <input type="text" id="top-url-input" class="header-url-input" placeholder="Paste YouTube Stream / Video URL here...">
+            <button id="top-play-btn" class="btn btn-active">APPLY</button>
+            <div class="close-focus-btn" id="exit-focus-btn" onclick="exitFocus(event)" title="Exit Full View">&#x2715; EXIT FULL VIEW</div>
+        </div>
         <div class="controls">
             <button id="toggle-scanlines" class="btn btn-active">CRT SCANLINES</button>
             <button id="open-config" class="btn">
@@ -849,7 +968,30 @@
                 document.getElementById(`input-url-${i}`).value = channel.url || '';
                 document.getElementById(`input-logo-${i}`).value = channel.logo || '';
                 document.getElementById(`slot-name-preview-${i}`).textContent = channel.name || `Slot ${i+1}`;
+                const topInput = document.getElementById('top-url-input');
+                if (topInput) {
+                    topInput.value = channel.url || '';
+                }
             }
+        }
+
+        // Apply URL from top header input box
+        function applyTopUrl() {
+            const topInput = document.getElementById('top-url-input');
+            if (!topInput) return;
+            const newUrl = topInput.value.trim();
+            if (!config.channels[0]) {
+                config.channels[0] = { name: 'Aaj Tak Live', url: '', logo: '' };
+            }
+            config.channels[0].url = newUrl;
+            localStorage.setItem('youtube_deck_config', JSON.stringify(config));
+            
+            // Exit focus / full view if currently active
+            exitFocus();
+            
+            // Re-initialize stream player
+            initStreams();
+            syncInputsWithConfig();
         }
 
         // DOM Listeners
@@ -857,6 +999,21 @@
             loadConfig();
             initStreams();
             syncInputsWithConfig();
+
+            // Top bar URL apply handlers
+            const topPlayBtn = document.getElementById('top-play-btn');
+            const topUrlInput = document.getElementById('top-url-input');
+            if (topPlayBtn) {
+                topPlayBtn.onclick = applyTopUrl;
+            }
+            if (topUrlInput) {
+                topUrlInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        applyTopUrl();
+                    }
+                });
+            }
 
             // CRT Scanline Toggle
             const toggleScanlinesBtn = document.getElementById('toggle-scanlines');

@@ -809,6 +809,52 @@
             0%, 100% { transform: scale(1); opacity: 0.6; }
             50% { transform: scale(1.03); opacity: 1; }
         }
+
+        /* Mobile Device Clean Fullscreen Adaptation (No notch/icons/battery) */
+        @media (max-width: 768px), (pointer: coarse) {
+            body {
+                padding: 0;
+                margin: 0;
+                overflow: hidden;
+                width: 100vw;
+                height: 100vh;
+                background: #000;
+            }
+
+            .tv-wrapper {
+                flex-direction: column;
+                gap: 0;
+                width: 100vw;
+                height: 100vh;
+                max-width: 100%;
+            }
+
+            .phone-wrapper {
+                width: 100vw !important;
+                height: 100vh !important;
+                border-radius: 0 !important;
+                padding: 0 !important;
+                background: #000 !important;
+                box-shadow: none !important;
+            }
+
+            .phone-button {
+                display: none !important;
+            }
+
+            .phone-screen {
+                border-radius: 0 !important;
+            }
+
+            /* Remove fake mobile icons, notch, status bar & battery view on actual mobile devices */
+            .dynamic-island-container,
+            .status-bar,
+            .home-indicator-bar,
+            .side-instruction-card,
+            .blur-blob {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1009,40 +1055,6 @@
             </div>
         </div>
 
-        <!-- Instructions Sidebar control panel -->
-        <div class="side-instruction-card">
-            <h3>📱 Simulator Controls</h3>
-            
-            <div class="instruction-step">
-                <span class="step-number">1</span>
-                <div>
-                    <strong>Unlock Screen:</strong> Tap the lock screen prompt or click the physical power button on the top-right side.
-                </div>
-            </div>
-
-            <div class="instruction-step">
-                <span class="step-number">2</span>
-                <div>
-                    <strong>Auto Onboarding:</strong> Upon unlock, a virtual pointer automatically selects and opens the <strong>Videos</strong> app.
-                </div>
-            </div>
-
-            <div class="instruction-step">
-                <span class="step-number">3</span>
-                <div>
-                    <strong>Interactive Gallery:</strong> Scroll the photos list. Hover plays preview. Single-click selects, and <strong>Double-Click</strong> opens TikTok full view.
-                </div>
-            </div>
-
-            <div class="instruction-step">
-                <span class="step-number">4</span>
-                <div>
-                    <strong>TikTok/Reels Mode:</strong> 
-                    • Use [Arrow Up / Down] keys to slide between videos.<br>
-                    • [Double-Click] on video to like and pop red hearts!<br>
-                    • Controls on the remote D-pad can also navigate feeds.
-                </div>
-            </div>
         </div>
 
     </div>

@@ -12,210 +12,222 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --win-blue: #0078d7;
+            --win-cyan: #00b7c3;
+            --win-green: #107c41;
+            --win-orange: #d13438;
+            --win-purple: #881798;
+            --win-teal: #008272;
+            --win-bg: #000000;
+            --tile-text: #ffffff;
+        }
+
         body {
-            background: linear-gradient(135deg, #3a3a3a 0%, #2a2a2a 50%, #1a1a1a 100%);
-            height: 100vh;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: white;
-            overflow: hidden; /* Force no scroll */
+            background-color: #0b1326;
+            background-image: 
+                radial-gradient(circle at 10% 20%, #004578 0%, transparent 50%),
+                radial-gradient(circle at 90% 80%, #00188f 0%, transparent 60%),
+                linear-gradient(180deg, #00122e 0%, #000000 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            color: #ffffff;
+            overflow-x: hidden;
+            overflow-y: auto;
+            padding: 16px;
         }
 
         .container {
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            padding: 15px 30px;
-            max-width: 1600px;
+            gap: 20px;
+            max-width: 1400px;
             margin: 0 auto;
-            height: 100vh;
+            min-height: 100vh;
         }
 
+        /* Windows 10 Start Header Bar */
         .header {
-            padding: 12px 25px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            padding: 12px 20px;
+            background: rgba(0, 0, 0, 0.6);
+            border-bottom: 2px solid var(--win-blue);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-shrink: 0;
             flex-wrap: wrap;
             gap: 15px;
+            backdrop-filter: blur(20px);
         }
 
         .header h1 {
-            font-size: 1.8rem;
+            font-size: 1.5rem;
             font-weight: 300;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            letter-spacing: 1px;
+            color: #ffffff;
             margin: 0;
             display: flex;
             align-items: center;
+            gap: 10px;
         }
 
         .header img.logo {
-            height: 35px;
-            margin-right: 15px;
-            vertical-align: middle;
-            -webkit-text-fill-color: initial;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+            height: 32px;
+            filter: drop-shadow(0 0 6px rgba(0, 120, 215, 0.8));
         }
 
         .header-actions {
             display: flex;
             align-items: center;
             gap: 10px;
-            flex-wrap: wrap;
         }
 
         .nav-btn-link {
-            color: #4ecdc4;
+            color: #ffffff;
             text-decoration: none;
             font-weight: 600;
-            font-size: 0.9rem;
-            padding: 7px 14px;
-            border: 1px solid #4ecdc4;
-            border-radius: 6px;
-            transition: all 0.3s ease;
+            font-size: 0.85rem;
+            padding: 7px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.2s ease;
             white-space: nowrap;
         }
 
         .nav-btn-link:hover {
-            background: #4ecdc4;
-            color: #1a1a1a;
-            box-shadow: 0 0 12px rgba(78, 205, 196, 0.4);
-        }
-
-        .nav-btn-settings {
-            color: #ff6b6b;
-            border-color: #ff6b6b;
+            background: var(--win-blue);
+            border-color: var(--win-blue);
+            transform: scale(1.02);
         }
 
         .nav-btn-settings:hover {
-            background: #ff6b6b;
-            color: #1a1a1a;
-            box-shadow: 0 0 12px rgba(255, 107, 107, 0.4);
+            background: var(--win-cyan);
+            border-color: var(--win-cyan);
         }
 
+        /* Windows 10 Metro Live Tile Grid Container */
         .apps-section {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            padding: 15px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
             display: flex;
             flex-direction: column;
+            gap: 25px;
             flex-grow: 1;
-            overflow-y: auto; /* Ensure it stays within bounds but can scroll internally */
-            padding-right: 10px;
+            padding-bottom: 30px;
         }
 
         .category-title {
-            font-size: 1.1rem;
-            margin: 15px 0 10px 0;
-            color: #4ecdc4;
-            font-weight: 400;
-            flex-shrink: 0;
-            border-bottom: 1px solid rgba(78, 205, 196, 0.2);
-            padding-bottom: 5px;
-        }
-        
-        .category-title:first-child {
-            margin-top: 0;
+            font-size: 1.15rem;
+            font-weight: 300;
+            color: #ffffff;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            padding-left: 4px;
+            border-left: 4px solid var(--win-blue);
+            line-height: 1.2;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
+        /* Windows Metro Tile Grid */
         .apps-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
             gap: 12px;
             align-content: start;
         }
 
-        /* Hide scrollbar for a cleaner look */
-        .apps-section::-webkit-scrollbar {
-            width: 6px;
-        }
-        .apps-section::-webkit-scrollbar-thumb {
-            background: rgba(255,255,255,0.2);
-            border-radius: 3px;
-        }
-
+        /* Windows 10 Metro Live Tile Card */
         .app-card {
             position: relative;
-            background-size: cover;
-            background-position: center;
-            border: 2px solid rgba(255, 255, 255, 0.12);
-            border-radius: 10px;
-            height: 90px;
-            overflow: hidden;
+            background-color: var(--win-blue);
+            border: 2px solid transparent;
+            min-height: 130px;
+            padding: 16px;
             display: flex;
             flex-direction: column;
-            justify-content: flex-end;
-            padding: 10px 14px;
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            justify-content: space-between;
+            overflow: hidden;
             cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.1, 0.9, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        .app-card:nth-child(2n) {
+            background-color: var(--win-teal);
+        }
+        .app-card:nth-child(3n) {
+            background-color: var(--win-purple);
+        }
+        .app-card:nth-child(4n) {
+            background-color: var(--win-orange);
+        }
+        .app-card:nth-child(5n) {
+            background-color: var(--win-green);
+        }
+
+        .app-card::after {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(0,0,0,0.3) 100%);
+            pointer-events: none;
         }
 
         .app-card:hover {
-            transform: translateY(-3px) scale(1.02);
-            border-color: #4ecdc4;
-            box-shadow: 0 8px 20px rgba(78, 205, 196, 0.4);
-            height: 160px;
+            transform: scale(1.03);
+            border-color: #ffffff;
+            box-shadow: 0 8px 24px rgba(0, 120, 215, 0.5);
             z-index: 10;
         }
 
         .app-card h3 {
-            font-size: 0.95rem;
-            margin: 0;
-            color: #ffeaa7;
+            font-size: 1.05rem;
             font-weight: 600;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+            color: #ffffff;
+            margin: 0;
             z-index: 5;
-            transition: transform 0.25s ease;
-        }
-
-        .app-card:hover h3 {
-            transform: translateY(-2px);
+            letter-spacing: 0.5px;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.6);
         }
 
         .app-card p {
-            font-size: 0.75rem;
-            color: rgba(255, 255, 255, 0.95);
+            font-size: 0.78rem;
+            color: rgba(255, 255, 255, 0.9);
             line-height: 1.35;
-            max-height: 0;
-            opacity: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease, opacity 0.3s ease, margin-top 0.3s ease;
+            margin-top: 8px;
             z-index: 5;
-            margin: 0;
-            text-shadow: 0 1px 3px rgba(0,0,0,0.95);
-        }
-
-        .app-card:hover p {
-            max-height: 100px;
-            opacity: 1;
-            margin-top: 6px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
 
         @media (max-width: 768px) {
-            body { overflow: auto; }
-            .container { height: auto; padding: 15px; }
+            body { padding: 10px; }
             .header {
                 flex-direction: column;
                 align-items: center;
                 text-align: center;
-                gap: 12px;
             }
-            .header-actions {
-                justify-content: center;
-                width: 100%;
+            .apps-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
             }
-            .header h1 {
-                font-size: 1.5rem;
+            .app-card {
+                min-height: 110px;
+                padding: 12px;
             }
+            .app-card h3 {
+                font-size: 0.9rem;
+            }
+            .app-card p {
+                font-size: 0.7rem;
+                -webkit-line-clamp: 2;
+            }
+        }
+
+        @media (max-width: 480px) {
             .apps-grid {
                 grid-template-columns: 1fr;
             }
@@ -228,7 +240,7 @@
             <h1><img src="assets/bindsol.png" alt="Bindsol" class="logo">Bindsol.util</h1>
             <div class="header-actions">
                 <a href="setting.html" class="nav-btn-link nav-btn-settings">⚙️ Settings</a>
-                <a href="document.html" class="nav-btn-link">❓ Help & Docs</a>
+                <a href="help.html" class="nav-btn-link">❓ Help & Docs</a>
             </div>
         </div>
 
@@ -289,9 +301,9 @@
                         <p>Rummy table styled image viewer where wallpaper images are shuffled like playing cards and revealed 1-by-1 with card corner suit details.</p>
                     </div>
 
-                    <div class="app-card" data-app="mobileSimulator" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/mobile.jpg');" onclick="window.open('mobile.html', '_blank')">
-                        <h3>📱 Mobile Simulator</h3>
-                        <p>A hybrid smartphone mockup (blending features of iOS and Android). Includes an interactive lock screen, home app launcher, and a virtual finger tap tutorial animation that opens the gallery. Double-clicking a grid stream launches a TikTok/Reels vertical feed equipped with heart burst visual reactions, spinning vinyl soundtracks, and gesture controls.</p>
+                    <div class="app-card" data-app="mobileSimulator" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/mobile.jpg');" onclick="window.open('reelviewer.html', '_blank')">
+                        <h3>📱 Reel Viewer</h3>
+                        <p>A hybrid smartphone mockup (blending features of iOS and Android). Includes an interactive lock screen, home app launcher, and video gallery. Double-clicking a grid stream launches a TikTok/Reels vertical feed equipped with heart burst visual reactions, spinning vinyl soundtracks, and gesture controls.</p>
                     </div>
                     <div class="app-card" data-app="maskedCamera" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/mobile.jpg');" onclick="window.open('maskedCamera.html', '_blank')">
                         <h3>🎭 Masked Camera</h3>

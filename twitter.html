@@ -36,6 +36,7 @@
             justify-content: center;
             align-items: center;
             padding: 20px;
+            overflow-y: auto;
         }
 
         .container {
@@ -53,8 +54,13 @@
         }
 
         @media (max-width: 900px) {
+            body {
+                align-items: flex-start;
+                padding: 12px;
+            }
             .container {
                 grid-template-columns: 1fr;
+                min-height: auto;
             }
         }
 
@@ -524,7 +530,10 @@
         
         <!-- SECTION 1: Inputs and Controls -->
         <div class="form-panel">
-            <h2>🐦 Custom Post Editor</h2>
+            <div style="display:flex; justify-shadow:space-between; justify-content:space-between; align-items:center;">
+                <h2>🐦 Custom Post Editor</h2>
+                <a href="help.html" style="color:var(--accent-color); font-size:0.8rem; text-decoration:none; font-weight:600;">❓ Help</a>
+            </div>
             
             <!-- User configuration -->
             <div class="form-row">
@@ -594,8 +603,11 @@
                 </div>
             </div>
 
-            <!-- Screenshot download trigger -->
-            <button class="download-action-btn" onclick="downloadScreenshot()">📸 Export Mock Image</button>
+            <!-- Screenshot download and Clear Output action trigger row -->
+            <div style="display: flex; gap: 10px; margin-top: 5px;">
+                <button class="download-action-btn" style="flex: 1;" onclick="downloadScreenshot()">📸 Export Mock Image</button>
+                <button class="download-action-btn" style="background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.4); color: #f87171;" onclick="clearOutputImage()">🗑️ Clear Output</button>
+            </div>
 
         </div>
 
@@ -976,6 +988,17 @@
             const year = date.getFullYear();
 
             tweetTimestampTxt.innerText = `${hours}:${minutes} ${ampm} · ${month} ${day}, ${year}`;
+        }
+
+        function clearOutputImage() {
+            inDisplayName.value = '';
+            inUsername.value = '';
+            inMessage.value = '';
+            inTagUser.value = '';
+            inStrike.value = '';
+            inMask.value = '';
+            inYellow.value = '';
+            updateLivePreview();
         }
 
         function downloadScreenshot() {

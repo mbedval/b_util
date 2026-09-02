@@ -64,15 +64,129 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 24px;
+            padding: 8px 16px;
             background: var(--deck-bg);
             border: 1px solid var(--panel-border);
             border-radius: 12px;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(10px);
             z-index: 10;
             flex-shrink: 0;
+        }
+
+        /* Responsive Mobile Portrait (Vertical 4-Player Stack within viewable area) */
+        @media (orientation: portrait) and (max-width: 768px) {
+            body {
+                padding: 6px;
+                overflow: hidden;
+                height: 100vh;
+                display: flex;
+                flex-direction: column;
+            }
+
+            header {
+                padding: 6px 10px;
+                flex-wrap: wrap;
+                gap: 6px;
+                flex-shrink: 0;
+            }
+
+            h1 {
+                font-size: 0.9rem;
+            }
+
+            .btn, .close-focus-btn {
+                padding: 4px 8px;
+                font-size: 0.7rem;
+                gap: 4px;
+            }
+
+            .controls {
+                gap: 4px;
+            }
+
+            .shortcuts-hint {
+                display: none !important;
+            }
+
+            /* 4 Players stacked vertically (2x2 grid in portrait) */
+            .viewer-container {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: 1fr 1fr;
+                gap: 6px;
+                padding: 6px;
+                flex-grow: 1;
+                height: auto;
+                min-height: 0;
+                overflow: hidden;
+            }
+        }
+
+        /* Responsive Mobile Landscape (4 Players 2x2 grid in landscape) */
+        @media (orientation: landscape) and (max-height: 600px) {
+            body {
+                flex-direction: row;
+                padding: 4px;
+                gap: 6px;
+                height: 100vh;
+                overflow: hidden;
+            }
+
+            header {
+                width: 20vw;
+                height: 100vh;
+                flex-direction: column;
+                justify-content: flex-start;
+                align-items: stretch;
+                margin-bottom: 0;
+                padding: 8px 6px;
+                gap: 8px;
+                overflow-y: auto;
+                flex-shrink: 0;
+            }
+
+            .logo-section h1 {
+                font-size: 0.75rem;
+                letter-spacing: 0;
+            }
+
+            .controls {
+                flex-direction: column;
+                width: 100%;
+                gap: 5px;
+            }
+
+            .btn, .close-focus-btn {
+                width: 100%;
+                padding: 4px 6px;
+                font-size: 0.65rem;
+                justify-content: center;
+                white-space: nowrap;
+            }
+
+            .shortcuts-hint {
+                display: none !important;
+            }
+
+            /* 4 Players 2x2 grid */
+            .viewer-container {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: 1fr 1fr;
+                gap: 6px;
+                padding: 6px;
+                width: 80vw;
+                height: 100vh;
+            }
+        }
+
+        /* Hide Settings button and modal completely on Mobile Devices */
+        @media (max-width: 768px), (pointer: coarse) {
+            #open-config, #config-modal {
+                display: none !important;
+            }
         }
 
         .logo-section {
@@ -161,7 +275,7 @@
             box-shadow: 0 0 15px rgba(0, 255, 128, 0.6);
         }
 
-        /* Main Viewport Container - Single Row 3 Columns */
+        /* Main Viewport Container - 2x2 Grid for 4 Channels */
         .viewer-container {
             flex-grow: 1;
             position: relative;
@@ -172,8 +286,8 @@
             backdrop-filter: blur(10px);
             overflow: hidden;
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            grid-template-rows: 1fr;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
             gap: 12px;
             padding: 12px;
             transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -790,6 +904,7 @@
                 <span><kbd style="background: rgba(0,242,254,0.1); color: var(--accent-cyan); border-radius: 4px; padding: 2px 5px; border: 1px solid rgba(0,242,254,0.2); font-family: monospace;">&#8592; &#8594;</kbd> Channel</span>
                 <span><kbd style="background: rgba(0,242,254,0.1); color: var(--accent-cyan); border-radius: 4px; padding: 2px 5px; border: 1px solid rgba(0,242,254,0.2); font-family: monospace;">Esc</kbd> Mini Deck</span>
             </span>
+            <a href="help.html" class="btn" style="text-decoration:none;">❓ HELP</a>
             <button id="toggle-cycle" class="btn">AUTO CYCLE</button>
             <button id="toggle-scanlines" class="btn btn-active">CRT SCANLINES</button>
             <button id="open-config" class="btn">
@@ -818,7 +933,6 @@
                 </div>
                 <div class="player-footer">
                     <div class="channel-info">
-                        <img class="channel-logo" id="logo-0" src="" alt="logo" onerror="this.style.display='none'">
                         <span class="channel-name" id="name-0">CNBC Awaaz</span>
                     </div>
                     <div class="audio-indicator" id="audio-indicator-0" onclick="toggleAudioMute(event, 0)" title="Toggle Mute/Unmute">
@@ -843,7 +957,6 @@
                 </div>
                 <div class="player-footer">
                     <div class="channel-info">
-                        <img class="channel-logo" id="logo-1" src="" alt="logo" onerror="this.style.display='none'">
                         <span class="channel-name" id="name-1">Zee Business</span>
                     </div>
                     <div class="audio-indicator" id="audio-indicator-1" onclick="toggleAudioMute(event, 1)" title="Toggle Mute/Unmute">
@@ -868,10 +981,33 @@
                 </div>
                 <div class="player-footer">
                     <div class="channel-info">
-                        <img class="channel-logo" id="logo-2" src="" alt="logo" onerror="this.style.display='none'">
                         <span class="channel-name" id="name-2">NDTV Profit</span>
                     </div>
                     <div class="audio-indicator" id="audio-indicator-2" onclick="toggleAudioMute(event, 2)" title="Toggle Mute/Unmute">
+                        <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Channel 4 -->
+        <div class="player-wrapper" data-index="3" onclick="toggleFocus(this)">
+            <div class="noise-container" id="noise-3">
+                <div class="noise-bg"></div>
+                <div class="noise-text" id="noise-text-3">RECEIVING FEED...</div>
+            </div>
+            <video disablePictureInPicture disableRemotePlayback class="player-video" id="video-3" playsinline autoplay muted></video>
+            <div class="player-overlay">
+                <div class="player-header">
+                    <span class="channel-tag"><span class="channel-num">CH 04</span> <span class="tag-name">CNBC Bajar</span></span>
+                    <button class="feed-toggle-btn" id="feed-toggle-3" onclick="toggleFeedPower(event, 3)">ONLINE</button>
+                    <span class="status-badge" id="status-3">CONNECTING</span>
+                </div>
+                <div class="player-footer">
+                    <div class="channel-info">
+                        <span class="channel-name" id="name-3">CNBC Bajar Gujarat</span>
+                    </div>
+                    <div class="audio-indicator" id="audio-indicator-3" onclick="toggleAudioMute(event, 3)" title="Toggle Mute/Unmute">
                         <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
                     </div>
                 </div>
@@ -951,6 +1087,27 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="slot-card" data-slot="3">
+                        <div class="slot-header">
+                            <span class="slot-label">Slot 04</span>
+                            <span class="slot-name-preview" id="slot-name-preview-3">CNBC Bajar</span>
+                        </div>
+                        <div class="slot-inputs">
+                            <div class="form-group">
+                                <label>Channel Name</label>
+                                <input type="text" class="form-input" id="input-name-3" placeholder="e.g. CNBC Bajar Gujarat">
+                            </div>
+                            <div class="form-group">
+                                <label>Logo URL</label>
+                                <input type="text" class="form-input" id="input-logo-3" placeholder="Logo Image URL">
+                            </div>
+                            <div class="form-group">
+                                <label>HLS Stream URL (.m3u8)</label>
+                                <input type="text" class="form-input" id="input-url-3" placeholder="http://.../master.m3u8">
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Right Column: M3U playlist preset searcher -->
@@ -996,6 +1153,11 @@
                     name: "NDTV Profit (Business)",
                     url: "https://ndtvprofit.akamaized.net/hls/live/2107404/ndtvprofit/chunklist_5.m3u8",
                     logo: "https://xstreamcp-assets-msp.streamready.in/assets/LIVETV/LIVECHANNEL/LIVETV_LIVETVCHANNEL_NDTV_PROFIT_PRIME/images/LOGO_HD/image.png"
+                },
+                {
+                    name: "CNBC Bajar Gujarat (Business)",
+                    url: "https://n18syndication.akamaized.net/bpk-tv/CNBC_Bazaar_NW18_MOB/output01/master.m3u8",
+                    logo: "https://jiotvimages.cdn.jio.com/dare_images/images/CNBC_Bajar.png"
                 }
             ]
         };
@@ -1006,9 +1168,9 @@
         }
 
         // Active players references & state tracking
-        const hlsInstances = [null, null, null];
-        const channelStates = [true, true, true]; // active (online) vs standby (offline)
-        const tempSuspendedStates = [false, false, false]; // trackers for focus mode suspension
+        const hlsInstances = [null, null, null, null];
+        const channelStates = [true, true, true, true]; // active (online) vs standby (offline)
+        const tempSuspendedStates = [false, false, false, false]; // trackers for focus mode suspension
         let lastViewedIndex = null; // Track the last viewed/focused player
         let selectedSlot = 0;
         let presets = [];
@@ -1046,7 +1208,7 @@
 
         // Initialize/Sync all streams
         function initStreams() {
-            for (let i = 0; i < 3; i++) {
+            for (let i = 0; i < config.channels.length; i++) {
                 if (channelStates[i]) {
                     startChannel(i);
                 } else {
@@ -1067,13 +1229,6 @@
             // Update UI static elements
             document.getElementById(`name-${i}`).textContent = channel ? channel.name : 'Unconfigured Slot';
             document.querySelector(`[data-index="${i}"] .tag-name`).textContent = channel ? channel.name.split(' (')[0] : 'Empty';
-            const logo = document.getElementById(`logo-${i}`);
-            if (channel && channel.logo) {
-                logo.src = channel.logo;
-                logo.style.display = 'block';
-            } else {
-                logo.style.display = 'none';
-            }
 
             // Update power toggle button UI
             toggleBtn.textContent = "ONLINE";
@@ -1230,7 +1385,7 @@
             if (video.muted) {
                 lastViewedIndex = index;
                 // Unmute this channel, mute all others
-                for (let i = 0; i < 3; i++) {
+                for (let i = 0; i < config.channels.length; i++) {
                     const v = document.getElementById(`video-${i}`);
                     const m = document.getElementById(`audio-indicator-${i}`);
                     if (v && m) {
@@ -1246,6 +1401,39 @@
             } else {
                 video.muted = true;
                 if (mic) mic.classList.remove('unmuted');
+            }
+        }
+
+        // Change volume up/down for active channel
+        function changeDeckVolume(amount) {
+            const focusedPlayer = document.querySelector('.player-wrapper.focused');
+            let targetIdx = focusedPlayer ? parseInt(focusedPlayer.getAttribute('data-index')) : (lastViewedIndex !== null ? lastViewedIndex : 0);
+            
+            // Check if any channel is unmuted
+            for (let i = 0; i < config.channels.length; i++) {
+                const v = document.getElementById(`video-${i}`);
+                if (v && !v.muted) {
+                    targetIdx = i;
+                    break;
+                }
+            }
+
+            const video = document.getElementById(`video-${targetIdx}`);
+            const mic = document.getElementById(`audio-indicator-${targetIdx}`);
+            if (!video) return;
+
+            if (video.muted && amount > 0) {
+                video.muted = false;
+                if (mic) mic.classList.add('unmuted');
+            }
+
+            let newVol = Math.min(1, Math.max(0, video.volume + amount));
+            video.volume = newVol;
+
+            // Apply volume to all videos so volume level remains consistent
+            for (let i = 0; i < config.channels.length; i++) {
+                const v = document.getElementById(`video-${i}`);
+                if (v) v.volume = newVol;
             }
         }
 
@@ -1295,7 +1483,7 @@
             mic.classList.add('unmuted');
 
             // OPTIMIZATION: Suspend background streams completely to save data
-            for (let i = 0; i < 3; i++) {
+            for (let i = 0; i < config.channels.length; i++) {
                 if (i !== index) {
                     tempSuspendedStates[i] = channelStates[i];
                     if (channelStates[i]) {
@@ -1349,9 +1537,9 @@
             let nextIndex = currentCycleIndex;
             
             do {
-                nextIndex = (nextIndex + 1) % 3;
+                nextIndex = (nextIndex + 1) % config.channels.length;
                 attempts++;
-            } while (attempts < 3); // Cycle next index sequentially
+            } while (attempts < config.channels.length); // Cycle next index sequentially
 
             // Shut down previous feed
             stopChannel(currentCycleIndex, true);
@@ -1569,12 +1757,17 @@
 
             // Save config
             document.getElementById('save-config').onclick = () => {
-                for (let i = 0; i < 3; i++) {
-                    config.channels[i] = {
-                        name: document.getElementById(`input-name-${i}`).value.trim(),
-                        url: document.getElementById(`input-url-${i}`).value.trim(),
-                        logo: document.getElementById(`input-logo-${i}`).value.trim()
-                    };
+                for (let i = 0; i < config.channels.length; i++) {
+                    const nameEl = document.getElementById(`input-name-${i}`);
+                    const urlEl = document.getElementById(`input-url-${i}`);
+                    const logoEl = document.getElementById(`input-logo-${i}`);
+                    if (nameEl && urlEl && logoEl) {
+                        config.channels[i] = {
+                            name: nameEl.value.trim(),
+                            url: urlEl.value.trim(),
+                            logo: logoEl.value.trim()
+                        };
+                    }
                 }
                 localStorage.setItem('iptv_deck_config', JSON.stringify(config));
                 initStreams();
@@ -1605,6 +1798,11 @@
                                     name: "NDTV Profit (Business)",
                                     url: "https://ndtvprofit.akamaized.net/hls/live/2107404/ndtvprofit/chunklist_5.m3u8",
                                     logo: "https://xstreamcp-assets-msp.streamready.in/assets/LIVETV/LIVECHANNEL/LIVETV_LIVETVCHANNEL_NDTV_PROFIT_PRIME/images/LOGO_HD/image.png"
+                                },
+                                {
+                                    name: "CNBC Bajar Gujarat (Business)",
+                                    url: "https://n18syndication.akamaized.net/bpk-tv/CNBC_Bazaar_NW18_MOB/output01/master.m3u8",
+                                    logo: "https://jiotvimages.cdn.jio.com/dare_images/images/CNBC_Bajar.png"
                                 }
                             ]
                         };
@@ -1643,12 +1841,35 @@
                     }
                 } else if (key === 'm' || key === 'M') {
                     e.preventDefault();
-                    let targetIdx = lastViewedIndex !== null ? lastViewedIndex : 0;
                     const focusedPlayer = document.querySelector('.player-wrapper.focused');
                     if (focusedPlayer) {
-                        targetIdx = parseInt(focusedPlayer.getAttribute('data-index'));
+                        const targetIdx = parseInt(focusedPlayer.getAttribute('data-index'));
+                        toggleAudioMute(null, targetIdx);
+                    } else {
+                        // In 4-deck view: check if any channel is currently unmuted
+                        let activeUnmutedIdx = null;
+                        for (let i = 0; i < config.channels.length; i++) {
+                            const v = document.getElementById(`video-${i}`);
+                            if (v && !v.muted) {
+                                activeUnmutedIdx = i;
+                                break;
+                            }
+                        }
+                        if (activeUnmutedIdx !== null) {
+                            // Mute the active unmuted channel
+                            toggleAudioMute(null, activeUnmutedIdx);
+                        } else {
+                            // Unmute last viewed channel or channel 0
+                            const targetIdx = lastViewedIndex !== null ? lastViewedIndex : 0;
+                            toggleAudioMute(null, targetIdx);
+                        }
                     }
-                    toggleAudioMute(null, targetIdx);
+                } else if (key === 'ArrowUp') {
+                    e.preventDefault();
+                    changeDeckVolume(0.05);
+                } else if (key === 'ArrowDown') {
+                    e.preventDefault();
+                    changeDeckVolume(-0.05);
                 } else if (key === 'ArrowRight') {
                     e.preventDefault();
                     let currentIdx = lastViewedIndex !== null ? lastViewedIndex : 0;
@@ -1656,7 +1877,7 @@
                     if (focusedPlayer) {
                         currentIdx = parseInt(focusedPlayer.getAttribute('data-index'));
                     }
-                    const nextIdx = (currentIdx + 1) % 3;
+                    const nextIdx = (currentIdx + 1) % config.channels.length;
                     const container = document.getElementById('viewer-deck');
                     if (container && container.classList.contains('has-focused')) {
                         const nextWrapper = document.querySelector(`.player-wrapper[data-index="${nextIdx}"]`);
@@ -1674,7 +1895,7 @@
                     if (focusedPlayer) {
                         currentIdx = parseInt(focusedPlayer.getAttribute('data-index'));
                     }
-                    const prevIdx = (currentIdx - 1 + 3) % 3;
+                    const prevIdx = (currentIdx - 1 + config.channels.length) % config.channels.length;
                     const container = document.getElementById('viewer-deck');
                     if (container && container.classList.contains('has-focused')) {
                         const prevWrapper = document.querySelector(`.player-wrapper[data-index="${prevIdx}"]`);
@@ -1701,6 +1922,68 @@
                     }
                 }
             });
+
+            // Touch & Swipe Gesture Support for Mobile
+            let iptvTouchStartX = 0;
+            let iptvTouchStartY = 0;
+            let iptvLastTouchTime = 0;
+
+            document.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    iptvTouchStartX = e.touches[0].clientX;
+                    iptvTouchStartY = e.touches[0].clientY;
+
+                    const currentTime = new Date().getTime();
+                    const tapLength = currentTime - iptvLastTouchTime;
+                    if (tapLength < 300 && tapLength > 0) {
+                        e.preventDefault();
+                        toggleFullScreen();
+                    }
+                    iptvLastTouchTime = currentTime;
+                }
+            }, { passive: false });
+
+            document.addEventListener('touchend', (e) => {
+                if (!iptvTouchStartX || !iptvTouchStartY) return;
+                const touchEndX = e.changedTouches[0].clientX;
+                const touchEndY = e.changedTouches[0].clientY;
+
+                const diffX = touchEndX - iptvTouchStartX;
+                const diffY = touchEndY - iptvTouchStartY;
+
+                if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) {
+                    let currentIdx = lastViewedIndex !== null ? lastViewedIndex : 0;
+                    const focusedPlayer = document.querySelector('.player-wrapper.focused');
+                    if (focusedPlayer) {
+                        currentIdx = parseInt(focusedPlayer.getAttribute('data-index'));
+                    }
+                    
+                    if (diffX < 0) {
+                        // Swipe Left -> Next Channel (ArrowRight logic)
+                        const nextIdx = (currentIdx + 1) % config.channels.length;
+                        const container = document.getElementById('viewer-deck');
+                        if (container && container.classList.contains('has-focused')) {
+                            const nextWrapper = document.querySelector(`.player-wrapper[data-index="${nextIdx}"]`);
+                            if (nextWrapper) toggleFocus(nextWrapper);
+                        } else {
+                            lastViewedIndex = nextIdx;
+                            toggleAudioMute(null, nextIdx);
+                        }
+                    } else {
+                        // Swipe Right -> Previous Channel (ArrowLeft logic)
+                        const prevIdx = (currentIdx - 1 + config.channels.length) % config.channels.length;
+                        const container = document.getElementById('viewer-deck');
+                        if (container && container.classList.contains('has-focused')) {
+                            const prevWrapper = document.querySelector(`.player-wrapper[data-index="${prevIdx}"]`);
+                            if (prevWrapper) toggleFocus(prevWrapper);
+                        } else {
+                            lastViewedIndex = prevIdx;
+                            toggleAudioMute(null, prevIdx);
+                        }
+                    }
+                }
+
+            }, { passive: true });
         });
     </script>
 </body>

@@ -152,16 +152,60 @@
             align-items: center;
         }
 
+        .mobile-nav-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 38px;
+            background: #111b21;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            z-index: 1500;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 0 10px;
+        }
+
+        .mobile-nav-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e9edef;
+            width: 32px;
+            height: 28px;
+            border-radius: 14px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .mobile-nav-btn:hover {
+            background: var(--accent-color);
+            color: #0b141a;
+            border-color: var(--accent-color);
+            transform: scale(1.1);
+        }
+
+        .mobile-nav-btn.clear-btn:hover {
+            background: #f43f5e;
+            color: #fff;
+            border-color: #f43f5e;
+            transform: scale(1.1);
+        }
+
         .home-indicator-bar {
             position: absolute;
-            bottom: 8px;
+            bottom: 3px;
             left: 50%;
             transform: translateX(-50%);
-            width: 130px;
-            height: 5px;
-            background: rgba(255,255,255,0.85);
+            width: 100px;
+            height: 4px;
+            background: rgba(255,255,255,0.4);
             border-radius: 10px;
-            z-index: 1000;
+            z-index: 1501;
             pointer-events: none;
         }
 
@@ -542,10 +586,10 @@
         /* Bottom chat input bar */
         .chat-input-bar {
             position: absolute;
-            bottom: 0; left: 0;
+            bottom: 38px; left: 0;
             width: 100%;
             background: #1f2c34;
-            padding: 10px;
+            padding: 8px 10px;
             display: flex;
             align-items: center;
             gap: 8px;
@@ -859,58 +903,18 @@
 
                 </div>
 
+                <!-- Mobile Navigation Controls Bar (Replay / Clear Chat) -->
+                <div class="mobile-nav-bar">
+                    <button class="mobile-nav-btn" id="btn-replay" title="Replay Story">🔄</button>
+                    <button class="mobile-nav-btn clear-btn" id="btn-clear" title="Clear Chat">🗑️</button>
+                </div>
+
                 <!-- Lightbox Zoom Overlay -->
                 <div class="lightbox-overlay hidden" id="lightbox">
                     <button class="lightbox-close" id="lightbox-close-btn">✕</button>
                     <img src="" alt="Zoomed Attach" class="lightbox-image" id="lightbox-img">
                 </div>
 
-            </div>
-        </div>
-
-        <!-- Instruction control panel -->
-        <div class="side-instruction-card">
-            <h3>💬 Chat Story Simulator</h3>
-            
-            <div class="instruction-step">
-                <span class="step-number">1</span>
-                <div>
-                    <strong>Unlock Screen:</strong> Tap the lock screen or click the power button to unlock.
-                </div>
-            </div>
-
-            <div class="instruction-step">
-                <span class="step-number">2</span>
-                <div>
-                    <strong>Auto Onboarding:</strong> Upon unlock, the virtual pointer clicks <strong>WhatsApp</strong>.
-                </div>
-            </div>
-
-            <div class="instruction-step">
-                <span class="step-number">3</span>
-                <div>
-                    <strong>Dynamic Script Playback:</strong> The app loads dialogs from `story.json` showing typing indicators (e.g. <em>Bob is typing...</em>) before messages arrive.
-                </div>
-            </div>
-
-            <div class="instruction-step">
-                <span class="step-number">4</span>
-                <div>
-                    <strong>Interactive Attachments:</strong> Click any image bubble to zoom into fullscreen lightbox mode.
-                </div>
-            </div>
-
-            <div class="instruction-step">
-                <span class="step-number">5</span>
-                <div>
-                    <strong>Type Messages:</strong> Type your own text and hit **Send** to join the conversation!
-                </div>
-            </div>
-
-            <div class="play-controls">
-                <button class="btn-control" id="btn-replay">Replay Story</button>
-                <button class="btn-control" id="btn-clear" style="background: #3a3a3a; color: #fff;">Clear Chat</button>
-            </div>
         </div>
 
     </div>

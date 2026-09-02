@@ -848,357 +848,319 @@
 
       if (videoElement.currentTime !== lastVideoTime) {
         lastVideoTime = videoElement.currentTime;
-
         if (faceLandmarker) {
-          try {
-            results = faceLandmarker.detectForVideo(videoElement, performance.now());
-          } catch (e) {
-            console.error("Landmark detection error:", e);
-          }
+          results = faceLandmarker.detectForVideo(videoElement, now);
         }
       }
 
       // Clear Canvas
       canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
-      // Render Active Mask Filter
+      // Render Active Filter if ON
       if (isMaskActive) {
         if (results && results.faceLandmarks && results.faceLandmarks.length > 0) {
-          const landmarks = results.faceLandmarks[0];
-          document.getElementById('statusDot').className = 'status-dot active';
-          document.getElementById('statusText').innerText = 'Tracking Face Live';
-          drawMaskFilter(landmarks);
+          renderAiFaceFilter(results.faceLandmarks[0]);
         } else {
-          // If model is downloading or face not locked yet, update status badge
-          if (faceLandmarker) {
-            document.getElementById('statusText').innerText = 'Searching for Face...';
-          }
-          drawFallbackMask();
+          renderFallbackFaceFilter();
         }
       }
 
       requestAnimationFrame(renderLoop);
     }
 
-    // Fallback Face Mask drawing when AI model is downloading or face undetected
-    function drawFallbackMask() {
+    // Get current filter configuration offsets
+    function getFilterConfig() {
+      const scale = parseFloat(document.getElementById('filterScale').value) / 100;
+      const offsetX = parseFloat(document.getElementById('filterOffsetX').value);
+      const offsetY = parseFloat(document.getElementById('filterOffsetY').value);
+      return { scale, offsetX, offsetY };
+    }
+
+    function updateFilterConfig() {
+      document.getElementById('opacityVal').innerText = `${document.getElementById('filterScale').value}%`;
+      document.getElementById('offsetXVal').innerText = `${document.getElementById('filterOffsetX').value}px`;
+      document.getElementById('offsetYVal').innerText = `${document.getElementById('filterOffsetY').value}px`;
+    }
+
+    // AI Landmark Based Mask Render Engine
+    function renderAiFaceFilter(landmarks) {
+      const config = getFilterConfig();
+      const current = FILTERS[currentFilterIndex];
+
+      // Key Facial Landmarks Indices from MediaPipe 468 mesh:
+      // Left eye outer: 33, Right eye outer: 263, Nose tip: 1, Chin bottom: 152, Forehead top: 10
+      const leftEye = landmarks[33];
+      const rightEye = landmarks[263];
+      const noseTip = landmarks[1];
+      const forehead = landmarks[10];
+
       const w = canvasElement.width;
       const h = canvasElement.height;
-      const scaleFactor = parseInt(document.getElementById('filterScale').value) / 100;
-      const offsetX = parseInt(document.getElementById('filterOffsetX').value);
-      const offsetY = parseInt(document.getElementById('filterOffsetY').value);
-      
-      // Face center points adjusted by manual X and Y offset controls
-      const noseBridge = { x: (w * 0.5) + offsetX, y: (h * 0.45) + offsetY };
-      const leftEye = { x: (w * 0.41) + offsetX, y: (h * 0.40) + offsetY };
-      const rightEye = { x: (w * 0.59) + offsetX, y: (h * 0.40) + offsetY };
-      const cheekLeft = { x: (w * 0.35) + offsetX, y: (h * 0.52) + offsetY };
-      const cheekRight = { x: (w * 0.65) + offsetX, y: (h * 0.52) + offsetY };
-      const forehead = { x: (w * 0.5) + offsetX, y: (h * 0.30) + offsetY };
 
-      const filter = FILTERS[currentFilterIndex];
+      const pLeft = { x: leftEye.x * w, y: leftEye.y * h };
+      const pRight = { x: rightEye.x * w, y: rightEye.y * h };
+      const pNose = { x: noseTip.x * w, y: noseTip.y * h };
+
+      // Calculate Eye Distance and Angle
+      const eyeDx = pRight.x - pLeft.x;
+      const eyeDy = pRight.y - pLeft.y;
+      const eyeDist = Math.hypot(eyeDx, eyeDy);
+      const eyeAngle = Math.atan2(eyeDy, eyeDx);
+
+      // Center point between eyes
+      const eyeCenterX = (pLeft.x + pRight.x) / 2 + config.offsetX;
+      const eyeCenterY = (pLeft.y + pRight.y) / 2 + config.offsetY;
+
       canvasCtx.save();
+      canvasCtx.translate(eyeCenterX, eyeCenterY);
+      canvasCtx.rotate(eyeAngle);
+      canvasCtx.scale(config.scale, config.scale);
 
-      switch (filter.id) {
+      switch (current.id) {
         case 'superhero':
-          drawSuperheroMask(canvasCtx, leftEye, rightEye, noseBridge, cheekLeft, cheekRight, forehead, scaleFactor);
+          drawSuperheroMask(eyeDist);
           break;
         case 'privacy':
-          drawPrivacyCensorBar(canvasCtx, leftEye, rightEye, noseBridge, scaleFactor);
+          drawPrivacyCensorBar(eyeDist);
           break;
         case 'cyber':
-          drawCyberVisor(canvasCtx, leftEye, rightEye, noseBridge, scaleFactor);
+          drawCyberVisor(eyeDist);
           break;
         case 'pixelate':
-          drawPixelatedMask(canvasCtx, leftEye, rightEye, noseBridge, cheekLeft, cheekRight, scaleFactor);
+          drawPixelatedAnonymizer(eyeCenterX, eyeCenterY, eyeDist);
           break;
         case 'gold_carnival':
-          drawGoldCarnivalMask(canvasCtx, leftEye, rightEye, noseBridge, forehead, scaleFactor);
+          drawGoldVenetianLeaf(eyeDist);
           break;
         case 'phantom':
-          drawPhantomMask(canvasCtx, rightEye, noseBridge, cheekRight, forehead, scaleFactor);
+          drawPhantomMask(eyeDist);
           break;
       }
 
       canvasCtx.restore();
     }
 
-    // Draw Masks on Canvas based on Facial Landmarks
-    function drawMaskFilter(landmarks) {
-      const filter = FILTERS[currentFilterIndex];
-      const scaleFactor = parseInt(document.getElementById('filterScale').value) / 100;
-      const w = canvasElement.width;
-      const h = canvasElement.height;
+    // Fallback Manual Mask Render when AI Landmarks are loading or undetected
+    function renderFallbackFaceFilter() {
+      const config = getFilterConfig();
+      const current = FILTERS[currentFilterIndex];
 
-      // Convert Normalized MediaPipe landmarks to Canvas pixels
-      const pt = (index) => ({
-        x: landmarks[index].x * w,
-        y: landmarks[index].y * h
-      });
-
-      // Key Facial Reference Points:
-      // Left eye corner: 33, Right eye corner: 263
-      // Nose bridge: 6, Nose tip: 4, Forehead: 10, Chin: 152
-      const leftEye = pt(33);
-      const rightEye = pt(263);
-      const noseBridge = pt(6);
-      const noseTip = pt(4);
-      const forehead = pt(10);
-      const cheekLeft = pt(234);
-      const cheekRight = pt(454);
+      const centerX = canvasElement.width / 2 + config.offsetX;
+      const centerY = canvasElement.height / 2.3 + config.offsetY;
+      const eyeDist = canvasElement.width * 0.22;
 
       canvasCtx.save();
+      canvasCtx.translate(centerX, centerY);
+      canvasCtx.scale(config.scale, config.scale);
 
-      switch (filter.id) {
+      switch (current.id) {
         case 'superhero':
-          drawSuperheroMask(canvasCtx, leftEye, rightEye, noseBridge, cheekLeft, cheekRight, forehead, scaleFactor);
+          drawSuperheroMask(eyeDist);
           break;
         case 'privacy':
-          drawPrivacyCensorBar(canvasCtx, leftEye, rightEye, noseBridge, scaleFactor);
+          drawPrivacyCensorBar(eyeDist);
           break;
         case 'cyber':
-          drawCyberVisor(canvasCtx, leftEye, rightEye, noseBridge, scaleFactor);
-          break;
-        case 'pixelate':
-          drawPixelatedMask(canvasCtx, leftEye, rightEye, noseBridge, cheekLeft, cheekRight, scaleFactor);
+          drawCyberVisor(eyeDist);
           break;
         case 'gold_carnival':
-          drawGoldCarnivalMask(canvasCtx, leftEye, rightEye, noseBridge, forehead, scaleFactor);
+          drawGoldVenetianLeaf(eyeDist);
           break;
         case 'phantom':
-          drawPhantomMask(canvasCtx, rightEye, noseBridge, cheekRight, forehead, scaleFactor);
+          drawPhantomMask(eyeDist);
           break;
       }
 
       canvasCtx.restore();
     }
 
-    // 1. Superhero Venetian Eye Mask
-    function drawSuperheroMask(ctx, lEye, rEye, nose, lCheek, rCheek, forehead, scale) {
-      const eyeDx = rEye.x - lEye.x;
-      const eyeDy = rEye.y - lEye.y;
-      const angle = Math.atan2(eyeDy, eyeDx);
-      const eyeDist = Math.hypot(eyeDx, eyeDy);
+    // Mask Rendering Primitives
+    function drawSuperheroMask(eyeDist) {
+      const mw = eyeDist * 2.2;
+      const mh = eyeDist * 0.95;
 
-      ctx.translate(nose.x, nose.y);
-      ctx.rotate(angle);
-      ctx.scale(scale, scale);
+      canvasCtx.fillStyle = '#0f172a';
+      canvasCtx.strokeStyle = '#38bdf8';
+      canvasCtx.lineWidth = 3;
+      canvasCtx.shadowColor = 'rgba(56, 189, 248, 0.5)';
+      canvasCtx.shadowBlur = 12;
 
-      ctx.fillStyle = '#0f172a';
-      ctx.strokeStyle = '#6366f1';
-      ctx.lineWidth = 4;
+      canvasCtx.beginPath();
+      canvasCtx.moveTo(-mw / 2, -mh * 0.2);
+      canvasCtx.bezierCurveTo(-mw * 0.35, -mh * 0.8, mw * 0.35, -mh * 0.8, mw / 2, -mh * 0.2);
+      canvasCtx.bezierCurveTo(mw * 0.55, mh * 0.5, mw * 0.2, mh * 0.9, 0, mh * 0.45);
+      canvasCtx.bezierCurveTo(-mw * 0.2, mh * 0.9, -mw * 0.55, mh * 0.5, -mw / 2, -mh * 0.2);
+      canvasCtx.closePath();
+      canvasCtx.fill();
+      canvasCtx.stroke();
 
-      ctx.beginPath();
-      // Outer wing top right
-      ctx.moveTo(eyeDist * 1.5, -eyeDist * 0.4);
-      // Dip over nose
-      ctx.quadraticCurveTo(eyeDist * 0.5, -eyeDist * 0.6, 0, -eyeDist * 0.2);
-      ctx.quadraticCurveTo(-eyeDist * 0.5, -eyeDist * 0.6, -eyeDist * 1.5, -eyeDist * 0.4);
-      // Wing bottom left
-      ctx.quadraticCurveTo(-eyeDist * 1.8, eyeDist * 0.5, -eyeDist * 0.8, eyeDist * 0.4);
-      // Nose beak point
-      ctx.lineTo(0, eyeDist * 0.7);
-      ctx.lineTo(eyeDist * 0.8, eyeDist * 0.4);
-      ctx.quadraticCurveTo(eyeDist * 1.8, eyeDist * 0.5, eyeDist * 1.5, -eyeDist * 0.4);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
+      // Left Eye Slot
+      canvasCtx.globalCompositeOperation = 'destination-out';
+      canvasCtx.beginPath();
+      canvasCtx.ellipse(-eyeDist * 0.45, 0, eyeDist * 0.25, eyeDist * 0.16, -0.2, 0, Math.PI * 2);
+      canvasCtx.fill();
 
-      // Eye Holes
-      ctx.globalCompositeOperation = 'destination-out';
-      ctx.beginPath();
-      ctx.ellipse(-eyeDist * 0.5, -eyeDist * 0.05, eyeDist * 0.28, eyeDist * 0.18, 0, 0, Math.PI * 2);
-      ctx.ellipse(eyeDist * 0.5, -eyeDist * 0.05, eyeDist * 0.28, eyeDist * 0.18, 0, 0, Math.PI * 2);
-      ctx.fill();
+      // Right Eye Slot
+      canvasCtx.beginPath();
+      canvasCtx.ellipse(eyeDist * 0.45, 0, eyeDist * 0.25, eyeDist * 0.16, 0.2, 0, Math.PI * 2);
+      canvasCtx.fill();
+
+      canvasCtx.globalCompositeOperation = 'source-over';
     }
 
-    // 2. Privacy Censor Bar
-    function drawPrivacyCensorBar(ctx, lEye, rEye, nose, scale) {
-      const eyeDx = rEye.x - lEye.x;
-      const eyeDy = rEye.y - lEye.y;
-      const angle = Math.atan2(eyeDy, eyeDx);
-      const eyeDist = Math.hypot(eyeDx, eyeDy);
+    function drawPrivacyCensorBar(eyeDist) {
+      const bw = eyeDist * 2.5;
+      const bh = eyeDist * 0.6;
 
-      ctx.translate(nose.x, nose.y);
-      ctx.rotate(angle);
-      ctx.scale(scale, scale);
+      canvasCtx.fillStyle = '#000000';
+      canvasCtx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+      canvasCtx.shadowBlur = 10;
 
-      const barWidth = eyeDist * 2.6;
-      const barHeight = eyeDist * 0.7;
+      canvasCtx.fillRect(-bw / 2, -bh / 2, bw, bh);
 
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(-barWidth / 2, -barHeight / 2, barWidth, barHeight);
-
-      // Redacted text overlay
-      ctx.fillStyle = '#ef4444';
-      ctx.font = `bold ${Math.round(barHeight * 0.4)}px 'JetBrains Mono', monospace`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('[ REDACTED ]', 0, 0);
+      canvasCtx.font = `bold ${Math.round(bh * 0.35)}px monospace`;
+      canvasCtx.fillStyle = '#ef4444';
+      canvasCtx.textAlign = 'center';
+      canvasCtx.textBaseline = 'middle';
+      canvasCtx.fillText('CENSORED', 0, 0);
     }
 
-    // 3. Neon Cyber Visor
-    function drawCyberVisor(ctx, lEye, rEye, nose, scale) {
-      const eyeDx = rEye.x - lEye.x;
-      const eyeDy = rEye.y - lEye.y;
-      const angle = Math.atan2(eyeDy, eyeDx);
-      const eyeDist = Math.hypot(eyeDx, eyeDy);
+    function drawCyberVisor(eyeDist) {
+      const vw = eyeDist * 2.4;
+      const vh = eyeDist * 0.75;
 
-      ctx.translate(nose.x, nose.y);
-      ctx.rotate(angle);
-      ctx.scale(scale, scale);
+      const grad = canvasCtx.createLinearGradient(-vw / 2, 0, vw / 2, 0);
+      grad.addColorStop(0, '#06b6d4');
+      grad.addColorStop(0.5, '#6366f1');
+      grad.addColorStop(1, '#ec4899');
 
-      const width = eyeDist * 2.4;
-      const height = eyeDist * 0.75;
+      canvasCtx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+      canvasCtx.strokeStyle = grad;
+      canvasCtx.lineWidth = 4;
+      canvasCtx.shadowColor = '#06b6d4';
+      canvasCtx.shadowBlur = 16;
 
-      // Glow visor background
-      const grad = ctx.createLinearGradient(-width/2, 0, width/2, 0);
-      grad.addColorStop(0, 'rgba(6, 182, 212, 0.8)');
-      grad.addColorStop(0.5, 'rgba(99, 102, 241, 0.85)');
-      grad.addColorStop(1, 'rgba(236, 72, 153, 0.8)');
+      canvasCtx.beginPath();
+      canvasCtx.moveTo(-vw / 2, -vh / 3);
+      canvasCtx.lineTo(vw / 2, -vh / 3);
+      canvasCtx.lineTo(vw * 0.4, vh / 2);
+      canvasCtx.lineTo(-vw * 0.4, vh / 2);
+      canvasCtx.closePath();
+      canvasCtx.fill();
+      canvasCtx.stroke();
 
-      ctx.fillStyle = grad;
-      ctx.shadowColor = '#06b6d4';
-      ctx.shadowBlur = 20;
-
-      ctx.beginPath();
-      ctx.moveTo(-width/2, -height/2);
-      ctx.lineTo(width/2, -height/2);
-      ctx.lineTo(width/2 - 15, height/2);
-      ctx.lineTo(-width/2 + 15, height/2);
-      ctx.closePath();
-      ctx.fill();
-
-      // Cyber tech lines
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-
-      ctx.fillStyle = '#ffffff';
-      ctx.font = `bold ${Math.round(height * 0.3)}px 'Outfit', sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('CYBER // MASK v1.0', 0, 0);
+      // Visor Glow Line
+      canvasCtx.strokeStyle = '#ffffff';
+      canvasCtx.lineWidth = 2;
+      canvasCtx.beginPath();
+      canvasCtx.moveTo(-vw * 0.42, 0);
+      canvasCtx.lineTo(vw * 0.42, 0);
+      canvasCtx.stroke();
     }
 
-    // 4. Pixelated / Anonymizer Blur Mask
-    function drawPixelatedMask(ctx, lEye, rEye, nose, lCheek, rCheek, scale) {
-      const eyeDx = rEye.x - lEye.x;
-      const eyeDy = rEye.y - lEye.y;
-      const eyeDist = Math.hypot(eyeDx, eyeDy);
-      const width = eyeDist * 2.4 * scale;
-      const height = eyeDist * 1.1 * scale;
+    function drawPixelatedAnonymizer(cx, cy, eyeDist) {
+      const boxW = Math.round(eyeDist * 2.4);
+      const boxH = Math.round(eyeDist * 1.1);
+      const startX = Math.round(cx - boxW / 2);
+      const startY = Math.round(cy - boxH / 2);
 
-      const x = nose.x - width / 2;
-      const y = nose.y - height / 2;
-
-      // Create pixel mosaic effect by sampling video
-      try {
-        const offCanvas = document.createElement('canvas');
-        const sampleW = 16;
-        const sampleH = 8;
-        offCanvas.width = sampleW;
-        offCanvas.height = sampleH;
-        const offCtx = offCanvas.getContext('2d');
-
-        offCtx.drawImage(videoElement, x, y, width, height, 0, 0, sampleW, sampleH);
-
-        ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(offCanvas, 0, 0, sampleW, sampleH, x, y, width, height);
-      } catch (e) {
-        // Fallback mosaic rects if canvas sampling blocked
-        ctx.fillStyle = '#334155';
-        ctx.fillRect(x, y, width, height);
+      const sampleSize = 12;
+      for (let y = startY; y < startY + boxH; y += sampleSize) {
+        for (let x = startX; x < startX + boxW; x += sampleSize) {
+          canvasCtx.fillStyle = `hsl(${((x + y) * 3) % 360}, 70%, 50%)`;
+          canvasCtx.fillRect(x - cx, y - cy, sampleSize - 1, sampleSize - 1);
+        }
       }
     }
 
-    // 5. Golden Venetian Carnival Mask
-    function drawGoldCarnivalMask(ctx, lEye, rEye, nose, forehead, scale) {
-      const eyeDx = rEye.x - lEye.x;
-      const eyeDy = rEye.y - lEye.y;
-      const angle = Math.atan2(eyeDy, eyeDx);
-      const eyeDist = Math.hypot(eyeDx, eyeDy);
+    function drawGoldVenetianLeaf(eyeDist) {
+      const mw = eyeDist * 2.3;
+      const mh = eyeDist * 1.1;
 
-      ctx.translate(nose.x, nose.y);
-      ctx.rotate(angle);
-      ctx.scale(scale, scale);
-
-      const grad = ctx.createLinearGradient(-eyeDist, -eyeDist, eyeDist, eyeDist);
+      const grad = canvasCtx.createLinearGradient(-mw / 2, -mh, mw / 2, mh);
       grad.addColorStop(0, '#f59e0b');
       grad.addColorStop(0.5, '#fbbf24');
       grad.addColorStop(1, '#d97706');
 
-      ctx.fillStyle = grad;
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 2;
+      canvasCtx.fillStyle = grad;
+      canvasCtx.strokeStyle = '#fef08a';
+      canvasCtx.lineWidth = 3;
+      canvasCtx.shadowColor = '#f59e0b';
+      canvasCtx.shadowBlur = 14;
 
-      ctx.beginPath();
-      ctx.arc(0, -eyeDist * 0.3, eyeDist * 1.2, Math.PI, 0);
-      ctx.lineTo(eyeDist * 1.2, eyeDist * 0.3);
-      ctx.lineTo(0, eyeDist * 0.6);
-      ctx.lineTo(-eyeDist * 1.2, eyeDist * 0.3);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
+      canvasCtx.beginPath();
+      canvasCtx.moveTo(-mw / 2, -mh * 0.1);
+      canvasCtx.quadraticCurveTo(-mw * 0.25, -mh * 0.9, 0, -mh * 0.6);
+      canvasCtx.quadraticCurveTo(mw * 0.25, -mh * 0.9, mw / 2, -mh * 0.1);
+      canvasCtx.quadraticCurveTo(mw * 0.35, mh * 0.7, 0, mh * 0.5);
+      canvasCtx.quadraticCurveTo(-mw * 0.35, mh * 0.7, -mw / 2, -mh * 0.1);
+      canvasCtx.closePath();
+      canvasCtx.fill();
+      canvasCtx.stroke();
 
-      // Crown Jewels
-      ctx.fillStyle = '#ef4444';
-      ctx.beginPath();
-      ctx.arc(0, -eyeDist * 1.1, 10, 0, Math.PI * 2);
-      ctx.fill();
+      // Eye cutouts
+      canvasCtx.globalCompositeOperation = 'destination-out';
+      canvasCtx.beginPath();
+      canvasCtx.ellipse(-eyeDist * 0.45, 0, eyeDist * 0.24, eyeDist * 0.15, 0, 0, Math.PI * 2);
+      canvasCtx.fill();
+
+      canvasCtx.beginPath();
+      canvasCtx.ellipse(eyeDist * 0.45, 0, eyeDist * 0.24, eyeDist * 0.15, 0, 0, Math.PI * 2);
+      canvasCtx.fill();
+
+      canvasCtx.globalCompositeOperation = 'source-over';
     }
 
-    // 6. Phantom Half-Mask
-    function drawPhantomMask(ctx, rEye, nose, rCheek, forehead, scale) {
-      const eyeDist = 80;
-      ctx.translate(nose.x + 20, nose.y - 10);
-      ctx.scale(scale, scale);
+    function drawPhantomMask(eyeDist) {
+      const mw = eyeDist * 1.5;
+      const mh = eyeDist * 1.2;
 
-      ctx.fillStyle = '#f8fafc';
-      ctx.strokeStyle = '#cbd5e1';
-      ctx.lineWidth = 3;
+      canvasCtx.fillStyle = '#f8fafc';
+      canvasCtx.strokeStyle = '#cbd5e1';
+      canvasCtx.lineWidth = 2;
+      canvasCtx.shadowColor = 'rgba(0,0,0,0.5)';
+      canvasCtx.shadowBlur = 10;
 
-      ctx.beginPath();
-      ctx.moveTo(-10, -eyeDist * 1.2);
-      ctx.quadraticCurveTo(eyeDist * 1.2, -eyeDist * 1.2, eyeDist * 1.2, eyeDist * 0.5);
-      ctx.quadraticCurveTo(eyeDist * 0.5, eyeDist * 1.2, -10, eyeDist * 0.5);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
+      canvasCtx.beginPath();
+      canvasCtx.moveTo(0, -mh * 0.6);
+      canvasCtx.quadraticCurveTo(mw * 0.6, -mh * 0.5, mw * 0.7, 0);
+      canvasCtx.quadraticCurveTo(mw * 0.6, mh * 0.7, 0, mh * 0.5);
+      canvasCtx.quadraticCurveTo(mw * 0.1, 0, 0, -mh * 0.6);
+      canvasCtx.closePath();
+      canvasCtx.fill();
+      canvasCtx.stroke();
 
       // Eye cutout
-      ctx.globalCompositeOperation = 'destination-out';
-      ctx.beginPath();
-      ctx.ellipse(eyeDist * 0.4, -eyeDist * 0.1, 22, 14, 0, 0, Math.PI * 2);
-      ctx.fill();
+      canvasCtx.globalCompositeOperation = 'destination-out';
+      canvasCtx.beginPath();
+      canvasCtx.ellipse(eyeDist * 0.38, -eyeDist * 0.05, eyeDist * 0.22, eyeDist * 0.14, 0.15, 0, Math.PI * 2);
+      canvasCtx.fill();
+
+      canvasCtx.globalCompositeOperation = 'source-over';
     }
 
-    function updateFilterConfig() {
-      const scale = document.getElementById('filterScale').value;
-      const offsetX = document.getElementById('filterOffsetX').value;
-      const offsetY = document.getElementById('filterOffsetY').value;
-
-      document.getElementById('opacityVal').innerText = `${scale}%`;
-      document.getElementById('offsetXVal').innerText = `${offsetX}px`;
-      document.getElementById('offsetYVal').innerText = `${offsetY}px`;
-    }
-
-    // Capture Photo Snapshot
+    // Photo Capture Snapshot
     function takeSnapshot() {
-      const snapshotCanvas = document.createElement('canvas');
-      snapshotCanvas.width = videoElement.videoWidth || 640;
-      snapshotCanvas.height = videoElement.videoHeight || 480;
-      const ctx = snapshotCanvas.getContext('2d');
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = canvasElement.width;
+      tempCanvas.height = canvasElement.height;
+      const ctx = tempCanvas.getContext('2d');
 
-      // Draw mirrored video
-      ctx.translate(snapshotCanvas.width, 0);
+      // Draw mirrored video stream
+      ctx.save();
+      ctx.translate(tempCanvas.width, 0);
       ctx.scale(-1, 1);
-      ctx.drawImage(videoElement, 0, 0, snapshotCanvas.width, snapshotCanvas.height);
+      ctx.drawImage(videoElement, 0, 0, tempCanvas.width, tempCanvas.height);
+      ctx.restore();
 
-      // Draw mirrored filter canvas
-      ctx.drawImage(canvasElement, 0, 0, snapshotCanvas.width, snapshotCanvas.height);
+      // Draw mask overlay
+      ctx.save();
+      ctx.translate(tempCanvas.width, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(canvasElement, 0, 0, tempCanvas.width, tempCanvas.height);
+      ctx.restore();
 
-      const dataUrl = snapshotCanvas.toDataURL('image/png');
+      const dataUrl = tempCanvas.toDataURL('image/png');
       document.getElementById('snapshotImg').src = dataUrl;
       document.getElementById('downloadSnapshotBtn').href = dataUrl;
       document.getElementById('snapshotModal').classList.add('open');
