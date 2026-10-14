@@ -2,28 +2,32 @@
 window.collageFiles = {
   "videos": [],
   "mobilevideos": [],
-  "animation": [],
-  "wallpapers": [],
-  "gif2video": [],
-  "stockcall": [
-    "assets/stockcall/portait_01.png",
-    "assets/stockcall/portait_02.png",
-    "assets/stockcall/portait_03.png",
-    "assets/stockcall/portait_04.png",
-    "assets/stockcall/portait_05.png",
-    "assets/stockcall/portait_06.png",
-    "assets/stockcall/portait_07.png",
-    "assets/stockcall/portait_09.png",
-    "assets/stockcall/square_01.png",
-    "assets/stockcall/square_02.png",
-    "assets/stockcall/square_03.png",
-    "assets/stockcall/square_04.png",
-    "assets/stockcall/square_05.png",
-    "assets/stockcall/square_06.png",
-    "assets/stockcall/square_07.png",
-    "assets/stockcall/square_08.png"
+  "animation": [
+    "input/animation/tumblr_22461fd36e76d8a75cf7f7d9951358a3_c8234f18_500.webp",
+    "input/animation/tumblr_3d4c11f772b74ac2c2cb06e0a5e9fd56_5b65138a_400.webp",
+    "input/animation/tumblr_464a7ed7fc444c4cd425b61d673f5828_87236b90_500.webp",
+    "input/animation/tumblr_a8d45e20e8ad96ba6797ff7ee4a4ba2d_5efd39b2_540.webp",
+    "input/animation/tumblr_dfe5ebc7d935882623293d272b3c15b1_dc0ff976_2048.webp",
+    "input/animation/tumblr_e775e1c7b056988a2ab4344430bc5b8b_0f7562ba_540.gif",
+    "input/animation/tumblr_mxa7nn2nOy1scozedo1_500.webp",
+    "input/animation/tumblr_ndmqwefSq61tm93ooo1_500.webp",
+    "input/animation/tumblr_nf74tctk2M1tml5nco1_500.webp",
+    "input/animation/tumblr_njl6784Drb1tya4rdo1_500.webp",
+    "input/animation/tumblr_nkyf63UnY61rii2pbo1_500.webp",
+    "input/animation/tumblr_nmpnbunTpH1tjki4uo1_500.webp",
+    "input/animation/tumblr_nzpo1zwZ9Z1uem3llo1_500.webp",
+    "input/animation/tumblr_o8dsyl9AHV1vtz0h2o1_540.webp",
+    "input/animation/tumblr_obh0ydISLu1r8k679o1_540.webp"
+  ],
+  "wallpapers": [
+    "input/wallpapers/desktop_wallpaper_Illustrious_260829132806.png",
+    "input/wallpapers/desktop_wallpaper_bggray_260829143457.png",
+    "input/wallpapers/desktop_wallpaper_graphite_2_260829143145.png",
+    "input/wallpapers/desktop_wallpaper_painting_260829132440.png",
+    "input/wallpapers/desktop_wallpaper_painting_260829142340.png"
   ],
   "chatstory": [
     "input/chatstory/story.json"
-  ]
+  ],
+  "music": []
 };

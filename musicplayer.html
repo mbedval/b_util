@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="google" content="notranslate">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>MP3 Audio Player - Bindsol.util</title>
+  <meta name="theme-color" content="#0F0F1A">
+  <meta name="description" content="Standard dark glassmorphism MP3 audio player with background playback and custom folder scanning support">
+  <script src="config.js"></script>
+  <script src="files.js" onerror="console.warn('files.js not found. Using fallback files.')"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0F0F1A 0%, #151528 50%, #0A0A14 100%);
+      --glass-bg: rgba(255, 255, 255, 0.05);
+      --glass-border: rgba(255, 255, 255, 0.1);
+      --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+      --accent-color: #7F52FF;
+      --accent-gradient: linear-gradient(135deg, #7F52FF 0%, #C068FF 100%);
+      --accent-hover: #9168FF;
+      --text-main: #FFFFFF;
+      --text-sub: #9494A8;
+      --win-blue: #0078d7;
+      --win-cyan: #00b7c3;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px;
+      overflow-x: hidden;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding-bottom: 24px;
+    }
+
+    /* Top Navigation Header */
+    .top-header {
+      width: 100%;
+      padding: 12px 16px;
+      background: rgba(15, 15, 26, 0.85);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      backdrop-filter: blur(12px);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .top-header h1 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .top-header h1 svg {
+      color: var(--accent-color);
+    }
+
+    .header-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-link {
+      color: var(--text-sub);
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.05);
+      transition: all 0.2s ease;
+    }
+
+    .nav-link:hover {
+      color: var(--text-main);
+      border-color: var(--accent-color);
+      background: rgba(127, 82, 255, 0.2);
+    }
+
+    /* Player Card */
+    .player-card {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      padding: 24px 20px;
+      backdrop-filter: blur(16px);
+      box-shadow: var(--glass-shadow);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      position: relative;
+    }
+
+    .art-visualizer {
+      position: relative;
+      width: 180px;
+      height: 180px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .glow-ring {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: var(--accent-gradient);
+      opacity: 0.25;
+      filter: blur(20px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+
+    .player-card.playing .glow-ring {
+      opacity: 0.65;
+      animation: pulseGlow 2s infinite ease-in-out alternate;
+    }
+
+    @keyframes pulseGlow {
+      0% { transform: scale(0.95); opacity: 0.45; }
+      100% { transform: scale(1.1); opacity: 0.75; }
+    }
+
+    .art-circle {
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.06);
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: var(--accent-color);
+      box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+      z-index: 2;
+    }
+
+    .player-card.playing .art-circle svg {
+      animation: spinRecord 10s linear infinite;
+    }
+
+    @keyframes spinRecord {
+      100% { transform: rotate(360deg); }
+    }
+
+    .track-info {
+      text-align: center;
+      width: 100%;
+    }
+
+    .track-info h2 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+      margin-bottom: 4px;
+    }
+
+    .track-info p {
+      font-size: 0.85rem;
+      color: var(--text-sub);
+    }
+
+    /* Seekbar */
+    .seekbar-container {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.15);
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--text-main);
+      box-shadow: 0 0 10px var(--accent-color);
+      cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    .time-display {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--text-sub);
+      font-weight: 600;
+    }
+
+    /* Controls */
+    .controls-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      width: 100%;
+    }
+
+    .ctrl-btn {
+      border: none;
+      outline: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      color: var(--text-main);
+    }
+
+    .ctrl-btn.secondary {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .ctrl-btn.secondary:hover {
+      background: rgba(255, 255, 255, 0.18);
+      transform: scale(1.05);
+    }
+
+    .ctrl-btn.primary {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: var(--accent-gradient);
+      box-shadow: 0 8px 24px rgba(127, 82, 255, 0.4);
+    }
+
+    .ctrl-btn.primary:hover {
+      transform: scale(1.08);
+      box-shadow: 0 10px 28px rgba(127, 82, 255, 0.6);
+    }
+
+    /* Playlist Section */
+    .playlist-section {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      padding: 18px 16px;
+      backdrop-filter: blur(16px);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .section-title h3 {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-sub);
+      letter-spacing: 1px;
+    }
+
+    .select-folder-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: rgba(127, 82, 255, 0.15);
+      border: 1px solid rgba(127, 82, 255, 0.3);
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #D8B4FE;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .select-folder-chip:hover {
+      background: rgba(127, 82, 255, 0.3);
+      color: var(--text-main);
+    }
+
+    .playlist-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 280px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .playlist-list::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .playlist-list::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+    }
+
+    .playlist-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .playlist-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .playlist-item.active {
+      background: rgba(127, 82, 255, 0.2);
+      border-color: rgba(127, 82, 255, 0.4);
+    }
+
+    .item-icon {
+      color: var(--text-sub);
+      display: flex;
+      align-items: center;
+    }
+
+    .playlist-item.active .item-icon {
+      color: var(--accent-color);
+    }
+
+    .item-meta {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .item-title {
+      font-size: 0.88rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .item-artist {
+      font-size: 0.75rem;
+      color: var(--text-sub);
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--text-sub);
+      font-size: 0.85rem;
+      padding: 24px 12px;
+      line-height: 1.5;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .icon-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-main);
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+
+    .icon-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    /* Modal Overlay */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
+
+    .modal-content {
+      background: #151524;
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      width: 100%;
+      max-width: 420px;
+      padding: 20px;
+      box-shadow: var(--glass-shadow);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .modal-header h3 {
+      font-size: 1.1rem;
+    }
+
+    .modal-body {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .setting-item {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .setting-item label {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .setting-desc {
+      font-size: 0.78rem;
+      color: var(--text-sub);
+      line-height: 1.4;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    .btn {
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      text-align: center;
+    }
+
+    .primary-btn {
+      background: var(--accent-gradient);
+      color: var(--text-main);
+    }
+
+    .secondary-btn {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-main);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Top Header -->
+    <header class="top-header">
+      <h1>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M9 18V5l12-2v13"></path>
+          <circle cx="6" cy="18" r="3"></circle>
+          <circle cx="18" cy="16" r="3"></circle>
+        </svg>
+        <span>MP3 Player</span>
+      </h1>
+      <div class="header-nav">
+        <a href="index.html" class="nav-link">🏠 Home</a>
+        <a href="setting.html" class="nav-link">⚙️ Settings</a>
+        <button id="settingsBtn" class="icon-btn" title="Folder Settings">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main View -->
+    <main class="main-view">
+      <!-- Player Visualizer Card -->
+      <section class="player-card">
+        <div class="art-visualizer">
+          <div class="glow-ring"></div>
+          <div class="art-circle" id="artCircle">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 18V5l12-2v13"></path>
+              <circle cx="6" cy="18" r="3"></circle>
+              <circle cx="18" cy="16" r="3"></circle>
+            </svg>
+          </div>
+        </div>
+
+        <div class="track-info">
+          <h2 id="trackTitle">Select audio folder or file</h2>
+          <p id="trackArtist">Bindsol Audio Player</p>
+        </div>
+
+        <!-- Progress Seekbar -->
+        <div class="seekbar-container">
+          <input type="range" id="seekBar" min="0" max="100" value="0" step="0.1">
+          <div class="time-display">
+            <span id="currentTime">0:00</span>
+            <span id="durationTime">0:00</span>
+          </div>
+        </div>
+
+        <!-- Audio Player Controls -->
+        <div class="controls-row">
+          <button id="prevBtn" class="ctrl-btn secondary" title="Previous Track">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="19 20 9 12 19 4 19 20"></polygon>
+              <line x1="5" y1="19" x2="5" y2="5" stroke="currentColor" stroke-width="3"></line>
+            </svg>
+          </button>
+
+          <button id="playPauseBtn" class="ctrl-btn primary" title="Play / Pause">
+            <svg id="playIcon" width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <svg id="pauseIcon" class="hidden" width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="6" y="4" width="4" height="16"></rect>
+              <rect x="14" y="4" width="4" height="16"></rect>
+            </svg>
+          </button>
+
+          <button id="nextBtn" class="ctrl-btn secondary" title="Next Track">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="5 4 15 12 5 20 5 4"></polygon>
+              <line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="3"></line>
+            </svg>
+          </button>
+        </div>
+      </section>
+
+      <!-- Playlist Section -->
+      <section class="playlist-section">
+        <div class="section-title">
+          <h3>AUDIO TRACKS (<span id="trackCount">0</span>)</h3>
+          <label for="folderInput" class="select-folder-chip">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <span>Scan Folder</span>
+          </label>
+          <input type="file" id="folderInput" webkitdirectory directory multiple accept="audio/*,.mp3,.m4a,.wav,.flac,.aac" class="hidden">
+        </div>
+
+        <ul id="playlistView" class="playlist-list">
+          <li class="empty-state">
+            No audio files loaded yet.<br>Tap <strong>Scan Folder</strong> to select your local MP3 folder!
+          </li>
+        </ul>
+      </section>
+    </main>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal-overlay hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Application Settings</h3>
+          <button id="closeSettingsBtn" class="icon-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="setting-item">
+            <label>Music Storage Folder</label>
+            <p class="setting-desc">Configure directory or select audio files directly from your storage.</p>
+            <div class="btn-group">
+              <label for="modalFolderInput" class="btn primary-btn">
+                Select Folder
+              </label>
+              <input type="file" id="modalFolderInput" webkitdirectory directory multiple accept="audio/*,.mp3,.m4a,.wav,.flac,.aac" class="hidden">
+
+              <label for="modalFileInput" class="btn secondary-btn">
+                Select Audio Files
+              </label>
+              <input type="file" id="modalFileInput" multiple accept="audio/*,.mp3,.m4a,.wav,.flac,.aac" class="hidden">
+            </div>
+          </div>
+
+          <div class="setting-item">
+            <label>Background Playback & Lock Screen</label>
+            <p class="setting-desc">Uses Web Media Session API to support playback control from notification center and lock screen.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <audio id="audioEngine" preload="metadata"></audio>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const audioEngine = document.getElementById('audioEngine');
+      const playPauseBtn = document.getElementById('playPauseBtn');
+      const playIcon = document.getElementById('playIcon');
+      const pauseIcon = document.getElementById('pauseIcon');
+      const prevBtn = document.getElementById('prevBtn');
+      const nextBtn = document.getElementById('nextBtn');
+      const seekBar = document.getElementById('seekBar');
+      const currentTimeEl = document.getElementById('currentTime');
+      const durationTimeEl = document.getElementById('durationTime');
+      const trackTitleEl = document.getElementById('trackTitle');
+      const trackArtistEl = document.getElementById('trackArtist');
+      const trackCountEl = document.getElementById('trackCount');
+      const playlistView = document.getElementById('playlistView');
+      const playerCard = document.querySelector('.player-card');
+
+      const folderInput = document.getElementById('folderInput');
+      const modalFolderInput = document.getElementById('modalFolderInput');
+      const modalFileInput = document.getElementById('modalFileInput');
+      const settingsBtn = document.getElementById('settingsBtn');
+      const settingsModal = document.getElementById('settingsModal');
+      const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+
+      let playlist = [];
+      let currentIndex = -1;
+
+      // 1. Settings Modal
+      settingsBtn.addEventListener('click', () => settingsModal.classList.remove('hidden'));
+      closeSettingsBtn.addEventListener('click', () => settingsModal.classList.add('hidden'));
+
+      // 2. Folder & File Handlers
+      folderInput.addEventListener('change', handleFileInput);
+      modalFolderInput.addEventListener('change', (e) => {
+        handleFileInput(e);
+        settingsModal.classList.add('hidden');
+      });
+      modalFileInput.addEventListener('change', (e) => {
+        handleFileInput(e);
+        settingsModal.classList.add('hidden');
+      });
+
+      function handleFileInput(event) {
+        const files = Array.from(event.target.files);
+        const audioFiles = files.filter(file => {
+          const type = file.type || '';
+          const name = file.name.toLowerCase();
+          return type.startsWith('audio/') || name.endsWith('.mp3') || name.endsWith('.m4a') || name.endsWith('.wav') || name.endsWith('.flac') || name.endsWith('.aac') || name.endsWith('.ogg');
+        });
+
+        if (audioFiles.length === 0) {
+          alert('No MP3 or supported audio files found in selection.');
+          return;
+        }
+
+        playlist = audioFiles.map(file => ({
+          name: truncateText(file.name.replace(/\.[^/.]+$/, "")),
+          artist: 'Local Audio Track',
+          url: URL.createObjectURL(file)
+        }));
+
+        updatePlaylistView();
+      }
+
+      function truncateText(str) {
+        if (!str) return '';
+        if (str.length > 20) {
+          return str.substring(0, 16) + '...';
+        }
+        return str;
+      }
+
+      // Auto-load from Server API or window.collageFiles
+      async function autoLoadServerTracks() {
+        let trackUrls = [];
+        try {
+          const res = await fetch('/api/files?folder=music');
+          if (res.ok) {
+            trackUrls = await res.json();
+          }
+        } catch (e) {
+          console.warn('Backend API endpoint not available, falling back to files.js');
+        }
+
+        if ((!trackUrls || trackUrls.length === 0) && window.collageFiles && window.collageFiles.music) {
+          trackUrls = window.collageFiles.music;
+        }
+
+        if (Array.isArray(trackUrls) && trackUrls.length > 0) {
+          playlist = trackUrls.map(url => {
+            const filename = url.split('/').pop().replace(/\.[^/.]+$/, "");
+            return {
+              name: truncateText(filename),
+              artist: 'Bindsol Media',
+              url: url
+            };
+          });
+          updatePlaylistView();
+        }
+      }
+
+      function updatePlaylistView() {
+        trackCountEl.textContent = playlist.length;
+        renderPlaylist();
+        if (playlist.length > 0 && currentIndex === -1) {
+          loadTrack(0);
+        }
+      }
+
+      function renderPlaylist() {
+        playlistView.innerHTML = '';
+        if (playlist.length === 0) {
+          playlistView.innerHTML = `
+            <li class="empty-state">
+              No audio files loaded yet.<br>Tap <strong>Scan Folder</strong> to pick your MP3 music folder!
+            </li>
+          `;
+          return;
+        }
+
+        playlist.forEach((track, index) => {
+          const li = document.createElement('li');
+          li.className = `playlist-item ${index === currentIndex ? 'active' : ''}`;
+          li.innerHTML = `
+            <div class="item-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 18V5l12-2v13"></path>
+                <circle cx="6" cy="18" r="3"></circle>
+                <circle cx="18" cy="16" r="3"></circle>
+              </svg>
+            </div>
+            <div class="item-meta">
+              <div class="item-title">${escapeHtml(track.name)}</div>
+              <div class="item-artist">${escapeHtml(track.artist)}</div>
+            </div>
+          `;
+          li.addEventListener('click', () => {
+            loadTrack(index);
+            playAudio();
+          });
+          playlistView.appendChild(li);
+        });
+      }
+
+      function escapeHtml(str) {
+        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      }
+
+      function loadTrack(index) {
+        if (index < 0 || index >= playlist.length) return;
+        currentIndex = index;
+        const track = playlist[currentIndex];
+
+        audioEngine.src = track.url;
+        trackTitleEl.textContent = track.name;
+        trackArtistEl.textContent = track.artist;
+
+        renderPlaylist();
+        setupMediaSession(track);
+      }
+
+      function setupMediaSession(track) {
+        if ('mediaSession' in navigator) {
+          navigator.mediaSession.metadata = new MediaMetadata({
+            title: track.name,
+            artist: track.artist,
+            album: 'Bindsol Audio Player'
+          });
+
+          navigator.mediaSession.setActionHandler('play', playAudio);
+          navigator.mediaSession.setActionHandler('pause', pauseAudio);
+          navigator.mediaSession.setActionHandler('previoustrack', playPrev);
+          navigator.mediaSession.setActionHandler('nexttrack', playNext);
+        }
+      }
+
+      function playAudio() {
+        if (currentIndex === -1 && playlist.length > 0) {
+          loadTrack(0);
+        }
+        audioEngine.play().then(() => {
+          playIcon.classList.add('hidden');
+          pauseIcon.classList.remove('hidden');
+          playerCard.classList.add('playing');
+          if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+        }).catch(err => console.log('Playback error:', err));
+      }
+
+      function pauseAudio() {
+        audioEngine.pause();
+        playIcon.classList.remove('hidden');
+        pauseIcon.classList.add('hidden');
+        playerCard.classList.remove('playing');
+        if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
+      }
+
+      function togglePlay() {
+        if (audioEngine.paused) {
+          playAudio();
+        } else {
+          pauseAudio();
+        }
+      }
+
+      function playNext() {
+        if (playlist.length === 0) return;
+        let nextIdx = currentIndex + 1;
+        if (nextIdx >= playlist.length) nextIdx = 0;
+        loadTrack(nextIdx);
+        playAudio();
+      }
+
+      function playPrev() {
+        if (playlist.length === 0) return;
+        let prevIdx = currentIndex - 1;
+        if (prevIdx < 0) prevIdx = playlist.length - 1;
+        loadTrack(prevIdx);
+        playAudio();
+      }
+
+      playPauseBtn.addEventListener('click', togglePlay);
+      nextBtn.addEventListener('click', playNext);
+      prevBtn.addEventListener('click', playPrev);
+      audioEngine.addEventListener('ended', playNext);
+
+      audioEngine.addEventListener('timeupdate', () => {
+        if (!isNaN(audioEngine.duration) && audioEngine.duration > 0) {
+          const pct = (audioEngine.currentTime / audioEngine.duration) * 100;
+          seekBar.value = pct;
+          currentTimeEl.textContent = formatTime(audioEngine.currentTime);
+          durationTimeEl.textContent = formatTime(audioEngine.duration);
+        }
+      });
+
+      seekBar.addEventListener('input', () => {
+        if (!isNaN(audioEngine.duration)) {
+          const seekTo = (seekBar.value / 100) * audioEngine.duration;
+          audioEngine.currentTime = seekTo;
+        }
+      });
+
+      function formatTime(secs) {
+        const m = Math.floor(secs / 60);
+        const s = Math.floor(secs % 60);
+        return `${m}:${s < 10 ? '0' : ''}${s}`;
+      }
+
+      // Initial auto load
+      autoLoadServerTracks();
+    });
+  </script>
+</body>
+</html>

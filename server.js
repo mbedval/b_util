@@ -72,7 +72,8 @@ app.get('/api/files', (req, res) => {
 
   const IMAGE_EXTS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'];
   const VIDEO_EXTS = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv'];
-  const ALL_EXTS = [...IMAGE_EXTS, ...VIDEO_EXTS];
+  const AUDIO_EXTS = ['.mp3', '.m4a', '.wav', '.flac', '.aac', '.ogg'];
+  const ALL_EXTS = [...IMAGE_EXTS, ...VIDEO_EXTS, ...AUDIO_EXTS];
 
   try {
     const files = fs.readdirSync(resolvedDir)
@@ -111,7 +112,8 @@ app.get('/api/files/scan', (req, res) => {
 
   const IMAGE_EXTS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'];
   const VIDEO_EXTS = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv'];
-  const ALL_EXTS = [...IMAGE_EXTS, ...VIDEO_EXTS];
+  const AUDIO_EXTS = ['.mp3', '.m4a', '.wav', '.flac', '.aac', '.ogg'];
+  const ALL_EXTS = [...IMAGE_EXTS, ...VIDEO_EXTS, ...AUDIO_EXTS];
 
   try {
     const files = fs.readdirSync(resolved)

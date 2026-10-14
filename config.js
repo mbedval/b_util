@@ -34,31 +34,22 @@ const config = {
             parent: "input",
             type: "image"
         },
-        "playingCard": {
-            folder: "wallpapers",
-            parent: "input",
-            type: "image"
-        },
-        "styleMorph": {
-            folder: "gif2video",
-            parent: "input",
-            type: "image"
-        },
-        "stockCall": {
-            folder: "stockcall",
-            parent: "assets",
-            type: "image"
-        },
         "chatStory": {
             folder: "chatstory",
             parent: "input",
             type: "json"
+        },
+        "musicPlayer": {
+            folder: "music",
+            parent: "input",
+            type: "audio"
         }
     },
     extensions: {
         video: ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv'],
         image: ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'],
-        json: ['.json']
+        json: ['.json'],
+        audio: ['.mp3', '.m4a', '.wav', '.flac', '.aac', '.ogg']
     }
 };
 

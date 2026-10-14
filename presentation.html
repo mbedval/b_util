@@ -261,6 +261,12 @@
     </style>
 </head>
 <body>
+    <div style="position: fixed; top: 16px; left: 16px; z-index: 1000; display: flex; gap: 10px; align-items: center;">
+        <a href="index.html" style="color: #fff; text-decoration: none; font-weight: 600; font-size: 0.85rem; padding: 8px 16px; background: rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; backdrop-filter: blur(8px); display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); transition: all 0.2s ease;">Dashboard</a>
+        <button id="fullscreenBtn" onclick="toggleFullScreen()" style="color: #fff; text-decoration: none; font-weight: 600; font-size: 0.85rem; padding: 8px 16px; background: rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; backdrop-filter: blur(8px); display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); cursor: pointer; transition: all 0.2s ease;" title="Toggle Fullscreen Mode (Press F or Double-Click)">
+            <span id="fullscreenIcon">⛶</span> <span id="fullscreenLabel">Fullscreen</span>
+        </button>
+    </div>
     <div class="presentation-container">
         <img class="presentation-image" id="presentationImage" src="" alt="Presentation">
         <div class="no-content" id="noContent">Add content to wallpapers folder</div>
@@ -482,14 +488,70 @@
             }, 500);
         }
 
+        // Toggle Fullscreen Functionality
+        function toggleFullScreen() {
+            if (!document.fullscreenElement && !document.mozFullScreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
+                if (document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen();
+                } else if (document.documentElement.msRequestFullscreen) {
+                    document.documentElement.msRequestFullscreen();
+                } else if (document.documentElement.mozRequestFullScreen) {
+                    document.documentElement.mozRequestFullScreen();
+                } else if (document.documentElement.webkitRequestFullscreen) {
+                    document.documentElement.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                } else if (document.mozCancelFullScreen) {
+                    document.mozCancelFullScreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                }
+            }
+        }
+
+        function updateFullscreenButtonState() {
+            const isFull = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+            const btn = document.getElementById('fullscreenBtn');
+            const icon = document.getElementById('fullscreenIcon');
+            const label = document.getElementById('fullscreenLabel');
+            if (btn && icon && label) {
+                if (isFull) {
+                    icon.innerText = '🗗';
+                    label.innerText = 'Exit Fullscreen';
+                    btn.style.borderColor = 'rgba(56, 189, 248, 0.6)';
+                    btn.style.color = '#38bdf8';
+                } else {
+                    icon.innerText = '⛶';
+                    label.innerText = 'Fullscreen';
+                    btn.style.borderColor = 'rgba(255,255,255,0.2)';
+                    btn.style.color = '#fff';
+                }
+            }
+        }
+
+        ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(evt => {
+            document.addEventListener(evt, updateFullscreenButtonState);
+        });
+
         // Click handler for pause/resume
         document.getElementById('presentationImage').addEventListener('click', () => {
             togglePause();
         });
 
-        // Keyboard event handler (ESC and Arrow keys)
+        // Double click anywhere on container to toggle Fullscreen
+        document.querySelector('.presentation-container').addEventListener('dblclick', () => {
+            toggleFullScreen();
+        });
+
+        // Keyboard event handler (ESC, F, and Arrow keys)
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
+            if (e.key === 'f' || e.key === 'F') {
+                toggleFullScreen();
+            } else if (e.key === 'Escape') {
                 showThankYou();
             } else if (imagePool.length > 0) {
                 if (e.key === 'ArrowLeft') {

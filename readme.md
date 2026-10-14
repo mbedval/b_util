@@ -190,68 +190,6 @@ A smartphone mockup simulation running a WhatsApp/Telegram-style chat app. It lo
 - Reads script from `assets/chatstory/story.json`.
 - Displays images from `assets/chatstory/images/`.
 
-### 🐦 Custom Post Generator (twitter.html)
-
-An interactive dashboard mockup mimicking X/Twitter post cards, supporting real-time text style compilation for customized highlights, strikethroughs, and spoiler masks.
-
-**Features:**
-- **Mobile Mockup Frame**: Displays the output post inside a high-fidelity smartphone device screenshot container with dynamic mobile status bar indicators and a home swipe indicator.
-- **Scrollable Feed context**: Renders a vertical scroll feed context with dummy posts from Bob and Charlie. These surrounding posts are styled with a privacy blur filter, keeping focus on the active editable card.
-- **Tag User handle**: Renamed from general highlighter; formats handle names (like `@mbedva`) as interactive, blue bold user profiles.
-- **Yellow Highlighter**: High-impact highlighter mapping that paints text in a bright yellow background and enlarges the font size to 1.5x of the body text flow.
-- **Spoiler Mask (< 21%)**: Centers mathematical asterisk code masks strictly capped below 21% of the total string length, offering a dynamic click-to-reveal toggle.
-- **Interactive Metrics**: Real-time reactive counters for comments, likes, reposts, and bookmarks.
-- **Presets Panel**: Quick-fill buttons for test data.
-
-**How to Use:**
-1. Open `twitter.html` in a browser.
-2. Edit the Name and Handle fields on the left.
-3. Type a message in the textarea, or click one of the pre-fill preset buttons.
-4. Input custom highlight, strike, and mask phrases.
-5. Click on the blacked-out spoiler blocks inside the card preview to reveal the words.
-6. Toggle theme buttons at the top right of the card to preview styling differences.
-
-### 📈 Stock Call Generator (StockCall.html)
-
-An interactive tool to generate Gen Z and Pop Art styled stock calls, overlaying custom alert boxes (CMP, SL, Target, catalysts, risks) on top of the bullish background (`assets/resources/callbg.png`).
-
-**Features:**
-- **Custom Alert details**: Edit Stock Symbol, Current Market Price, Target Price, Stop Loss, and custom sticker badges.
-- **Why Buy & Risk Check Bullets**: Add custom catalyst reasons and risk checks as multiline inputs (dynamically parsed to bullet items).
-- **Layout & Location Sliders**: Precise slider controls to move the alert card horizontally/vertically (X and Y offsets) and adjust its width and font scale dynamically to fit in the free green area of the background.
-- **Neo-Brutalist & Pop Art Themes**: Instantly toggle between visual styling presets (Yellow Pop, Neon Pink, Cyber Punk, Minimal).
-- **High-DPI Image Downloader**: Exports the final image at double resolution (`pixelRatio: 2`) using `html-to-image`, producing sharp PNG files of the poster content.
-
-**How to Use:**
-1. Open `StockCall.html` in a browser.
-2. Enter the stock details, catalysts, and risks, or choose a quick pre-fill preset (e.g. $NVDA Breakout).
-3. Select a style theme.
-4. Adjust X/Y location and width sliders to place the stock alert card neatly in the left free area of the image.
-5. Click **Export Stock Call Image** to download the high-quality PNG.
-
-### 🎞️ Style Morph Animator (image2video.html)
-
-A high-speed sequential image-to-video animator that plays a series of images (e.g. style-transfer frames) from the `assets/gif2video` folder in sequence, creating a smooth morphing animation.
-
-**Features:**
-- **Zero-Flicker Playback**: Preloads and stacks all frames in the browser DOM to guarantee absolutely smooth, hardware-accelerated playback.
-- **Loop Modes**: Support for Continuous Loop, Ping-Pong (Bounce ⇄), and Play Once.
-- **Speed & Control**: Adjustable Frame Rate (FPS) slider from 1 FPS to 60 FPS, and timeline scrubbing slider.
-- **Interactive Playlist**: Sidebar displaying thumbnails of all frames, allowing you to select/deselect specific frames to include in the animation, and reorder the sequence manually.
-- **Multiple Themes & Backgrounds**: Customize page background styles (Dark, Light, Checkerboard) and themes (Warm Dark, Cyberpunk, Forest, Monochrome).
-- **Keyboard Shortcuts**: Spacebar for play/pause, Arrow keys for navigation/speed, and Number keys 1-9 to jump directly to frames.
-
-**How to Use:**
-1. Open `image2video.html` in a browser.
-2. Wait for the preloader to cache all images.
-3. Use the control bar to adjust the FPS, timeline slider, or loop style.
-4. Click on the viewport to play/pause.
-5. In the sidebar, toggle checkboxes to exclude frames, or use up/down arrows to reorder.
-
-**File Structure:**
-- Reads files from `assets/gif2video/` folder
-- Supported image formats: `.png`, `.jpg`, `.jpeg`, `.webp`, `.gif`, etc.
-
 ## Shared Features
 
 Both applications include:
@@ -295,9 +233,7 @@ collage/
 ├── Television.html     # Retro CRT television application
 ├── mobile.html         # Mobile layout simulator application
 ├── Whatsapp.html       # Chat story simulator application
-├── twitter.html        # Custom post generator application
-├── StockCall.html      # Pop Art & Gen Z styled stock call generator
-├── image2video.html    # Style morph animator application
+├── musicplayer.html    # MP3 Music Player application
 ├── presentation.html   # Presentation slideshow application
 ├── diagonal.html       # Diagonal split-screen application
 ├── readme.md           # This documentation file
@@ -309,7 +245,6 @@ collage/
     ├── animation/      # GIF and WebP animation files
     ├── videos/         # MP4 and WebM video files
     ├── wallpapers/     # Slideshow and wallpaper image files
-    ├── gif2video/      # Sequence of style-transfer image files
     └── chatstory/      # JSON dialog file and message images
 ```
 

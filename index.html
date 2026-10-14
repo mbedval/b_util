@@ -141,8 +141,8 @@
             position: relative;
             background-color: var(--win-blue);
             border: 2px solid transparent;
-            min-height: 130px;
-            padding: 16px;
+            min-height: 85px;
+            padding: 12px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -181,7 +181,7 @@
         }
 
         .app-card h3 {
-            font-size: 1.05rem;
+            font-size: 0.98rem;
             font-weight: 600;
             color: #ffffff;
             margin: 0;
@@ -191,14 +191,14 @@
         }
 
         .app-card p {
-            font-size: 0.78rem;
+            font-size: 0.75rem;
             color: rgba(255, 255, 255, 0.9);
-            line-height: 1.35;
-            margin-top: 8px;
+            line-height: 1.25;
+            margin-top: 6px;
             z-index: 5;
             text-shadow: 0 1px 2px rgba(0,0,0,0.5);
             display: -webkit-box;
-            -webkit-line-clamp: 3;
+            -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
@@ -250,24 +250,9 @@
             <div class="category-block" id="cat-social">
                 <h2 class="category-title">1) Social Media Post</h2>
                 <div class="apps-grid">
-                    <div class="app-card" data-app="twitter" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/chat.jpg');" onclick="window.open('twitter.html', '_blank')">
-                        <h3>🐦 Twitter-X Post</h3>
-                        <p>Interactive dashboard mocking up X/Twitter post cards. Supports real-time text parsing that applies substring highlights, strikethroughs, and click-to-reveal blacked-out spoiler masks. Features customizable Light/Dim/Dark themes and live metric counters.</p>
-                    </div>
-                    
-                    <div class="app-card" data-app="stockCall" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/callbg.png');" onclick="window.open('StockCall.html', '_blank')">
-                        <h3>📈 Insta BSA-Call</h3>
-                        <p>Pop Art & Gen Z styled stock alert poster creator. Overlays customizable tickers, prices, and catalyst/risk check bullets onto the bullish chart canvas with location/scale sliders and high-DPI image downloads.</p>
-                    </div>
-
-                    <div class="app-card" data-app="chatStory" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/chat.jpg');" onclick="window.open('Whatsapp.html', '_blank')">
+                    <div class="app-card" data-app="chatStory" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/chat.jpg');" onclick="window.location.href='Whatsapp.html'">
                         <h3>💬 Chat Story Simulator</h3>
-                        <p>A smartphone mockup simulation running a WhatsApp-style chat app. Dynamically parses input/chatstory/story.json to replay conversations with typing indicator delays, checkmark receipts, and attachment images. Includes click-to-zoom image lightboxes and interactive send inputs that trigger automated chatbot responses.</p>
-                    </div>
-
-                    <div class="app-card" data-app="styleMorph" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/morph.jpg');" onclick="window.open('image2video.html', '_blank')">
-                        <h3>🎨 Style Morph Animator</h3>
-                        <p>High-speed sequential image-to-video player animating style-transfer frames from assets/gif2video folder. Includes frame-by-frame controls, speed control, loop modes, frame selection, and theme customization.</p>
+                        <p>WhatsApp-style chat story simulator & replay.</p>
                     </div>
                 </div>
             </div>
@@ -276,38 +261,34 @@
             <div class="category-block" id="cat-gallery">
                 <h2 class="category-title">2) Gallery</h2>
                 <div class="apps-grid">
-                    <div class="app-card" data-app="cctv" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/cctv.jpg');" onclick="window.open('CCTV.html', '_blank')">
+                    <div class="app-card" data-app="cctv" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/cctv.jpg');" onclick="window.location.href='CCTV.html'">
                         <h3>📡 CCTV Control Center</h3>
-                        <p>Security control room dashboard displaying active video streams as CCTV feeds. Features adjustable grid layouts (2x2, 3x3, 4x4, 1+5 Split), retro CRT screen filters, automated stream rotation, live event logs, click-to-audio selection, and double-click client fullscreen overlay.</p>
+                        <p>Security control room CCTV video feed dashboard.</p>
                     </div>
 
-                    <div class="app-card" data-app="videoViewer" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/collage.jpg');" onclick="window.open('video.html', '_blank')">
+                    <div class="app-card" data-app="videoViewer" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/collage.jpg');" onclick="window.location.href='video.html'">
                         <h3>🎞️ Video Viewer</h3>
-                        <p>Video collage with full-screen playback, play/pause controls, animated border effects, and shuffle through 66 video files with maintained playback state.</p>
+                        <p>Interactive video collage with full-screen playback.</p>
                     </div>
 
-                    <div class="app-card" data-app="animationGallery" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/collage.jpg');" onclick="window.open('animation.html', '_blank')">
+                    <div class="app-card" data-app="animationGallery" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/collage.jpg');" onclick="window.location.href='animation.html'">
                         <h3>🖼️ Animation Gallery</h3>
-                        <p>Dynamic dashboard for animated content with adjustable grid layouts (2x2, 3x3, 4x4, Masonry). Features cyberpunk theme switching, polaroid frame styles, auto-shuffle timer, and full-screen preview modes.</p>
+                        <p>Dynamic grid gallery for animated content.</p>
                     </div>
 
-                    <div class="app-card" data-app="presentation" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/collage.jpg');" onclick="window.open('presentation.html', '_blank')">
+                    <div class="app-card" data-app="presentation" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/collage.jpg');" onclick="window.location.href='presentation.html'">
                         <h3>🖼️ Presentation</h3>
-                        <p>Full-screen slideshow presentation with auto-shuffle images, click to pause/resume, and ESC key to show animated Thank You message.</p>
+                        <p>Full-screen slideshow presentation manager.</p>
                     </div>
 
-                    <div class="app-card" data-app="playingCard" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/morph.jpg');" onclick="window.open('playingcard.html', '_blank')">
-                        <h3>🎴 Playing Card Viewer</h3>
-                        <p>Rummy table styled image viewer where wallpaper images are shuffled like playing cards and revealed 1-by-1 with card corner suit details.</p>
-                    </div>
-
-                    <div class="app-card" data-app="mobileSimulator" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/mobile.jpg');" onclick="window.open('reelviewer.html', '_blank')">
+                    <div class="app-card" data-app="mobileSimulator" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/mobile.jpg');" onclick="window.location.href='reelviewer.html'">
                         <h3>📱 Reel Viewer</h3>
-                        <p>A hybrid smartphone mockup (blending features of iOS and Android). Includes an interactive lock screen, home app launcher, and video gallery. Double-clicking a grid stream launches a TikTok/Reels vertical feed equipped with heart burst visual reactions, spinning vinyl soundtracks, and gesture controls.</p>
+                        <p>Smartphone mockup & TikTok/Reels feed simulator.</p>
                     </div>
-                    <div class="app-card" data-app="maskedCamera" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/mobile.jpg');" onclick="window.open('maskedCamera.html', '_blank')">
+
+                    <div class="app-card" data-app="maskedCamera" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/mobile.jpg');" onclick="window.location.href='maskedCamera.html'">
                         <h3>🎭 Masked Camera</h3>
-                        <p>Web camera client with real-time face landmark tracking and partial face masking filters. Includes filter toggling (ON/OFF), superhero/privacy/cyber/gold filters, Next/Previous controls, scale tweaks, and snapshot downloads.</p>
+                        <p>Web camera client with real-time face masking filters.</p>
                     </div>
                 </div>
             </div>
@@ -316,19 +297,24 @@
             <div class="category-block" id="cat-online">
                 <h2 class="category-title">3) Online</h2>
                 <div class="apps-grid">
-                    <div class="app-card" data-app="youtube" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/tv.jpg');" onclick="window.open('youtube.html', '_blank')">
+                    <div class="app-card" data-app="youtube" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/tv.jpg');" onclick="window.location.href='youtube.html'">
                         <h3>🔴 YouTube</h3>
-                        <p>Interactive 2-view YouTube live streams receiver. Auto-extracts YouTube video IDs, dynamically scales stream resolution (480p when small to save data, up to 720p HD when focused), with click-to-audio routing controls.</p>
+                        <p>Interactive dual YouTube live stream receiver.</p>
                     </div>
 
-                    <div class="app-card" data-app="retroTV" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/bindsol.png');" onclick="window.open('television.html', '_blank')">
+                    <div class="app-card" data-app="retroTV" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/bindsol.png');" onclick="window.location.href='television.html'">
                         <h3>📺 Live Television</h3>
-                        <p>Vintage wood-cabinet CRT TV featuring Bindsol branding. Access categories (Business, News, Music, Lifestyle, English News, Gujarati News, Rajasthani) dynamically from a single config. Features viewport auto-scaling, channel cards strip, CRT screen filters, and scanlines.</p>
+                        <p>Vintage wood-cabinet CRT TV player.</p>
                     </div>
 
-                    <div class="app-card" data-app="iptv" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/cctv.jpg');" onclick="window.open('iptv.html', '_blank')">
+                    <div class="app-card" data-app="iptv" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/cctv.jpg');" onclick="window.location.href='iptv.html'">
                         <h3>📡 IP TV</h3>
-                        <p>Interactive 3-view live IPTV dashboard receiver. Configurable slots for HLS streams. Click a stream to expand to full viewport with live audio. Auto Cycle mode, CRT scanlines, preset finder and per-feed power controls.</p>
+                        <p>Interactive 3-view live IPTV stream receiver.</p>
+                    </div>
+
+                    <div class="app-card" data-app="musicPlayer" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 90%), url('assets/chat.jpg');" onclick="window.location.href='musicplayer.html'">
+                        <h3>🎵 MP3 Music Player</h3>
+                        <p>Dark glassmorphism audio player with background playback.</p>
                     </div>
                 </div>
             </div>

@@ -507,6 +507,7 @@
   <!-- Header -->
   <header>
     <div class="brand">
+      <a href="index.html" style="color: #fff; text-decoration: none; font-size: 0.85rem; font-weight: 600; padding: 6px 14px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; margin-right: 12px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s ease;">Dashboard</a>
       <div class="brand-icon">🎭</div>
       <div>
         <div class="brand-title">Masked Web Camera Client</div>
@@ -581,9 +582,9 @@
         <div class="panel-title">Filter Customization</div>
         <div class="control-label">
           <span>Scale</span>
-          <span id="opacityVal">100%</span>
+          <span id="opacityVal">40%</span>
         </div>
-        <input type="range" id="filterScale" min="50" max="200" value="100" oninput="updateFilterConfig()">
+        <input type="range" id="filterScale" min="10" max="200" value="40" oninput="updateFilterConfig()">
 
         <div class="control-label" style="margin-top: 10px;">
           <span>Horizontal Offset (X)</span>
@@ -629,6 +630,30 @@
         name: 'Venetian Superhero Mask',
         icon: '🦹',
         description: 'Classic sleek upper-face masquerade mask'
+      },
+      {
+        id: 'captain_america',
+        name: 'Captain America Cowl',
+        icon: '🛡️',
+        description: 'Vibranium navy blue helmet with star emblem & wing accents'
+      },
+      {
+        id: 'iron_man',
+        name: 'Iron Man Mark L Helmet',
+        icon: '🦾',
+        description: 'Metallic crimson & gold helmet with glowing arc eyes'
+      },
+      {
+        id: 'spider_man',
+        name: 'Spider-Man Web Mask',
+        icon: '🕷️',
+        description: 'Vibrant red webbed cowl with animated eye blinks'
+      },
+      {
+        id: 'hulk',
+        name: 'Incredible Hulk Smash',
+        icon: '🟢',
+        description: 'Gamma green enraged brow, heavy jaw & radioactive aura'
       },
       {
         id: 'privacy',
@@ -680,6 +705,7 @@
     // Initialize application
     window.addEventListener('DOMContentLoaded', async () => {
       renderFilterGrid();
+      updateFilterConfig();
       await setupMediaPipe();
       await initWebcam();
     });
@@ -863,6 +889,9 @@
         } else {
           renderFallbackFaceFilter();
         }
+
+        // Draw themed camera border frame to complement active filter
+        drawFilterBorderFrame(FILTERS[currentFilterIndex].id, canvasElement.width, canvasElement.height);
       }
 
       requestAnimationFrame(renderLoop);
@@ -911,14 +940,62 @@
       const eyeCenterX = (pLeft.x + pRight.x) / 2 + config.offsetX;
       const eyeCenterY = (pLeft.y + pRight.y) / 2 + config.offsetY;
 
+      // Real-time user eye blink detection using upper/lower eyelid landmarks
+      let leftBlinkFactor = 1.0;
+      let rightBlinkFactor = 1.0;
+      if (landmarks[159] && landmarks[145] && landmarks[386] && landmarks[374]) {
+        const leftH = Math.hypot((landmarks[159].x - landmarks[145].x) * w, (landmarks[159].y - landmarks[145].y) * h);
+        const rightH = Math.hypot((landmarks[386].x - landmarks[374].x) * w, (landmarks[386].y - landmarks[374].y) * h);
+        const normH = eyeDist * 0.22;
+        leftBlinkFactor = Math.max(0.12, Math.min(1.0, leftH / normH));
+        rightBlinkFactor = Math.max(0.12, Math.min(1.0, rightH / normH));
+      }
+
+      // Periodic superhero auto-blink cycle (blinks every ~3.2 seconds)
+      const nowSec = performance.now() / 1000;
+      const blinkCycle = nowSec % 3.2;
+      let autoBlinkFactor = 1.0;
+      if (blinkCycle < 0.22) {
+        autoBlinkFactor = 0.15 + 0.85 * Math.abs(Math.sin((blinkCycle / 0.22) * Math.PI));
+      }
+
+      const finalLeftBlink = Math.min(leftBlinkFactor, autoBlinkFactor);
+      const finalRightBlink = Math.min(rightBlinkFactor, autoBlinkFactor);
+
+      // Dynamic facial oval aspect scaling based on real face mesh landmarks (cheekbones 234/454 and forehead/chin 10/152)
+      let scaleX = config.scale;
+      let scaleY = config.scale;
+      if (landmarks[234] && landmarks[454] && landmarks[10] && landmarks[152]) {
+        const faceW = Math.hypot((landmarks[454].x - landmarks[234].x) * w, (landmarks[454].y - landmarks[234].y) * h);
+        const faceH = Math.hypot((landmarks[152].x - landmarks[10].x) * w, (landmarks[152].y - landmarks[10].y) * h);
+        if (eyeDist > 0) {
+          const normW = eyeDist * 2.3;
+          const normH = eyeDist * 2.7;
+          scaleX *= Math.max(0.8, Math.min(1.35, faceW / normW));
+          scaleY *= Math.max(0.8, Math.min(1.35, faceH / normH));
+        }
+      }
+
       canvasCtx.save();
       canvasCtx.translate(eyeCenterX, eyeCenterY);
       canvasCtx.rotate(eyeAngle);
-      canvasCtx.scale(config.scale, config.scale);
+      canvasCtx.scale(scaleX, scaleY);
 
       switch (current.id) {
         case 'superhero':
           drawSuperheroMask(eyeDist);
+          break;
+        case 'captain_america':
+          drawCaptainAmericaMask(eyeDist);
+          break;
+        case 'iron_man':
+          drawIronManMask(eyeDist);
+          break;
+        case 'spider_man':
+          drawSpiderManMask(eyeDist, finalLeftBlink, finalRightBlink);
+          break;
+        case 'hulk':
+          drawHulkMask(eyeDist);
           break;
         case 'privacy':
           drawPrivacyCensorBar(eyeDist);
@@ -949,6 +1026,14 @@
       const centerY = canvasElement.height / 2.3 + config.offsetY;
       const eyeDist = canvasElement.width * 0.22;
 
+      // Periodic hero auto-blink for fallback mode
+      const nowSec = performance.now() / 1000;
+      const blinkCycle = nowSec % 3.2;
+      let autoBlinkFactor = 1.0;
+      if (blinkCycle < 0.22) {
+        autoBlinkFactor = 0.15 + 0.85 * Math.abs(Math.sin((blinkCycle / 0.22) * Math.PI));
+      }
+
       canvasCtx.save();
       canvasCtx.translate(centerX, centerY);
       canvasCtx.scale(config.scale, config.scale);
@@ -956,6 +1041,18 @@
       switch (current.id) {
         case 'superhero':
           drawSuperheroMask(eyeDist);
+          break;
+        case 'captain_america':
+          drawCaptainAmericaMask(eyeDist);
+          break;
+        case 'iron_man':
+          drawIronManMask(eyeDist);
+          break;
+        case 'spider_man':
+          drawSpiderManMask(eyeDist, autoBlinkFactor, autoBlinkFactor);
+          break;
+        case 'hulk':
+          drawHulkMask(eyeDist);
           break;
         case 'privacy':
           drawPrivacyCensorBar(eyeDist);
@@ -975,6 +1072,566 @@
     }
 
     // Mask Rendering Primitives
+    function drawCaptainAmericaMask(eyeDist) {
+      const mw = eyeDist * 2.6;
+      const mh = eyeDist * 1.8;
+
+      canvasCtx.save();
+
+      // Metallic Navy Blue Cowl Helmet Base
+      const blueGrad = canvasCtx.createLinearGradient(-mw / 2, -mh / 2, mw / 2, mh / 2);
+      blueGrad.addColorStop(0, '#1e3a8a');
+      blueGrad.addColorStop(0.4, '#2563eb');
+      blueGrad.addColorStop(0.8, '#1d4ed8');
+      blueGrad.addColorStop(1, '#0f172a');
+
+      canvasCtx.fillStyle = blueGrad;
+      canvasCtx.strokeStyle = '#1e40af';
+      canvasCtx.lineWidth = 3;
+      canvasCtx.shadowColor = 'rgba(37, 99, 235, 0.4)';
+      canvasCtx.shadowBlur = 15;
+
+      // Metallic Navy Blue Cowl Helmet Base (Smooth Facial Oval Contour)
+      canvasCtx.beginPath();
+      canvasCtx.ellipse(0, -mh * 0.05, mw * 0.48, mh * 0.52, 0, 0, Math.PI * 2);
+      canvasCtx.fill();
+      canvasCtx.stroke();
+
+      // Forehead "A" Stencil Emblem
+      canvasCtx.fillStyle = '#ffffff';
+      canvasCtx.strokeStyle = '#cbd5e1';
+      canvasCtx.lineWidth = 2;
+      canvasCtx.shadowColor = '#ffffff';
+      canvasCtx.shadowBlur = 10;
+
+      canvasCtx.font = `bold ${Math.round(mh * 0.38)}px sans-serif`;
+      canvasCtx.textAlign = 'center';
+      canvasCtx.textBaseline = 'middle';
+      canvasCtx.fillText('A', 0, -mh * 0.26);
+
+      // Side Silver Wing Accents (Left & Right)
+      const drawWing = (isRight) => {
+        const dir = isRight ? 1 : -1;
+        canvasCtx.save();
+        canvasCtx.translate(dir * mw * 0.38, -mh * 0.18);
+        canvasCtx.scale(dir, 1);
+
+        const wingGrad = canvasCtx.createLinearGradient(0, 0, eyeDist * 0.3, 0);
+        wingGrad.addColorStop(0, '#ffffff');
+        wingGrad.addColorStop(1, '#94a3b8');
+
+        canvasCtx.fillStyle = wingGrad;
+        canvasCtx.beginPath();
+        canvasCtx.moveTo(0, 0);
+        canvasCtx.quadraticCurveTo(eyeDist * 0.25, -mh * 0.15, eyeDist * 0.35, -mh * 0.05);
+        canvasCtx.quadraticCurveTo(eyeDist * 0.2, mh * 0.05, 0, mh * 0.1);
+        canvasCtx.closePath();
+        canvasCtx.fill();
+
+        canvasCtx.restore();
+      };
+
+      drawWing(false);
+      drawWing(true);
+
+      // Eye Cutouts
+      canvasCtx.globalCompositeOperation = 'destination-out';
+      canvasCtx.beginPath();
+      canvasCtx.ellipse(-eyeDist * 0.45, 0, eyeDist * 0.26, eyeDist * 0.17, -0.1, 0, Math.PI * 2);
+      canvasCtx.fill();
+
+      canvasCtx.beginPath();
+      canvasCtx.ellipse(eyeDist * 0.45, 0, eyeDist * 0.26, eyeDist * 0.17, 0.1, 0, Math.PI * 2);
+      canvasCtx.fill();
+
+      canvasCtx.globalCompositeOperation = 'source-over';
+      canvasCtx.restore();
+    }
+
+    function drawHulkMask(eyeDist) {
+      const mw = eyeDist * 2.7;
+      const mh = eyeDist * 1.9;
+
+      canvasCtx.save();
+
+      // Gamma Green Angry Brow Ridge
+      const greenGrad = canvasCtx.createLinearGradient(0, -mh / 2, 0, mh / 2);
+      greenGrad.addColorStop(0, '#166534');
+      greenGrad.addColorStop(0.4, '#22c55e');
+      greenGrad.addColorStop(0.8, '#15803d');
+      greenGrad.addColorStop(1, '#14532d');
+
+      canvasCtx.fillStyle = greenGrad;
+      canvasCtx.strokeStyle = '#14532d';
+      canvasCtx.lineWidth = 3.5;
+      canvasCtx.shadowColor = 'rgba(34, 197, 94, 0.6)';
+      canvasCtx.shadowBlur = 18;
+
+      // Gamma Green Angry Brow Ridge (Smooth Facial Oval Contour)
+      canvasCtx.beginPath();
+      canvasCtx.ellipse(0, -mh * 0.04, mw * 0.49, mh * 0.52, 0, 0, Math.PI * 2);
+      canvasCtx.fill();
+      canvasCtx.stroke();
+
+      // Furrowed Angry Brow Creases
+      canvasCtx.strokeStyle = '#052e16';
+      canvasCtx.lineWidth = 3;
+      canvasCtx.beginPath();
+      canvasCtx.moveTo(-mw * 0.1, -mh * 0.2);
+      canvasCtx.lineTo(0, -mh * 0.05);
+      canvasCtx.lineTo(mw * 0.1, -mh * 0.2);
+      canvasCtx.moveTo(-mw * 0.4, -mh * 0.22);
+      canvasCtx.quadraticCurveTo(-mw * 0.2, -mh * 0.28, 0, -mh * 0.12);
+      canvasCtx.quadraticCurveTo(mw * 0.2, -mh * 0.28, mw * 0.4, -mh * 0.22);
+      canvasCtx.stroke();
+
+      // Jagged Dark Hulk Hair Spikes across top
+      canvasCtx.fillStyle = '#0f172a';
+      canvasCtx.shadowColor = '#000000';
+      canvasCtx.shadowBlur = 8;
+      canvasCtx.beginPath();
+      canvasCtx.moveTo(-mw * 0.45, -mh * 0.35);
+      const spikes = 9;
+      for (let i = 0; i <= spikes; i++) {
+        const x = -mw * 0.45 + (i * mw * 0.9) / spikes;
+        const spikeY = -mh * (0.45 + (i % 2 === 0 ? 0.18 : 0.08));
+        canvasCtx.lineTo(x, spikeY);
+      }
+      canvasCtx.lineTo(mw * 0.45, -mh * 0.35);
+      canvasCtx.closePath();
+      canvasCtx.fill();
+
+      // Eye Cutouts
+      canvasCtx.globalCompositeOperation = 'destination-out';
+      canvasCtx.beginPath();
+      canvasCtx.ellipse(-eyeDist * 0.45, 0, eyeDist * 0.25, eyeDist * 0.16, -0.15, 0, Math.PI * 2);
+      canvasCtx.fill();
+
+      canvasCtx.beginPath();
+      canvasCtx.ellipse(eyeDist * 0.45, 0, eyeDist * 0.25, eyeDist * 0.16, 0.15, 0, Math.PI * 2);
+      canvasCtx.fill();
+
+      canvasCtx.globalCompositeOperation = 'source-over';
+
+      // Enraged Green Eye Aura Outline
+      canvasCtx.strokeStyle = '#4ade80';
+      canvasCtx.lineWidth = 2;
+      canvasCtx.shadowColor = '#22c55e';
+      canvasCtx.shadowBlur = 12;
+      canvasCtx.beginPath();
+      canvasCtx.ellipse(-eyeDist * 0.45, 0, eyeDist * 0.27, eyeDist * 0.18, -0.15, 0, Math.PI * 2);
+      canvasCtx.stroke();
+      canvasCtx.beginPath();
+      canvasCtx.ellipse(eyeDist * 0.45, 0, eyeDist * 0.27, eyeDist * 0.18, 0.15, 0, Math.PI * 2);
+      canvasCtx.stroke();
+
+      canvasCtx.restore();
+    }
+
+    // Camera Viewport Theme Border Frame Renderer
+    function drawFilterBorderFrame(filterId, w, h) {
+      canvasCtx.save();
+
+      switch (filterId) {
+        case 'captain_america':
+          // Vibranium Shield Border Frame
+          canvasCtx.lineWidth = 12;
+          canvasCtx.strokeStyle = '#dc2626'; // Red outer ring
+          canvasCtx.strokeRect(6, 6, w - 12, h - 12);
+
+          canvasCtx.lineWidth = 6;
+          canvasCtx.strokeStyle = '#f8fafc'; // Silver middle ring
+          canvasCtx.strokeRect(15, 15, w - 30, h - 30);
+
+          canvasCtx.lineWidth = 6;
+          canvasCtx.strokeStyle = '#1e3a8a'; // Navy inner ring
+          canvasCtx.strokeRect(21, 21, w - 42, h - 42);
+
+          // 4 Corner Stars
+          canvasCtx.fillStyle = '#ffffff';
+          canvasCtx.shadowColor = '#ffffff';
+          canvasCtx.shadowBlur = 10;
+          canvasCtx.font = '22px sans-serif';
+          canvasCtx.fillText('★', 32, 44);
+          canvasCtx.fillText('★', w - 46, 44);
+          canvasCtx.fillText('★', 32, h - 28);
+          canvasCtx.fillText('★', w - 46, h - 28);
+          break;
+
+        case 'hulk':
+          // Gamma Radiation Toxic Border Frame
+          canvasCtx.lineWidth = 10;
+          canvasCtx.strokeStyle = '#22c55e';
+          canvasCtx.shadowColor = '#4ade80';
+          canvasCtx.shadowBlur = 20;
+          canvasCtx.strokeRect(10, 10, w - 20, h - 20);
+
+          // Gamma Corner Hazard Chevrons
+          canvasCtx.fillStyle = '#15803d';
+          const size = 45;
+          canvasCtx.fillRect(15, 15, size, 8);
+          canvasCtx.fillRect(15, 15, 8, size);
+          canvasCtx.fillRect(w - 15 - size, 15, size, 8);
+          canvasCtx.fillRect(w - 23, 15, 8, size);
+          canvasCtx.fillRect(15, h - 23, size, 8);
+          canvasCtx.fillRect(15, h - 15 - size, 8, size);
+          canvasCtx.fillRect(w - 15 - size, h - 23, size, 8);
+          canvasCtx.fillRect(w - 23, h - 15 - size, 8, size);
+          break;
+
+        case 'spider_man':
+          // Spider Web Corner Frames
+          canvasCtx.strokeStyle = '#ef4444';
+          canvasCtx.lineWidth = 2.5;
+          canvasCtx.shadowColor = '#dc2626';
+          canvasCtx.shadowBlur = 10;
+
+          const drawCornerWeb = (cx, cy, dirX, dirY) => {
+            const webRad = 70;
+            const lines = 4;
+            for (let i = 0; i <= lines; i++) {
+              const angle = (i * (Math.PI / 2)) / lines;
+              canvasCtx.beginPath();
+              canvasCtx.moveTo(cx, cy);
+              canvasCtx.lineTo(cx + dirX * Math.cos(angle) * webRad, cy + dirY * Math.sin(angle) * webRad);
+              canvasCtx.stroke();
+            }
+            [25, 50, 70].forEach(r => {
+              canvasCtx.beginPath();
+              canvasCtx.arc(cx, cy, r, 0, Math.PI / 2);
+              canvasCtx.stroke();
+            });
+          };
+
+          drawCornerWeb(0, 0, 1, 1);
+          drawCornerWeb(w, 0, -1, 1);
+          drawCornerWeb(0, h, 1, -1);
+          drawCornerWeb(w, h, -1, -1);
+
+          canvasCtx.strokeStyle = 'rgba(239, 68, 68, 0.8)';
+          canvasCtx.lineWidth = 4;
+          canvasCtx.strokeRect(6, 6, w - 12, h - 12);
+          break;
+
+        case 'iron_man':
+          // Stark Tech HUD Camera Frame
+          canvasCtx.strokeStyle = '#00f0ff';
+          canvasCtx.lineWidth = 2;
+          canvasCtx.shadowColor = '#00f0ff';
+          canvasCtx.shadowBlur = 12;
+          canvasCtx.strokeRect(15, 15, w - 30, h - 30);
+
+          // Gold/Red Tech Corner Bracket Overlays
+          canvasCtx.strokeStyle = '#fbbf24';
+          canvasCtx.lineWidth = 4;
+          const bracketLen = 40;
+          // TL
+          canvasCtx.beginPath(); canvasCtx.moveTo(15, 15 + bracketLen); canvasCtx.lineTo(15, 15); canvasCtx.lineTo(15 + bracketLen, 15); canvasCtx.stroke();
+          // TR
+          canvasCtx.beginPath(); canvasCtx.moveTo(w - 15 - bracketLen, 15); canvasCtx.lineTo(w - 15, 15); canvasCtx.lineTo(w - 15, 15 + bracketLen); canvasCtx.stroke();
+          // BL
+          canvasCtx.beginPath(); canvasCtx.moveTo(15, h - 15 - bracketLen); canvasCtx.lineTo(15, h - 15); canvasCtx.lineTo(15 + bracketLen, h - 15); canvasCtx.stroke();
+          // BR
+          canvasCtx.beginPath(); canvasCtx.moveTo(w - 15 - bracketLen, h - 15); canvasCtx.lineTo(w - 15, h - 15); canvasCtx.lineTo(w - 15, h - 15 - bracketLen); canvasCtx.stroke();
+
+          // STARK HUD Reticle Text
+          canvasCtx.font = '12px monospace';
+          canvasCtx.fillStyle = '#00f0ff';
+          canvasCtx.fillText('SYS.LOC // STARK_HUD_ONLINE', 25, 32);
+          canvasCtx.fillText('MARK L [TARGET_LOCK]', w - 180, 32);
+          break;
+
+        case 'cyber':
+          canvasCtx.strokeStyle = '#ec4899';
+          canvasCtx.lineWidth = 3;
+          canvasCtx.shadowColor = '#06b6d4';
+          canvasCtx.shadowBlur = 15;
+          canvasCtx.strokeRect(10, 10, w - 20, h - 20);
+          break;
+
+        case 'privacy':
+          // Hazard Stripes Top & Bottom
+          const stripeW = 20;
+          canvasCtx.fillStyle = '#eab308';
+          canvasCtx.fillRect(0, 0, w, 12);
+          canvasCtx.fillRect(0, h - 12, w, 12);
+          canvasCtx.fillStyle = '#000000';
+          for (let x = 0; x < w; x += stripeW * 2) {
+            canvasCtx.beginPath();
+            canvasCtx.moveTo(x, 0); canvasCtx.lineTo(x + stripeW, 0); canvasCtx.lineTo(x, 12);
+            canvasCtx.closePath(); canvasCtx.fill();
+            canvasCtx.beginPath();
+            canvasCtx.moveTo(x, h - 12); canvasCtx.lineTo(x + stripeW, h - 12); canvasCtx.lineTo(x, h);
+            canvasCtx.closePath(); canvasCtx.fill();
+          }
+          break;
+
+        case 'gold_carnival':
+          canvasCtx.strokeStyle = '#fbbf24';
+          canvasCtx.lineWidth = 5;
+          canvasCtx.shadowColor = '#f59e0b';
+          canvasCtx.shadowBlur = 12;
+          canvasCtx.strokeRect(12, 12, w - 24, h - 24);
+          break;
+
+        case 'phantom':
+          canvasCtx.strokeStyle = '#e2e8f0';
+          canvasCtx.lineWidth = 3;
+          canvasCtx.shadowColor = '#000000';
+          canvasCtx.shadowBlur = 15;
+          canvasCtx.strokeRect(14, 14, w - 28, h - 28);
+          break;
+
+        case 'superhero':
+          canvasCtx.strokeStyle = '#38bdf8';
+          canvasCtx.lineWidth = 3;
+          canvasCtx.shadowColor = '#38bdf8';
+          canvasCtx.shadowBlur = 14;
+          canvasCtx.strokeRect(10, 10, w - 20, h - 20);
+          break;
+
+        case 'pixelate':
+          canvasCtx.strokeStyle = '#a855f7';
+          canvasCtx.lineWidth = 6;
+          canvasCtx.strokeRect(8, 8, w - 16, h - 16);
+          break;
+      }
+
+      canvasCtx.restore();
+    }
+
+    function drawIronManMask(eyeDist) {
+      const mw = eyeDist * 2.6;
+      const mh = eyeDist * 1.8;
+
+      canvasCtx.save();
+
+      // Outer Crimson Red Helmet
+      const redGrad = canvasCtx.createLinearGradient(-mw / 2, -mh / 2, mw / 2, mh / 2);
+      redGrad.addColorStop(0, '#991b1b');
+      redGrad.addColorStop(0.3, '#dc2626');
+      redGrad.addColorStop(0.7, '#b91c1c');
+      redGrad.addColorStop(1, '#7f1d1d');
+
+      canvasCtx.fillStyle = redGrad;
+      canvasCtx.strokeStyle = '#450a0a';
+      canvasCtx.lineWidth = 3;
+      canvasCtx.shadowColor = 'rgba(220, 38, 38, 0.4)';
+      canvasCtx.shadowBlur = 15;
+
+      // Outer Crimson Red Helmet (Ergonomic Facial Oval Silhouette)
+      canvasCtx.beginPath();
+      canvasCtx.ellipse(0, 0, mw * 0.48, mh * 0.54, 0, 0, Math.PI * 2);
+      canvasCtx.fill();
+      canvasCtx.stroke();
+
+      // Gold Faceplate (center plate)
+      const goldGrad = canvasCtx.createLinearGradient(0, -mh * 0.4, 0, mh * 0.4);
+      goldGrad.addColorStop(0, '#fef08a');
+      goldGrad.addColorStop(0.2, '#fbbf24');
+      goldGrad.addColorStop(0.8, '#d97706');
+      goldGrad.addColorStop(1, '#92400e');
+
+      canvasCtx.fillStyle = goldGrad;
+      canvasCtx.strokeStyle = '#b45309';
+      canvasCtx.lineWidth = 2.5;
+      canvasCtx.shadowColor = 'rgba(251, 191, 36, 0.3)';
+      canvasCtx.shadowBlur = 10;
+
+      canvasCtx.beginPath();
+      canvasCtx.ellipse(0, mh * 0.02, mw * 0.32, mh * 0.44, 0, 0, Math.PI * 2);
+      canvasCtx.fill();
+      canvasCtx.stroke();
+
+      // Panel Line / Mechanical Grooves
+      canvasCtx.strokeStyle = '#78350f';
+      canvasCtx.lineWidth = 1.5;
+      // Forehead crest line
+      canvasCtx.beginPath();
+      canvasCtx.moveTo(0, -mh * 0.38);
+      canvasCtx.lineTo(0, -mh * 0.15);
+      canvasCtx.stroke();
+
+      // Cheek accent lines
+      canvasCtx.beginPath();
+      canvasCtx.moveTo(-mw * 0.3, -mh * 0.05);
+      canvasCtx.lineTo(-mw * 0.1, mh * 0.1);
+      canvasCtx.moveTo(mw * 0.3, -mh * 0.05);
+      canvasCtx.lineTo(mw * 0.1, mh * 0.1);
+      canvasCtx.stroke();
+
+      // Glowing Arc Eyes (Cyan/White) with pulse animation
+      const nowSec = performance.now() / 1000;
+      const ironPulse = 0.75 + 0.25 * Math.sin(nowSec * 5);
+      canvasCtx.shadowColor = '#00f0ff';
+      canvasCtx.shadowBlur = 12 + 14 * ironPulse;
+      canvasCtx.fillStyle = '#e0f7fa';
+      canvasCtx.strokeStyle = '#0284c7';
+      canvasCtx.lineWidth = 2;
+
+      // Left Eye
+      canvasCtx.beginPath();
+      canvasCtx.moveTo(-mw * 0.3, -mh * 0.1);
+      canvasCtx.lineTo(-mw * 0.1, -mh * 0.06);
+      canvasCtx.lineTo(-mw * 0.12, mh * 0.04);
+      canvasCtx.lineTo(-mw * 0.27, -mh * 0.02);
+      canvasCtx.closePath();
+      canvasCtx.fill();
+      canvasCtx.stroke();
+
+      // Right Eye
+      canvasCtx.beginPath();
+      canvasCtx.moveTo(mw * 0.3, -mh * 0.1);
+      canvasCtx.lineTo(mw * 0.1, -mh * 0.06);
+      canvasCtx.lineTo(mw * 0.12, mh * 0.04);
+      canvasCtx.lineTo(mw * 0.27, -mh * 0.02);
+      canvasCtx.closePath();
+      canvasCtx.fill();
+      canvasCtx.stroke();
+
+      // Eye White Inner Glow Core
+      canvasCtx.fillStyle = '#ffffff';
+      canvasCtx.beginPath();
+      canvasCtx.moveTo(-mw * 0.28, -mh * 0.08);
+      canvasCtx.lineTo(-mw * 0.12, -mh * 0.05);
+      canvasCtx.lineTo(-mw * 0.14, mh * 0.02);
+      canvasCtx.lineTo(-mw * 0.26, -mh * 0.02);
+      canvasCtx.closePath();
+      canvasCtx.fill();
+
+      canvasCtx.beginPath();
+      canvasCtx.moveTo(mw * 0.28, -mh * 0.08);
+      canvasCtx.lineTo(mw * 0.12, -mh * 0.05);
+      canvasCtx.lineTo(mw * 0.14, mh * 0.02);
+      canvasCtx.lineTo(mw * 0.26, -mh * 0.02);
+      canvasCtx.closePath();
+      canvasCtx.fill();
+
+      canvasCtx.restore();
+    }
+
+    function drawSpiderManMask(eyeDist, leftBlink = 1.0, rightBlink = 1.0) {
+      const mw = eyeDist * 2.5;
+      const mh = eyeDist * 1.7;
+
+      canvasCtx.save();
+
+      // Red Mask Cowl Base
+      const redGrad = canvasCtx.createRadialGradient(0, 0, eyeDist * 0.2, 0, 0, mw * 0.6);
+      redGrad.addColorStop(0, '#f87171');
+      redGrad.addColorStop(0.4, '#ef4444');
+      redGrad.addColorStop(0.8, '#dc2626');
+      redGrad.addColorStop(1, '#991b1b');
+
+      canvasCtx.fillStyle = redGrad;
+      canvasCtx.strokeStyle = '#7f1d1d';
+      canvasCtx.lineWidth = 3;
+      canvasCtx.shadowColor = 'rgba(239, 68, 68, 0.4)';
+      canvasCtx.shadowBlur = 15;
+
+      // Red Mask Cowl Base (Ergonomic Facial Oval Silhouette)
+      canvasCtx.beginPath();
+      canvasCtx.ellipse(0, 0, mw * 0.48, mh * 0.52, 0, 0, Math.PI * 2);
+      canvasCtx.fill();
+      canvasCtx.stroke();
+
+      // Spider Web Pattern
+      canvasCtx.strokeStyle = 'rgba(20, 20, 20, 0.65)';
+      canvasCtx.lineWidth = 1.8;
+
+      const originX = 0;
+      const originY = -mh * 0.05;
+      const numRadials = 10;
+      const radius = mw * 0.52;
+
+      // Radial Lines
+      for (let i = 0; i < numRadials; i++) {
+        const angle = (i * Math.PI * 2) / numRadials;
+        canvasCtx.beginPath();
+        canvasCtx.moveTo(originX, originY);
+        canvasCtx.lineTo(originX + Math.cos(angle) * radius, originY + Math.sin(angle) * radius);
+        canvasCtx.stroke();
+      }
+
+      // Concentric Web Arcs
+      const webRings = [eyeDist * 0.35, eyeDist * 0.7, eyeDist * 1.05];
+      webRings.forEach(r => {
+        canvasCtx.beginPath();
+        for (let i = 0; i <= numRadials; i++) {
+          const angle = (i * Math.PI * 2) / numRadials;
+          const px = originX + Math.cos(angle) * r;
+          const py = originY + Math.sin(angle) * r;
+
+          const prevAngle = ((i - 0.5) * Math.PI * 2) / numRadials;
+          const ctrlR = r * 0.85;
+          const ctrlX = originX + Math.cos(prevAngle) * ctrlR;
+          const ctrlY = originY + Math.sin(prevAngle) * ctrlR;
+
+          if (i === 0) {
+            canvasCtx.moveTo(px, py);
+          } else {
+            canvasCtx.quadraticCurveTo(ctrlX, ctrlY, px, py);
+          }
+        }
+        canvasCtx.stroke();
+      });
+
+      // Iconic Animated Spider-Man Eye Lenses (Thick Black Border + White/Silver Mesh Lens)
+      const drawLens = (isRight) => {
+        const dir = isRight ? 1 : -1;
+        const blinkFactor = Math.max(0.12, isRight ? rightBlink : leftBlink);
+
+        canvasCtx.save();
+        canvasCtx.translate(dir * eyeDist * 0.42, -mh * 0.02);
+        // Vertical squish scaling for animated eye blink / expressiveness
+        canvasCtx.scale(dir, blinkFactor);
+
+        const lw = eyeDist * 0.42;
+        const lh = eyeDist * 0.38;
+
+        // Outer Black Frame
+        canvasCtx.fillStyle = '#0f172a';
+        canvasCtx.strokeStyle = '#000000';
+        canvasCtx.lineWidth = 4;
+        canvasCtx.shadowColor = '#000000';
+        canvasCtx.shadowBlur = 10;
+
+        canvasCtx.beginPath();
+        canvasCtx.moveTo(-lw * 0.7, -lh * 0.5);
+        canvasCtx.quadraticCurveTo(0, -lh * 0.8, lw * 0.75, -lh * 0.2);
+        canvasCtx.quadraticCurveTo(lw * 0.4, lh * 0.7, -lw * 0.6, lh * 0.5);
+        canvasCtx.quadraticCurveTo(-lw * 0.9, 0, -lw * 0.7, -lh * 0.5);
+        canvasCtx.closePath();
+        canvasCtx.fill();
+        canvasCtx.stroke();
+
+        // Inner White/Silver Lens
+        const lensGrad = canvasCtx.createLinearGradient(-lw * 0.5, -lh * 0.5, lw * 0.5, lh * 0.5);
+        lensGrad.addColorStop(0, '#ffffff');
+        lensGrad.addColorStop(0.7, '#f1f5f9');
+        lensGrad.addColorStop(1, '#cbd5e1');
+
+        canvasCtx.fillStyle = lensGrad;
+        canvasCtx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+        canvasCtx.shadowBlur = 8;
+
+        canvasCtx.beginPath();
+        canvasCtx.moveTo(-lw * 0.55, -lh * 0.38);
+        canvasCtx.quadraticCurveTo(0, -lh * 0.62, lw * 0.58, -lh * 0.15);
+        canvasCtx.quadraticCurveTo(lw * 0.28, lh * 0.5, -lw * 0.48, lh * 0.38);
+        canvasCtx.quadraticCurveTo(-lw * 0.72, 0, -lw * 0.55, -lh * 0.38);
+        canvasCtx.closePath();
+        canvasCtx.fill();
+
+        canvasCtx.restore();
+      };
+
+      drawLens(false); // Left Eye Lens
+      drawLens(true);  // Right Eye Lens
+
+      canvasCtx.restore();
+    }
+
     function drawSuperheroMask(eyeDist) {
       const mw = eyeDist * 2.2;
       const mh = eyeDist * 0.95;

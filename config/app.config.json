@@ -1,13 +1,5 @@
 {
   "apps": {
-    "twitter": {
-      "name": "🐦 Twitter-X Post",
-      "enabled": true
-    },
-    "stockCall": {
-      "name": "📈 Insta BSA-Call",
-      "enabled": true
-    },
     "cctv": {
       "name": "📡 CCTV Control Center",
       "enabled": true
@@ -22,10 +14,6 @@
     },
     "presentation": {
       "name": "🖼️ Presentation",
-      "enabled": true
-    },
-    "playingCard": {
-      "name": "🎴 Playing Card Viewer",
       "enabled": true
     },
     "mobileSimulator": {
@@ -48,8 +36,8 @@
       "name": "💬 Chat Story Simulator",
       "enabled": true
     },
-    "styleMorph": {
-      "name": "🎨 Style Morph Animator",
+    "musicPlayer": {
+      "name": "🎵 MP3 Music Player",
       "enabled": true
     }
   }

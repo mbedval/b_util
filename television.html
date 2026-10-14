@@ -76,10 +76,10 @@
         /* SCREEN FRAME & CRT LAYERS */
         .screen-frame {
             background: var(--bezel);
-            border-radius: 28px;
+            border-radius: 20px;
             border: 10px solid #1a1a1a;
-            box-shadow: inset 0 12px 24px rgba(0,0,0,0.9), 0 2px 4px rgba(255,255,255,0.04);
-            padding: 10px;
+            box-shadow: inset 0 8px 16px rgba(0,0,0,0.8), 0 2px 4px rgba(255,255,255,0.04);
+            padding: 8px;
             position: relative;
             display: flex;
             align-items: center;
@@ -89,30 +89,23 @@
 
         .crt-mask {
             width: 100%; height: 100%;
-            background: #050505;
-            border-radius: 30px / 20px;
+            background: #000;
+            border-radius: 12px;
             position: relative;
             overflow: hidden;
-            box-shadow: inset 0 0 90px rgba(0,0,0,1);
+            box-shadow: inset 0 0 3px rgba(0,0,0,0.5);
         }
 
         .crt-scanlines {
-            position: absolute; inset: 0;
-            background: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.22) 50%);
-            background-size: 100% 4px;
-            z-index: 100; pointer-events: none;
+            display: none;
         }
 
         .crt-sheen {
-            position: absolute; inset: 0;
-            background: linear-gradient(130deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.02) 22%, transparent 42%);
-            z-index: 101; pointer-events: none;
+            display: none;
         }
 
         .crt-curve-overlay {
-            position: absolute; inset: 0;
-            box-shadow: inset 0 0 50px rgba(0,0,0,0.9);
-            z-index: 102; pointer-events: none;
+            display: none;
         }
 
         .tv-screen-content { width:100%; height:100%; position:relative; }
@@ -189,7 +182,14 @@
             display:flex; align-items:center; justify-content:center;
         }
         .channel-playback-view.hidden { display:none; }
-        .channel-playback-view video { width:100%; height:100%; object-fit:contain; }
+        .channel-playback-view video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            image-rendering: -webkit-optimize-contrast;
+            transform: translateZ(0);
+            backface-visibility: hidden;
+        }
 
         /* RIGHT CONTROL PANEL */
         .tv-controls {
@@ -527,6 +527,7 @@
     </style>
 </head>
 <body>
+    <a href="index.html" style="position: fixed; top: 16px; left: 16px; z-index: 1000; color: #4ade80; text-decoration: none; font-weight: 600; font-size: 0.85rem; padding: 8px 16px; background: rgba(5, 10, 8, 0.85); border: 1px solid rgba(74, 222, 128, 0.4); border-radius: 8px; backdrop-filter: blur(8px); display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.6);">Dashboard</a>
 
     <div class="tv-area" id="tv-area">
         <div class="tv-cabinet-wrap" id="tv-cabinet-wrap">
@@ -602,15 +603,18 @@
                             </button>
                         </div>
 
-                        <!-- Bottom Row: Volume + , Volume - , Filter -->
-                        <div style="display:flex; flex-direction:row; align-items:center; justify-content:center; gap:5px; width:100%;">
-                            <button class="panel-btn" id="vol-up-btn" title="Volume Up (Arrow Up)" style="width: 28px; height: 26px; border-radius: 6px; display:flex; align-items:center; justify-content:center;">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                        <!-- Bottom Row: Volume + , Volume - , Mute, Filter -->
+                        <div style="display:flex; flex-direction:row; align-items:center; justify-content:center; gap:4px; width:100%;">
+                            <button class="panel-btn" id="vol-up-btn" title="Volume Up (Arrow Up)" style="width: 27px; height: 26px; border-radius: 6px; display:flex; align-items:center; justify-content:center;">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="16" y1="12" x2="22" y2="12"></line><line x1="19" y1="9" x2="19" y2="15"></line></svg>
                             </button>
-                            <button class="panel-btn" id="vol-down-btn" title="Volume Down (Arrow Down)" style="width: 28px; height: 26px; border-radius: 6px; display:flex; align-items:center; justify-content:center;">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+                            <button class="panel-btn" id="vol-down-btn" title="Volume Down (Arrow Down)" style="width: 27px; height: 26px; border-radius: 6px; display:flex; align-items:center; justify-content:center;">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="16" y1="12" x2="22" y2="12"></line></svg>
                             </button>
-                            <button class="panel-btn" id="filter-btn" title="Cycle Screen Filter (Normal/B&W/Sepia)" style="height: 26px; padding: 0 6px; font-size: 0.52rem; text-transform: uppercase; font-weight: 800; border-radius: 6px; letter-spacing: 0.5px;">Filter</button>
+                            <button class="panel-btn" id="mute-btn" title="Mute / Unmute [M]" style="width: 27px; height: 26px; border-radius: 6px; display:flex; align-items:center; justify-content:center;">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+                            </button>
+                            <button class="panel-btn" id="filter-btn" title="Cycle Screen Filter (Normal/B&W/Sepia)" style="height: 26px; padding: 0 5px; font-size: 0.52rem; text-transform: uppercase; font-weight: 800; border-radius: 6px; letter-spacing: 0.5px;">Filter</button>
                         </div>
                     </div>
                 </div>
@@ -778,15 +782,15 @@
         const availH  = window.innerHeight - hintH;
         const availW  = window.innerWidth;
 
-        const scaleX  = availW / NATIVE_W;
-        const scaleY  = availH / NATIVE_H;
+        const scale        = Math.min(availW / NATIVE_W, availH / NATIVE_H);
+        const clampedScale = Math.max(0.2, scale);
 
         const wrap = document.getElementById('tv-cabinet-wrap');
-        wrap.style.width  = availW + 'px';
-        wrap.style.height = availH + 'px';
+        wrap.style.width  = (NATIVE_W * clampedScale) + 'px';
+        wrap.style.height = (NATIVE_H * clampedScale) + 'px';
 
         const cabinet = document.getElementById('tv-cabinet');
-        cabinet.style.transform = `scale(${scaleX}, ${scaleY})`;
+        cabinet.style.transform = `scale(${clampedScale})`;
     }
 
     window.addEventListener('resize', scaleTV);
@@ -865,6 +869,11 @@
             tvVideo.load();
             staticBurst.classList.add('active');
             highlightCard(null);
+            const muteBtn = document.getElementById('mute-btn');
+            if (muteBtn) {
+                muteBtn.style.color = '';
+                muteBtn.style.borderColor = '';
+            }
             setTimeout(() => {
                 staticBurst.classList.remove('active');
                 screenOffLayer.classList.remove('hidden');
@@ -883,6 +892,11 @@
         tvVideo.volume = tvVolume;
         if (tvVideo.muted && tvVolume > 0) {
             tvVideo.muted = false;
+            const muteBtn = document.getElementById('mute-btn');
+            if (muteBtn) {
+                muteBtn.style.color = '';
+                muteBtn.style.borderColor = '';
+            }
         }
         const volPct = Math.round(tvVolume * 100);
         showBadge(`VOLUME: ${volPct}%`);
@@ -924,7 +938,7 @@
             stopStatic();
 
             if (Hls.isSupported()) {
-                hls = new Hls({ maxMaxBufferLength: 10, lowLatencyMode: true });
+                hls = new Hls({ maxMaxBufferLength: 10, lowLatencyMode: true, capLevelToPlayerSize: false });
                 hls.loadSource(ch.url);
                 hls.attachMedia(tvVideo);
                 hls.on(Hls.Events.MANIFEST_PARSED, () => {
@@ -994,10 +1008,19 @@
     function toggleMute() {
         if (!tvOn) return;
         tvVideo.muted = !tvVideo.muted;
+        const muteBtn = document.getElementById('mute-btn');
         if (tvVideo.muted) {
             showBadge('MUTE ON');
+            if (muteBtn) {
+                muteBtn.style.color = '#ef4444';
+                muteBtn.style.borderColor = '#ef4444';
+            }
         } else {
             showBadge('MUTE OFF');
+            if (muteBtn) {
+                muteBtn.style.color = '';
+                muteBtn.style.borderColor = '';
+            }
         }
     }
 
@@ -1006,6 +1029,7 @@
     document.getElementById('fullscreen-btn').addEventListener('click', toggleFullScreen);
     document.getElementById('vol-up-btn').addEventListener('click', () => changeVolume(0.05));
     document.getElementById('vol-down-btn').addEventListener('click', () => changeVolume(-0.05));
+    document.getElementById('mute-btn').addEventListener('click', toggleMute);
 
     document.addEventListener('keydown', e => {
         if (e.key === ' ') { e.preventDefault(); togglePower(); return; }
